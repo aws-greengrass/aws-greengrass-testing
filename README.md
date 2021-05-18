@@ -1,11 +1,17 @@
-## My Project
+## AWS Greengrass Testing Framework
 
-TODO: Fill this README out!
+This framework is a collection of building blocks
+to support end to end automation from the customer
+perspective, using Cucumber as the feature driver. AWS Greengrass uses these very same building
+blocks to qualify software changes on variable devices.
 
-Be sure to:
+## What's inside?
 
-* Change the title in this README
-* Edit your repository description on GitHub
+- AWS Resource Management
+- A platform abstraction over Java Process API
+- A bunch of common steps
+- Ability for the features to be driven through IDT.
+- Service discovery for extensions like other AWS resources, steps, and configuration.
 
 ## Security
 

@@ -1,0 +1,23 @@
+system:
+  thingName: {thing_name}
+  privateKeyPath: ~root/privKey.key
+  rootCaPath: ~root/rootCA.pem
+  certificateFilePath: ~root/thingCert.crt
+services:
+  main:
+    lifecycle: {}
+  aws.greengrass.Nucleus:
+    version: {nucleus_version}
+    configuration:
+      awsRegion: {aws_region}
+      envStage: {env_stage}
+      iotCredEndpoint: {iot_cred_endpoint}
+      iotDataEndpoint: {iot_data_endpoint}
+      iotRoleAlias: {role_alias}
+      greengrassDataPlanePort: {data_plane_port}
+      deploymentPollingFrequencySeconds: 1
+      networkProxy:
+        proxy:
+          url: {proxy_url}
+      runWithDefault:
+        posixUser: {posixUser}
