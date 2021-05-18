@@ -1,0 +1,31 @@
+roleName: "nucleus-role"
+policyDocument: >
+  {
+    "Version": "2012-10-17",
+    "Statement": [{
+      "Effect": "Allow",
+      "Action": [
+        "greengrass:*",
+        "iot:DescribeCertificate",
+        "iot:ListThingPrincipals",
+        "iot:Connect",
+        "iot:Publish",
+        "iot:Subscribe",
+        "iot:Receive",
+        "iot:GetThingShadow",
+        "iot:UpdateThingShadow"
+      ],
+      "Resource": "*"
+    }]
+  }
+trustDocument: >
+  {
+    "Version": "2012-10-17",
+    "Statement": [{
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "credentials.iot.amazonaws.com"
+      },
+      "Action": "sts:AssumeRole"
+    }]
+  }
