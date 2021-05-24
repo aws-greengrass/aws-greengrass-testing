@@ -5,9 +5,9 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.util.List;
 import java.util.Optional;
 import java.util.ServiceLoader;
+import java.util.Set;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.stream.Collectors;
@@ -16,9 +16,9 @@ import java.util.stream.StreamSupport;
 
 public final class AWSResources implements Closeable {
     private static final Logger LOGGER = LogManager.getLogger(AWSResources.class);
-    private final List<AWSResourceLifecycle<?>> lifecycles;
+    private final Set<AWSResourceLifecycle> lifecycles;
 
-    public AWSResources(List<AWSResourceLifecycle<?>> lifecycles) {
+    public AWSResources(Set<AWSResourceLifecycle> lifecycles) {
         this.lifecycles = lifecycles;
     }
 
@@ -27,7 +27,7 @@ public final class AWSResources implements Closeable {
                 Spliterators.spliteratorUnknownSize(
                         ServiceLoader.load(AWSResourceLifecycle.class).iterator(), Spliterator.DISTINCT), false)
                 .map(awsResourceLifecycle -> (AWSResourceLifecycle<?>) awsResourceLifecycle)
-                .collect(Collectors.toList()));
+                .collect(Collectors.toSet()));
     }
 
     public <U extends AWSResourceLifecycle> U lifecycle(Class<U> lifecycleType) {

@@ -9,13 +9,13 @@ import software.amazon.awssdk.services.iam.IamClient;
 import javax.inject.Inject;
 
 @AutoService(AWSResourceLifecycle.class)
-public class IamRoleLifecycle extends AbstractAWSResourceLifecycle<IamClient> {
+public class IamLifecycle extends AbstractAWSResourceLifecycle<IamClient> {
     @Inject
-    public IamRoleLifecycle(IamClient client) {
+    public IamLifecycle(IamClient client) {
         super(client, IamRoleSpec.class);
     }
 
-    public IamRoleLifecycle() {
+    public IamLifecycle() {
         this(IamClient.builder().build());
     }
 }

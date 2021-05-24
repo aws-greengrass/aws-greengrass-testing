@@ -21,6 +21,7 @@
         <module>aws-greengrass-testing-features</module>
         <module>aws-greengrass-testing-api</module>
         <module>aws-greengrass-testing-platform</module>
+        <module>aws-greengrass-testing-modules</module>
     </modules>
 
     <properties>
@@ -33,6 +34,7 @@
         <aws.sdk.version>2.16.52</aws.sdk.version>
         <auto.service.version>1.0</auto.service.version>
         <findbugs.version>3.0.2</findbugs.version>
+        <guice.version>5.0.1</guice.version>
     </properties>
 
     <dependencyManagement>
