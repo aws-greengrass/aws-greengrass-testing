@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 public abstract class AbstractAWSResourceLifecycle<C> implements AWSResourceLifecycle<C> {
@@ -47,5 +48,21 @@ public abstract class AbstractAWSResourceLifecycle<C> implements AWSResourceLife
             resource.remove(client);
             iterator.remove();
         }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        AbstractAWSResourceLifecycle<?> that = (AbstractAWSResourceLifecycle<?>) o;
+        return Objects.equals(client, that.client)
+                && Objects.equals(specClasses, that.specClasses)
+                && Objects.equals(specs, that.specs)
+                && Objects.equals(resources, that.resources);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(client, specClasses, specs, resources);
     }
 }
