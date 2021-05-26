@@ -10,6 +10,8 @@ import com.google.inject.multibindings.Multibinder;
 import io.cucumber.guice.ScenarioScoped;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 
 import javax.inject.Singleton;
 import java.util.Set;
@@ -26,6 +28,13 @@ public class AWSResourcesModule extends AbstractModule {
     @ScenarioScoped
     static AWSResources providesAWSResources(Set<AWSResourceLifecycle> lifecycles) {
         return new AWSResources(lifecycles);
+    }
+
+    @Provides
+    @Singleton
+    static Region providesRegion() {
+        return DefaultAwsRegionProviderChain.builder().build()
+                .getRegion();
     }
 
     @Provides

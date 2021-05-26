@@ -22,6 +22,7 @@
         <module>aws-greengrass-testing-api</module>
         <module>aws-greengrass-testing-platform</module>
         <module>aws-greengrass-testing-modules</module>
+        <module>aws-greengrass-testing-launcher</module>
     </modules>
 
     <properties>
@@ -35,6 +36,8 @@
         <auto.service.version>1.0</auto.service.version>
         <findbugs.version>3.0.2</findbugs.version>
         <guice.version>5.0.1</guice.version>
+        <jupiter.version>5.7.2</jupiter.version>
+        <junit.platform.version>1.7.2</junit.platform.version>
     </properties>
 
     <dependencyManagement>
