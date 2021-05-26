@@ -1,6 +1,7 @@
 package com.aws.greengrass.testing.modules;
 
 import com.google.auto.service.AutoService;
+import com.google.common.collect.Sets;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 import com.google.inject.matcher.Matchers;
@@ -75,7 +76,7 @@ public class AWSResourceCleanupModule extends AbstractModule {
 
     @Override
     protected void configure() {
-        final Set<Closeable> closers = new ConcurrentSkipListSet<>();
+        final Set<Closeable> closers = Sets.newConcurrentHashSet();
         final MethodInterceptor cleanup = new CleanupInterceptor(closers);
         Runtime.getRuntime().addShutdownHook(new Thread(new CleanupRunnable(closers)));
         bindListener(Matchers.any(), new CleanupProvisioner(closers));

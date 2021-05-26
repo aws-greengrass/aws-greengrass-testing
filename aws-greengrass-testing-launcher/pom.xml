@@ -22,5 +22,10 @@
             <artifactId>junit-jupiter-engine</artifactId>
             <version>${jupiter.version}</version>
         </dependency>
+        <dependency>
+            <groupId>io.cucumber</groupId>
+            <artifactId>cucumber-junit-platform-engine</artifactId>
+            <version>${cucumber.version}</version>
+        </dependency>
     </dependencies>
 </project>

@@ -23,6 +23,7 @@
         <module>aws-greengrass-testing-platform</module>
         <module>aws-greengrass-testing-modules</module>
         <module>aws-greengrass-testing-launcher</module>
+        <module>aws-greengrass-testing-examples</module>
     </modules>
 
     <properties>
