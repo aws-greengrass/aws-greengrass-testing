@@ -3,7 +3,10 @@ package com.aws.greengrass.testing.launcher;
 import org.junit.platform.console.options.CommandLineOptions;
 import org.junit.platform.console.options.Details;
 import org.junit.platform.console.options.Theme;
+import org.junit.platform.console.tasks.ConsoleTestExecutor;
+import org.junit.platform.launcher.listeners.TestExecutionSummary;
 
+import java.io.PrintWriter;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -16,7 +19,7 @@ public final class TestLauncher {
     private static final String DEFAULT_GLUE_PATH = "com.aws.greengrass";
     private static final String DEFAULT_FEATURES = "greengrass/features";
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         final Path output;
         if (args.length > 0) {
             output = Paths.get(args[0]);
@@ -32,11 +35,19 @@ public final class TestLauncher {
             options.setIncludedTagExpressions(Arrays.asList(tags));
         }
         options.setSelectedClasspathResources(Arrays.asList(System.getProperty("feature.path", DEFAULT_FEATURES)));
+        final Path resultsXml = output.toAbsolutePath().resolve("TEST-greengrass-results.xml");
         options.setConfigurationParameters(new HashMap<String, String>() {{
            put("cucumber.glue", System.getProperty("glue.package", DEFAULT_GLUE_PATH));
            put("cucumber.plugin", new StringJoiner(",")
-                   .add("junit:" + output.toAbsolutePath().resolve("TEST-greengrass-results.xml").toString())
+                   .add("junit:" + resultsXml.toString())
                    .toString());
         }});
+        final ConsoleTestExecutor executor = new ConsoleTestExecutor(options);
+        final TestExecutionSummary summary = executor.execute(new PrintWriter(System.out));
+        if (summary.getTestsFailedCount() > 0) {
+            System.err.println("Test Failure: " + summary.getTestsFailedCount());
+            System.err.println("See the full error report: " + resultsXml);
+            System.exit(1);
+        }
     }
 }
