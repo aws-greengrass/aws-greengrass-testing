@@ -41,7 +41,6 @@
             <groupId>${project.parent.groupId}</groupId>
             <artifactId>aws-greengrass-testing-modules</artifactId>
             <version>${project.parent.version}</version>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.google.auto.service</groupId>

@@ -5,6 +5,7 @@ import com.google.auto.service.AutoService;
 import com.google.inject.Module;
 import com.google.inject.Provides;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.http.apache.ApacheHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.iam.IamClient;
 
@@ -15,7 +16,10 @@ public class IamModule extends AbstractAWSResourceModule<IamClient, IamLifecycle
     @Provides
     @Singleton
     @Override
-    protected IamClient providesClient(AwsCredentialsProvider provider, Region region) {
+    protected IamClient providesClient(
+            final AwsCredentialsProvider provider,
+            final Region region,
+            final ApacheHttpClient.Builder httpClientBuilder) {
         final Region globalRegion = Region.regions().stream()
                 .filter(Region::isGlobalRegion)
                 .filter(global -> global.metadata().partition().id().equals(region.metadata().partition().id()))
@@ -23,6 +27,7 @@ public class IamModule extends AbstractAWSResourceModule<IamClient, IamLifecycle
                 .orElseThrow(() -> new IllegalArgumentException("Global region not found: " + region.metadata().id()));
         return IamClient.builder()
                 .credentialsProvider(provider)
+                .httpClientBuilder(httpClientBuilder)
                 .region(globalRegion)
                 .build();
     }
