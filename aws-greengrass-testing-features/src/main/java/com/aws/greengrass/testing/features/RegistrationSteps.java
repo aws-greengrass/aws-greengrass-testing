@@ -1,5 +1,6 @@
 package com.aws.greengrass.testing.features;
 
+import com.aws.greengrass.testing.api.device.Device;
 import com.aws.greengrass.testing.api.model.TestId;
 import com.aws.greengrass.testing.resources.AWSResources;
 import com.aws.greengrass.testing.resources.iam.IamRoleSpec;
@@ -19,6 +20,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -31,13 +33,16 @@ public class RegistrationSteps {
     private final Path tempDir;
     private final AWSResources resources;
     private final IamSteps iamSteps;
+    private final Device device;
 
     @Inject
     public RegistrationSteps(
+            Device device,
             AWSResources resources,
             IamSteps iamSteps,
             TestId testId,
             Path tempDir) {
+        this.device = device;
         this.resources = resources;
         this.testId = testId;
         this.iamSteps = iamSteps;
@@ -104,10 +109,23 @@ public class RegistrationSteps {
             additionalUpdatableFields.putIfAbsent("{iot_cred_endpoint}", "null");
         }
 
+        if (roleAliasSpec != null) {
+            config = config.replace("{role_alias}", roleAliasSpec.resource().roleAlias());
+        } else {
+            additionalUpdatableFields.putIfAbsent("{role_alias}", "null");
+        }
+
+        config = config.replace("{proxy_url}", "");
+        config = config.replace("{aws_region}", "");
+        config = config.replace("{nucleus_version}", "");
+        config = config.replace("{env_stage}", "");
+        config = config.replace("{data_plane_port}", "8443");
+
         Path configFilePath = tempDir.resolve("config");
         Files.createDirectories(configFilePath);
         // Files.write(configFilePath.resolve("rootCA.pem"))
         Files.write(configFilePath.resolve("config.yaml"), config.getBytes(StandardCharsets.UTF_8));
         // Copy to where the nucleus will read it
+        device.copy(configFilePath, Paths.get(testId.id()));
     }
 }

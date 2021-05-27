@@ -1,5 +1,8 @@
 package com.aws.greengrass.testing.resources;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -8,6 +11,7 @@ import java.util.Objects;
 import java.util.stream.Stream;
 
 public abstract class AbstractAWSResourceLifecycle<C> implements AWSResourceLifecycle<C> {
+    private static final Logger LOGGER = LogManager.getLogger(AbstractAWSResourceLifecycle.class);
     protected C client;
     protected List<Class<? extends ResourceSpec<C, ? extends AWSResource<C>>>> specClasses;
     protected List<ResourceSpec<C, ? extends AWSResource<C>>> specs;
@@ -45,7 +49,12 @@ public abstract class AbstractAWSResourceLifecycle<C> implements AWSResourceLife
         final Iterator<? extends AWSResource<C>> iterator = resources.listIterator();
         while (iterator.hasNext()) {
             final AWSResource<C> resource = iterator.next();
-            resource.remove(client);
+            try {
+                resource.remove(client);
+            } catch (Throwable ex) {
+                // Don't prevent SDK failures from removing other resources being tracked.
+                LOGGER.error("Failed to remove {} in {}", resource, getClass().getSimpleName(), ex);
+            }
             iterator.remove();
         }
     }
