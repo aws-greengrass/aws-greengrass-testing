@@ -1,7 +1,11 @@
 package com.aws.greengrass.testing.features;
 
 import com.aws.greengrass.testing.api.device.Device;
-import com.aws.greengrass.testing.api.model.TestId;
+import com.aws.greengrass.testing.api.model.ProxyConfig;
+import com.aws.greengrass.testing.model.GreengrassContext;
+import com.aws.greengrass.testing.model.RegistrationContext;
+import com.aws.greengrass.testing.model.TestContext;
+import com.aws.greengrass.testing.modules.AWSResourcesContext;
 import com.aws.greengrass.testing.resources.AWSResources;
 import com.aws.greengrass.testing.resources.iam.IamRoleSpec;
 import com.aws.greengrass.testing.resources.iot.IotLifecycle;
@@ -20,7 +24,6 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -28,9 +31,11 @@ import java.util.Optional;
 
 @ScenarioScoped
 public class RegistrationSteps {
-    private static final String DEFAULT_CONFIG = "basic_config.yaml";
-    private final TestId testId;
-    private final Path tempDir;
+    private static final String DEFAULT_CONFIG = "/nucleus/configs/basic_config.yaml";
+    private final TestContext testContext;
+    private final RegistrationContext registrationContext;
+    private final AWSResourcesContext resourcesContext;
+    private final GreengrassContext greengrassContext;
     private final AWSResources resources;
     private final IamSteps iamSteps;
     private final Device device;
@@ -40,54 +45,58 @@ public class RegistrationSteps {
             Device device,
             AWSResources resources,
             IamSteps iamSteps,
-            TestId testId,
-            Path tempDir) {
+            TestContext testContext,
+            RegistrationContext registrationContext,
+            GreengrassContext greengrassContext,
+            AWSResourcesContext resourcesContext) {
         this.device = device;
         this.resources = resources;
-        this.testId = testId;
         this.iamSteps = iamSteps;
-        this.tempDir = tempDir;
+        this.testContext = testContext;
+        this.registrationContext = registrationContext;
+        this.greengrassContext = greengrassContext;
+        this.resourcesContext = resourcesContext;
     }
 
-    @Given.Givens({
-            @Given("my device is registered as a Thing"),
-            @Given("my device is registered as a Thing using config {word}")
-    })
+    @Given("my device is registered as a Thing using config {word}")
     public void registerAsThing(String configName) throws IOException {
-        registerAsThing(configName, testId.idFor("group"));
+        registerAsThing(configName, testContext.testId().idFor("group"));
+    }
+
+    @Given("my device is registered as a Thing")
+    public void registerAsThing() throws IOException {
+        registerAsThing(null);
     }
 
     private void registerAsThing(String configName, String thingGroupName) throws IOException {
         final String configFile = Optional.ofNullable(configName).orElse(DEFAULT_CONFIG);
-        IotRoleAliasSpec roleAliasSpec = IotRoleAliasSpec.builder()
-                .name(testId.idFor("role-alias"))
-                .iamRole(resources.trackingSpecs(IamRoleSpec.class)
-                        .filter(s -> s.roleName().equals(testId.idFor("nucleus-role")))
-                        .findFirst()
-                        .orElseGet(iamSteps::createDefaultIamRole)
-                        .resource())
-                .build();
 
-        IotThingSpec thingSpec = IotThingSpec.builder()
-                .thingName(testId.idFor("thing"))
+        IotThingSpec thingSpec = resources.create(IotThingSpec.builder()
+                .thingName(testContext.testId().idFor("ggc-thing"))
                 .addThingGroups(IotThingGroupSpec.of(thingGroupName))
                 .createCertificate(true)
-                .roleAliasSpec(roleAliasSpec)
-                .build();
+                .roleAliasSpec(IotRoleAliasSpec.builder()
+                        .name(testContext.testId().idFor("ggc-role-alias"))
+                        .iamRole(resources.trackingSpecs(IamRoleSpec.class)
+                                .filter(s -> s.roleName().equals(testContext.testId().idFor("ggc-role")))
+                                .findFirst()
+                                .orElseGet(iamSteps::createDefaultIamRole)
+                                .resource())
+                        .build())
+                .build());
 
-        IotThingSpec updatedSpec = resources.create(thingSpec);
         try (InputStream input = getClass().getResourceAsStream(DEFAULT_CONFIG)) {
             StringBuilder configBuilder = new StringBuilder();
             final BufferedReader reader = new BufferedReader(
                     new InputStreamReader(input, StandardCharsets.UTF_8));
             String line = reader.readLine();
             while (Objects.nonNull(line)) {
-                configBuilder.append(line);
+                configBuilder.append(line).append("\n");
                 line = reader.readLine();
             }
             setupConfig(
-                    updatedSpec.resource(),
-                    roleAliasSpec,
+                    thingSpec.resource(),
+                    thingSpec.roleAliasSpec(),
                     configBuilder.toString(),
                     new HashMap<>());
         }
@@ -99,10 +108,16 @@ public class RegistrationSteps {
             String config,
             Map<String, String> additionalUpdatableFields) throws IOException {
         IotLifecycle iot = resources.lifecycle(IotLifecycle.class);
+        Path configFilePath = testContext.testDirectory().resolve("config");
+        Files.createDirectories(configFilePath);
         if (Objects.nonNull(thing)) {
             config = config.replace("{thing_name}", thing.thingName());
             config = config.replace("{iot_data_endpoint}", iot.dataEndpoint());
             config = config.replace("{iot_cred_endpoint}", iot.credentialsEndpoint());
+            Files.write(configFilePath.resolve("privKey.key"),
+                    thing.certificate().keyPair().privateKey().getBytes(StandardCharsets.UTF_8));
+            Files.write(configFilePath.resolve("thingCert.crt"),
+                    thing.certificate().certificatePem().getBytes(StandardCharsets.UTF_8));
         } else {
             additionalUpdatableFields.putIfAbsent("{thing_name}", "null");
             additionalUpdatableFields.putIfAbsent("{iot_data_endpoint}", "null");
@@ -115,17 +130,16 @@ public class RegistrationSteps {
             additionalUpdatableFields.putIfAbsent("{role_alias}", "null");
         }
 
-        config = config.replace("{proxy_url}", "");
-        config = config.replace("{aws_region}", "");
-        config = config.replace("{nucleus_version}", "");
-        config = config.replace("{env_stage}", "");
+        config = config.replace("{proxy_url}", resourcesContext.proxyConfig().map(ProxyConfig::proxyUrl).orElse(""));
+        config = config.replace("{aws_region}", resourcesContext.region().metadata().id());
+        config = config.replace("{nucleus_version}", greengrassContext.version());
+        config = config.replace("{env_stage}", resourcesContext.envStage());
+        config = config.replace("{posix_user}", testContext.currentUser());
         config = config.replace("{data_plane_port}", "8443");
 
-        Path configFilePath = tempDir.resolve("config");
-        Files.createDirectories(configFilePath);
-        // Files.write(configFilePath.resolve("rootCA.pem"))
+        Files.write(configFilePath.resolve("rootCA.pem"), registrationContext.rootCA().getBytes(StandardCharsets.UTF_8));
         Files.write(configFilePath.resolve("config.yaml"), config.getBytes(StandardCharsets.UTF_8));
         // Copy to where the nucleus will read it
-        device.copy(configFilePath, Paths.get(testId.id()));
+        device.sync(configFilePath);
     }
 }

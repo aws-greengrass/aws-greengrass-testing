@@ -14,7 +14,6 @@ import org.apache.logging.log4j.Logger;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Set;
-import java.util.concurrent.ConcurrentSkipListSet;
 
 @AutoService(Module.class)
 public class AWSResourceCleanupModule extends AbstractModule {

@@ -15,10 +15,12 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 @AutoService(Device.class)
 public class LocalDevice implements Device {
@@ -87,6 +89,20 @@ public class LocalDevice implements Device {
     public void copy(Path source, Path destination) {
         try {
             Files.copy(source, destination);
+            if (Files.isDirectory(source)) {
+                try (Stream<Path> files = Files.walk(source)) {
+                    files.forEach(file -> {
+                        Path relativePath = source.relativize(file);
+                        if (!relativePath.getFileName().toString().isEmpty()) {
+                            try {
+                                Files.copy(file, destination.resolve(relativePath));
+                            } catch (IOException e) {
+                                throw new CopyException(e, file, destination.resolve(relativePath));
+                            }
+                        }
+                    });
+                }
+            }
         } catch (IOException e) {
             throw new CopyException(e, source, destination);
         }

@@ -12,7 +12,7 @@ import javax.inject.Inject;
 public class IamLifecycle extends AbstractAWSResourceLifecycle<IamClient> {
     @Inject
     public IamLifecycle(IamClient client) {
-        super(client, IamRoleSpec.class);
+        super(client, IamPolicySpec.class, IamRoleSpec.class);
     }
 
     public IamLifecycle() {

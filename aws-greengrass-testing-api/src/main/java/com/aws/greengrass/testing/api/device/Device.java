@@ -30,6 +30,10 @@ public interface Device {
 
     void copy(Path source, Path destination) throws CopyException;
 
+    default void sync(Path source) throws CopyException {
+        copy(source, source);
+    }
+
     boolean exists(Path file);
 
     static Device acquire(String type) {

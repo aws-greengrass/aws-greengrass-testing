@@ -39,6 +39,7 @@
         <guice.version>5.0.1</guice.version>
         <jupiter.version>5.7.2</jupiter.version>
         <junit.platform.version>1.7.2</junit.platform.version>
+        <jackson.version>2.12.3</jackson.version>
     </properties>
 
     <dependencyManagement>
