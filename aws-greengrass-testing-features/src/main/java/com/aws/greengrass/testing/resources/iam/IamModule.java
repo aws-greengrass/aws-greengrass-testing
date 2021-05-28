@@ -22,7 +22,7 @@ public class IamModule extends AbstractAWSResourceModule<IamClient, IamLifecycle
             final ApacheHttpClient.Builder httpClientBuilder) {
         final Region globalRegion = Region.regions().stream()
                 .filter(Region::isGlobalRegion)
-                .filter(global -> global.metadata().partition().id().equals(region.metadata().partition().id()))
+                .filter(global -> global.id().startsWith(region.metadata().partition().id() + "-"))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Global region not found: " + region.metadata().id()));
         return IamClient.builder()

@@ -6,7 +6,7 @@ import java.nio.file.Path;
 
 @TestingModel
 @Value.Immutable
-interface NucleusContextModel {
+interface GreengrassContextModel {
     String version();
 
     Path archivePath();

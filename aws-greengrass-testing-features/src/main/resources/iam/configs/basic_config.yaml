@@ -1,4 +1,4 @@
-roleName: "nucleus-role"
+roleName: "greengrass-role"
 policyDocument: >
   {
     "Version": "2012-10-17",

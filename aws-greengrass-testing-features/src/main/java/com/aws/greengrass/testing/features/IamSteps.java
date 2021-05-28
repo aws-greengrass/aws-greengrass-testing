@@ -14,7 +14,7 @@ import java.util.Optional;
 
 @ScenarioScoped
 public class IamSteps {
-    private static final String DEFAULT_CONFIG = "basic_config.yaml";
+    private static final String DEFAULT_CONFIG = "/iam/configs/basic_config.yaml";
     private final AWSResources resources;
     private final ObjectMapper mapper;
     private final TestId testId;
@@ -26,10 +26,12 @@ public class IamSteps {
         this.testId = testId;
     }
 
-    @Given.Givens({
-            @Given("I create an IAM role from {word}"),
-            @Given("I create a default IAM role for a greengrass core device")
-    })
+    @Given("I create a default IAM role for Greengrass")
+    public IamRoleSpec createIamRole() throws IOException {
+        return createIamRole(null);
+    }
+
+    @Given("I create an IAM role from {word}")
     public IamRoleSpec createIamRole(String roleFile) throws IOException {
         final String configFile = Optional.ofNullable(roleFile).orElse(DEFAULT_CONFIG);
 

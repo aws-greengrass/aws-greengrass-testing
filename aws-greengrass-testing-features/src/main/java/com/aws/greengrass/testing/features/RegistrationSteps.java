@@ -1,6 +1,7 @@
 package com.aws.greengrass.testing.features;
 
 import com.aws.greengrass.testing.api.device.Device;
+import com.aws.greengrass.testing.api.model.GreengrassContext;
 import com.aws.greengrass.testing.api.model.ProxyConfig;
 import com.aws.greengrass.testing.api.model.TestId;
 import com.aws.greengrass.testing.model.RegistrationContext;
@@ -36,6 +37,7 @@ public class RegistrationSteps {
     private final TestContext testContext;
     private final RegistrationContext registrationContext;
     private final AWSResourcesContext resourcesContext;
+    private final GreengrassContext greengrassContext;
     private final AWSResources resources;
     private final IamSteps iamSteps;
     private final Device device;
@@ -47,21 +49,25 @@ public class RegistrationSteps {
             IamSteps iamSteps,
             TestContext testContext,
             RegistrationContext registrationContext,
+            GreengrassContext greengrassContext,
             AWSResourcesContext resourcesContext) {
         this.device = device;
         this.resources = resources;
         this.iamSteps = iamSteps;
         this.testContext = testContext;
         this.registrationContext = registrationContext;
+        this.greengrassContext = greengrassContext;
         this.resourcesContext = resourcesContext;
     }
 
-    @Given.Givens({
-            @Given("my device is registered as a Thing"),
-            @Given("my device is registered as a Thing using config {word}")
-    })
+    @Given("my device is registered as a Thing using config {word}")
     public void registerAsThing(String configName) throws IOException {
         registerAsThing(configName, testContext.testId().idFor("group"));
+    }
+
+    @Given("my device is registered as a Thing")
+    public void registerAsThing() throws IOException {
+        registerAsThing(null);
     }
 
     private void registerAsThing(String configName, String thingGroupName) throws IOException {
@@ -130,13 +136,13 @@ public class RegistrationSteps {
 
         config = config.replace("{proxy_url}", resourcesContext.proxyConfig().map(ProxyConfig::proxyUrl).orElse(""));
         config = config.replace("{aws_region}", resourcesContext.region().metadata().id());
-        config = config.replace("{nucleus_version}", "");
+        config = config.replace("{nucleus_version}", greengrassContext.version());
         config = config.replace("{env_stage}", resourcesContext.envStage());
         config = config.replace("{data_plane_port}", "8443");
 
         Files.write(configFilePath.resolve("rootCA.pem"), registrationContext.rootCA().getBytes(StandardCharsets.UTF_8));
         Files.write(configFilePath.resolve("config.yaml"), config.getBytes(StandardCharsets.UTF_8));
         // Copy to where the nucleus will read it
-        device.copy(configFilePath, configFilePath.resolve("nucleus"));
+        device.sync(configFilePath);
     }
 }
