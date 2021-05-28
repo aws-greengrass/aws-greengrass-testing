@@ -5,14 +5,17 @@ import com.aws.greengrass.testing.api.device.Device;
 import com.aws.greengrass.testing.model.GreengrassContext;
 import com.aws.greengrass.testing.model.TestContext;
 import io.cucumber.guice.ScenarioScoped;
+import io.cucumber.java.After;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.When;
 
 import javax.inject.Inject;
+import java.io.Closeable;
 import java.io.IOException;
+import java.nio.file.Files;
 
 @ScenarioScoped
-public class GreengrassSteps {
+public class GreengrassSteps implements Closeable {
     private final Greengrass greengrass;
     private final GreengrassContext greengrassContext;
     private final TestContext testContext;
@@ -32,6 +35,10 @@ public class GreengrassSteps {
 
     public void install() throws IOException {
         device.copy(greengrassContext.greengrassPath(), testContext.testDirectory().resolve("greengrass"));
+        greengrass.install();
+        if (!Files.exists(testContext.testDirectory().resolve("logs/greengrass.log"))) {
+            throw new RuntimeException("Failed to install greengrass!");
+        }
     }
 
     @Given("my device is running Greengrass")
@@ -50,5 +57,10 @@ public class GreengrassSteps {
     public void restart() {
         greengrass.stop();
         greengrass.start();
+    }
+
+    @After
+    public void close() {
+        stop();
     }
 }

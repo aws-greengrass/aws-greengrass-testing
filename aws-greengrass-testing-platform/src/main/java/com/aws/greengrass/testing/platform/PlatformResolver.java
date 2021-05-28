@@ -62,7 +62,9 @@ public class PlatformResolver {
             if (device.exists(Paths.get("/usr/bin/yum"))) {
                 ranks.put("fedora", 11);
             }
-            String sysver = device.executeToString(CommandInput.of("sh -c uname -a"));
+            String sysver = device.executeToString(CommandInput.builder()
+                    .line("sh").addArgs("-c", "uname -a")
+                    .build());
             if (sysver.contains("ubuntu")) {
                 ranks.put("ubuntu", 20);
             }
