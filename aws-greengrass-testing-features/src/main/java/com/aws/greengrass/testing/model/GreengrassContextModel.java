@@ -1,6 +1,5 @@
 package com.aws.greengrass.testing.model;
 
-import com.aws.greengrass.testing.api.model.TestId;
 import com.aws.greengrass.testing.api.model.TestingModel;
 import org.immutables.value.Value;
 
@@ -10,17 +9,19 @@ import java.nio.file.Path;
 
 @TestingModel
 @Value.Immutable
-interface TestContextModel extends Closeable, DirectoryCleanupMixin {
-    TestId testId();
-    Path testDirectory();
+interface GreengrassContextModel extends Closeable, DirectoryCleanupMixin {
+    String version();
 
-    @Value.Default
-    default String currentUser() {
-        return System.getProperty("user.name");
+    Path archivePath();
+
+    Path tempDirectory();
+
+    default Path greengrassPath() {
+        return tempDirectory().resolve("greengrass");
     }
 
     @Override
     default void close() throws IOException {
-        recursivelyDelete(testDirectory());
+        recursivelyDelete(tempDirectory());
     }
 }

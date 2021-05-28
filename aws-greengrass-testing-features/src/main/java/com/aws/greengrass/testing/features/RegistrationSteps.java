@@ -1,9 +1,8 @@
 package com.aws.greengrass.testing.features;
 
 import com.aws.greengrass.testing.api.device.Device;
-import com.aws.greengrass.testing.api.model.GreengrassContext;
 import com.aws.greengrass.testing.api.model.ProxyConfig;
-import com.aws.greengrass.testing.api.model.TestId;
+import com.aws.greengrass.testing.model.GreengrassContext;
 import com.aws.greengrass.testing.model.RegistrationContext;
 import com.aws.greengrass.testing.model.TestContext;
 import com.aws.greengrass.testing.modules.AWSResourcesContext;
@@ -25,7 +24,6 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -93,7 +91,7 @@ public class RegistrationSteps {
                     new InputStreamReader(input, StandardCharsets.UTF_8));
             String line = reader.readLine();
             while (Objects.nonNull(line)) {
-                configBuilder.append(line);
+                configBuilder.append(line).append("\n");
                 line = reader.readLine();
             }
             setupConfig(
@@ -136,6 +134,7 @@ public class RegistrationSteps {
         config = config.replace("{aws_region}", resourcesContext.region().metadata().id());
         config = config.replace("{nucleus_version}", greengrassContext.version());
         config = config.replace("{env_stage}", resourcesContext.envStage());
+        config = config.replace("{posix_user}", testContext.currentUser());
         config = config.replace("{data_plane_port}", "8443");
 
         Files.write(configFilePath.resolve("rootCA.pem"), registrationContext.rootCA().getBytes(StandardCharsets.UTF_8));

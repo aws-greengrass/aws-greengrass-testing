@@ -20,4 +20,4 @@ services:
         proxy:
           url: {proxy_url}
       runWithDefault:
-        posixUser: {posixUser}
+        posixUser: {posix_user}

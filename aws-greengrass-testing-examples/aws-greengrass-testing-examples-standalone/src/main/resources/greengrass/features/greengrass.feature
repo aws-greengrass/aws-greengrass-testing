@@ -3,5 +3,6 @@ Feature: Testing Device
 
     Given my device is registered as a Thing
     And I start Greengrass
-    When I create a test file named "test.txt" in the test directory
+    And I have created the test directory
+    When I create a test file named test in the test directory
     Then the file is created with test information

@@ -2,25 +2,17 @@ package com.aws.greengrass.testing.features;
 
 import com.aws.greengrass.testing.api.Greengrass;
 import com.aws.greengrass.testing.api.device.Device;
-import com.aws.greengrass.testing.api.model.GreengrassContext;
+import com.aws.greengrass.testing.model.GreengrassContext;
 import com.aws.greengrass.testing.model.TestContext;
 import io.cucumber.guice.ScenarioScoped;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.When;
 
 import javax.inject.Inject;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Objects;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
 @ScenarioScoped
 public class GreengrassSteps {
-    private static final int MAX_BUFFER = 1_000_000;
     private final Greengrass greengrass;
     private final GreengrassContext greengrassContext;
     private final TestContext testContext;
@@ -39,35 +31,7 @@ public class GreengrassSteps {
     }
 
     public void install() throws IOException {
-        final Path stagingPath = testContext.testDirectory().resolve("greengrass");
-        if (!Files.exists(stagingPath)) {
-            Files.createDirectory(stagingPath);
-            try (ZipInputStream zipStream = new ZipInputStream(new FileInputStream(greengrassContext.archivePath().toFile()))) {
-                ZipEntry entry = zipStream.getNextEntry();
-                while (Objects.nonNull(entry)) {
-                    final Path contentPath = stagingPath.resolve(entry.getName());
-                    if (entry.isDirectory()) {
-                        Files.createDirectories(contentPath);
-                        continue;
-                    } else if (!Files.exists(contentPath.getParent())) {
-                        Files.createDirectories(contentPath.getParent());
-                    }
-                    try (FileOutputStream output = new FileOutputStream(contentPath.toFile())) {
-                        final byte[] buffer = new byte[MAX_BUFFER];
-                        int read = 0;
-                        do {
-                            read = zipStream.read(buffer);
-                            if (read > 0) {
-                                output.write(buffer, 0, read);
-                            }
-                        } while (read > 0);
-                    }
-                    entry = zipStream.getNextEntry();
-                }
-                zipStream.closeEntry();
-            }
-            device.sync(stagingPath);
-        }
+        device.copy(greengrassContext.greengrassPath(), testContext.testDirectory().resolve("greengrass"));
     }
 
     @Given("my device is running Greengrass")

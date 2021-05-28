@@ -53,7 +53,7 @@ public class AWSResourcesModule extends AbstractModule {
             final Optional<ProxyConfig> proxyConfig,
             final Region region) {
         return AWSResourcesContext.builder()
-                .envStage(System.getProperty(ENV_STAGE, ""))
+                .envStage(System.getProperty(ENV_STAGE, "prod"))
                 .proxyConfig(proxyConfig)
                 .region(region)
                 .build();
