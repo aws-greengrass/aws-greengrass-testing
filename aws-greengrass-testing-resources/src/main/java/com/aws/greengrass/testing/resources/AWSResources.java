@@ -32,7 +32,8 @@ public final class AWSResources implements Closeable {
 
     public <U extends AWSResourceLifecycle> U lifecycle(Class<U> lifecycleType) {
         return lifecycles.stream()
-                .filter(lc -> lc.getClass() == lifecycleType)
+                .peek(lc -> LOGGER.debug("Available lifecycle {}", lc))
+                .filter(lc -> lifecycleType.isAssignableFrom(lc.getClass()))
                 .map(lifecycleType::cast)
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Could not find " + lifecycleType));

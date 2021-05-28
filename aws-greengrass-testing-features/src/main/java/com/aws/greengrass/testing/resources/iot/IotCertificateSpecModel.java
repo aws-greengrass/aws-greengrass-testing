@@ -29,6 +29,7 @@ interface IotCertificateSpecModel extends ResourceSpec<IotClient, IotCertificate
                 .from(this)
                 .created(true)
                 .resource(IotCertificate.builder()
+                        .keyPair(created.keyPair())
                         .certificateArn(created.certificateArn())
                         .certificateId(created.certificateId())
                         .certificatePem(created.certificatePem())

@@ -26,6 +26,7 @@ interface IamPolicySpecModel extends ResourceSpec<IamClient, IamPolicy> {
                 .from(this)
                 .created(true)
                 .resource(IamPolicy.builder()
+                        .policyArn(createdPolicy.policy().arn())
                         .build())
                 .build();
     }

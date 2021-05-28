@@ -42,7 +42,7 @@ public class GreengrassSteps {
         final Path stagingPath = testContext.testDirectory().resolve("greengrass");
         if (!Files.exists(stagingPath)) {
             Files.createDirectory(stagingPath);
-            try (ZipInputStream zipStream = new ZipInputStream(new FileInputStream(stagingPath.toFile()))) {
+            try (ZipInputStream zipStream = new ZipInputStream(new FileInputStream(greengrassContext.archivePath().toFile()))) {
                 ZipEntry entry = zipStream.getNextEntry();
                 while (Objects.nonNull(entry)) {
                     final Path contentPath = stagingPath.resolve(entry.getName());
@@ -56,13 +56,15 @@ public class GreengrassSteps {
                         final byte[] buffer = new byte[MAX_BUFFER];
                         int read = 0;
                         do {
-                            read = zipStream.read(buffer, 0, read);
+                            read = zipStream.read(buffer);
                             if (read > 0) {
                                 output.write(buffer, 0, read);
                             }
                         } while (read > 0);
                     }
+                    entry = zipStream.getNextEntry();
                 }
+                zipStream.closeEntry();
             }
             device.sync(stagingPath);
         }

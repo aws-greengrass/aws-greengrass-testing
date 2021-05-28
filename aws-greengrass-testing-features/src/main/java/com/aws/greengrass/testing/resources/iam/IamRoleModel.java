@@ -21,12 +21,12 @@ interface IamRoleModel extends AWSResource<IamClient> {
                 .roleName(roleName())
                 .build()).attachedPolicies()) {
             client.detachRolePolicy(DetachRolePolicyRequest.builder()
-                    .roleName(roleArn())
+                    .roleName(roleName())
                     .policyArn(policy.policyArn())
                     .build());
         }
         client.deleteRole(DeleteRoleRequest.builder()
-                .roleName(roleArn())
+                .roleName(roleName())
                 .build());
     }
 }

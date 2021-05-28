@@ -33,7 +33,7 @@ import java.util.Optional;
 
 @ScenarioScoped
 public class RegistrationSteps {
-    private static final String DEFAULT_CONFIG = "basic_config.yaml";
+    private static final String DEFAULT_CONFIG = "/nucleus/configs/basic_config.yaml";
     private final TestContext testContext;
     private final RegistrationContext registrationContext;
     private final AWSResourcesContext resourcesContext;
@@ -72,23 +72,21 @@ public class RegistrationSteps {
 
     private void registerAsThing(String configName, String thingGroupName) throws IOException {
         final String configFile = Optional.ofNullable(configName).orElse(DEFAULT_CONFIG);
-        IotRoleAliasSpec roleAliasSpec = IotRoleAliasSpec.builder()
-                .name(testContext.testId().idFor("role-alias"))
-                .iamRole(resources.trackingSpecs(IamRoleSpec.class)
-                        .filter(s -> s.roleName().equals(testContext.testId().idFor("ggc-role")))
-                        .findFirst()
-                        .orElseGet(iamSteps::createDefaultIamRole)
-                        .resource())
-                .build();
 
-        IotThingSpec thingSpec = IotThingSpec.builder()
-                .thingName(testContext.testId().idFor("thing"))
+        IotThingSpec thingSpec = resources.create(IotThingSpec.builder()
+                .thingName(testContext.testId().idFor("ggc-thing"))
                 .addThingGroups(IotThingGroupSpec.of(thingGroupName))
                 .createCertificate(true)
-                .roleAliasSpec(roleAliasSpec)
-                .build();
+                .roleAliasSpec(IotRoleAliasSpec.builder()
+                        .name(testContext.testId().idFor("ggc-role-alias"))
+                        .iamRole(resources.trackingSpecs(IamRoleSpec.class)
+                                .filter(s -> s.roleName().equals(testContext.testId().idFor("ggc-role")))
+                                .findFirst()
+                                .orElseGet(iamSteps::createDefaultIamRole)
+                                .resource())
+                        .build())
+                .build());
 
-        IotThingSpec updatedSpec = resources.create(thingSpec);
         try (InputStream input = getClass().getResourceAsStream(DEFAULT_CONFIG)) {
             StringBuilder configBuilder = new StringBuilder();
             final BufferedReader reader = new BufferedReader(
@@ -99,8 +97,8 @@ public class RegistrationSteps {
                 line = reader.readLine();
             }
             setupConfig(
-                    updatedSpec.resource(),
-                    roleAliasSpec,
+                    thingSpec.resource(),
+                    thingSpec.roleAliasSpec(),
                     configBuilder.toString(),
                     new HashMap<>());
         }

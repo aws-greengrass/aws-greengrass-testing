@@ -1,6 +1,7 @@
 package com.aws.greengrass.testing.features;
 
 import com.aws.greengrass.testing.api.model.TestId;
+import com.aws.greengrass.testing.modules.JacksonModule;
 import com.aws.greengrass.testing.resources.AWSResources;
 import com.aws.greengrass.testing.resources.iam.IamRoleSpec;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -8,6 +9,7 @@ import io.cucumber.guice.ScenarioScoped;
 import io.cucumber.java.en.Given;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Optional;
@@ -20,7 +22,7 @@ public class IamSteps {
     private final TestId testId;
 
     @Inject
-    public IamSteps(TestId testId, ObjectMapper mapper, AWSResources resources) {
+    public IamSteps(TestId testId, @Named(JacksonModule.YAML) ObjectMapper mapper, AWSResources resources) {
         this.resources = resources;
         this.mapper = mapper;
         this.testId = testId;
