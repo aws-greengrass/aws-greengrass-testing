@@ -6,6 +6,8 @@ import com.aws.greengrass.testing.resources.AbstractAWSResourceLifecycle;
 import com.google.auto.service.AutoService;
 import software.amazon.awssdk.services.iot.IotClient;
 import software.amazon.awssdk.services.iot.model.DescribeEndpointRequest;
+import software.amazon.awssdk.services.iot.model.ListThingsInThingGroupRequest;
+import software.amazon.awssdk.services.iot.paginators.ListThingsInThingGroupIterable;
 
 import javax.inject.Inject;
 
@@ -33,6 +35,13 @@ public class IotLifecycle extends AbstractAWSResourceLifecycle<IotClient> {
 
     public String dataEndpoint() {
         return endpointType(DATA_ENDPOINT);
+    }
+
+    public ListThingsInThingGroupIterable listThingsForGroup(String thingGroupName) {
+        return client.listThingsInThingGroupPaginator(ListThingsInThingGroupRequest.builder()
+                .recursive(true)
+                .thingGroupName(thingGroupName)
+                .build());
     }
 
     private String endpointType(String endpoint) {
