@@ -14,12 +14,12 @@
     <dependencies>
         <dependency>
             <groupId>com.aws.greengrass</groupId>
-            <artifactId>aws-greengrass-testing-api</artifactId>
+            <artifactId>aws-greengrass-testing-platform</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
             <groupId>com.aws.greengrass</groupId>
-            <artifactId>aws-greengrass-testing-resources</artifactId>
+            <artifactId>aws-greengrass-testing-resources-iot</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
@@ -43,16 +43,6 @@
             <version>${jackson.version}</version>
         </dependency>
         <dependency>
-            <groupId>javax.inject</groupId>
-            <artifactId>javax.inject</artifactId>
-            <version>1</version>
-        </dependency>
-        <dependency>
-            <groupId>${project.parent.groupId}</groupId>
-            <artifactId>aws-greengrass-testing-modules</artifactId>
-            <version>${project.parent.version}</version>
-        </dependency>
-        <dependency>
             <groupId>com.google.auto.service</groupId>
             <artifactId>auto-service</artifactId>
             <version>${auto.service.version}</version>
@@ -70,14 +60,5 @@
             <scope>provided</scope>
         </dependency>
 
-
-        <dependency>
-            <groupId>software.amazon.awssdk</groupId>
-            <artifactId>iot</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>software.amazon.awssdk</groupId>
-            <artifactId>iam</artifactId>
-        </dependency>
     </dependencies>
 </project>

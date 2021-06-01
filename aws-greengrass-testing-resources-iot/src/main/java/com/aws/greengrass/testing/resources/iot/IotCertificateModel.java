@@ -21,6 +21,7 @@ interface IotCertificateModel extends AWSResource<IotClient> {
     default void remove(IotClient client) {
         client.updateCertificate(UpdateCertificateRequest.builder()
                 .newStatus(CertificateStatus.INACTIVE)
+                .certificateId(certificateId())
                 .build());
         client.deleteCertificate(DeleteCertificateRequest.builder()
                 .certificateId(certificateId())

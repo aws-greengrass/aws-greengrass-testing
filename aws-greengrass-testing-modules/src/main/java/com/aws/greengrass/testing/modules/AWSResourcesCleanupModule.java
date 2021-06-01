@@ -16,8 +16,8 @@ import java.io.IOException;
 import java.util.Set;
 
 @AutoService(Module.class)
-public class AWSResourceCleanupModule extends AbstractModule {
-    private static final Logger LOGGER = LogManager.getLogger(AWSResourceCleanupModule.class);
+public class AWSResourcesCleanupModule extends AbstractModule {
+    private static final Logger LOGGER = LogManager.getLogger(AWSResourcesCleanupModule.class);
 
     private static class CleanupRunnable implements Runnable {
         final Set<Closeable> closers;

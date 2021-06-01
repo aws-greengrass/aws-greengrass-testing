@@ -9,8 +9,10 @@ import java.util.stream.Stream;
 
 interface DirectoryCleanupMixin {
     default void recursivelyDelete(Path directory) throws IOException {
-        try (Stream<Path> files = Files.walk(directory)) {
-            files.sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
+        if (Files.exists(directory)) {
+            try (Stream<Path> files = Files.walk(directory)) {
+                files.sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
+            }
         }
     }
 }
