@@ -7,6 +7,8 @@ import com.aws.greengrass.testing.api.device.exception.CopyException;
 import com.aws.greengrass.testing.api.device.model.CommandInput;
 import com.aws.greengrass.testing.api.device.model.PlatformOS;
 import com.google.auto.service.AutoService;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -24,6 +26,7 @@ import java.util.stream.Stream;
 
 @AutoService(Device.class)
 public class LocalDevice implements Device {
+    private static final Logger LOGGER = LogManager.getLogger(LocalDevice.class);
     private static final String TYPE = "LOCAL";
 
     @Override
@@ -43,6 +46,7 @@ public class LocalDevice implements Device {
             args.forEach(builder.command()::add);
         });
         try {
+            LOGGER.info("Runninng process: {}", builder.command());
             final Process process = builder.start();
             if (Objects.isNull(input.timeout())) {
                 process.waitFor();

@@ -114,9 +114,9 @@ public class RegistrationSteps {
             config = config.replace("{thing_name}", thing.thingName());
             config = config.replace("{iot_data_endpoint}", iot.dataEndpoint());
             config = config.replace("{iot_cred_endpoint}", iot.credentialsEndpoint());
-            Files.write(configFilePath.resolve("privKey.key"),
+            Files.write(testContext.testDirectory().resolve("privKey.key"),
                     thing.certificate().keyPair().privateKey().getBytes(StandardCharsets.UTF_8));
-            Files.write(configFilePath.resolve("thingCert.crt"),
+            Files.write(testContext.testDirectory().resolve("thingCert.crt"),
                     thing.certificate().certificatePem().getBytes(StandardCharsets.UTF_8));
         } else {
             additionalUpdatableFields.putIfAbsent("{thing_name}", "null");
@@ -137,9 +137,9 @@ public class RegistrationSteps {
         config = config.replace("{posix_user}", testContext.currentUser());
         config = config.replace("{data_plane_port}", "8443");
 
-        Files.write(configFilePath.resolve("rootCA.pem"), registrationContext.rootCA().getBytes(StandardCharsets.UTF_8));
+        Files.write(testContext.testDirectory().resolve("rootCA.pem"), registrationContext.rootCA().getBytes(StandardCharsets.UTF_8));
         Files.write(configFilePath.resolve("config.yaml"), config.getBytes(StandardCharsets.UTF_8));
         // Copy to where the nucleus will read it
-        device.sync(configFilePath);
+        device.sync(testContext.testDirectory());
     }
 }

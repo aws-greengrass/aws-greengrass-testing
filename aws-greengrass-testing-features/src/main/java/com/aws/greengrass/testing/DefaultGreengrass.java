@@ -48,13 +48,22 @@ public class DefaultGreengrass implements Greengrass {
         greengrassProcess = platform.commands().executeInBackground(CommandInput.builder()
                 .line(loaderScriptPath.toString())
                 .build());
-        LOGGER.info("Starting greengrass on {}", greengrassProcess);
+        LOGGER.info("Starting greengrass on pid {}", greengrassProcess);
+        try {
+            Thread.sleep(10_000L);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
-    public void stop() {
+    synchronized public void stop() {
         try {
-            platform.commands().kill(Arrays.asList(greengrassProcess));
+            if (greengrassProcess != 0) {
+                platform.commands().kill(Arrays.asList(greengrassProcess));
+                LOGGER.info("Stopped greengrass on pid {}", greengrassProcess);
+                greengrassProcess = 0;
+            }
         } catch (CommandExecutionException e) {
             LOGGER.warn("Failed to kill process {}: {}", greengrassProcess, e.getMessage());
         }

@@ -38,7 +38,7 @@ public abstract class UnixCommands implements Commands {
     public int executeInBackground(CommandInput input) throws CommandExecutionException {
         final byte[] rawBytes = execute(CommandInput.builder()
                 .from(input)
-                .addArgs("2>&1", "&", "echo", "$!")
+                .addArgs("2> err_output.txt & echo $!")
                 .build());
         return Integer.parseInt(new String(rawBytes, StandardCharsets.UTF_8).trim());
     }
