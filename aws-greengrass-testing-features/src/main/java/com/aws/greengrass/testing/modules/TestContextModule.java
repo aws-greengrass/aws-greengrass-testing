@@ -1,5 +1,7 @@
 package com.aws.greengrass.testing.modules;
 
+import com.aws.greengrass.testing.ScenarioTestRuns;
+import com.aws.greengrass.testing.api.TestRuns;
 import com.aws.greengrass.testing.api.model.TestId;
 import com.aws.greengrass.testing.model.TestContext;
 import com.aws.greengrass.testing.modules.exception.ModuleProvisionException;
@@ -9,6 +11,7 @@ import com.google.inject.Module;
 import com.google.inject.Provides;
 import io.cucumber.guice.ScenarioScoped;
 
+import javax.inject.Singleton;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.file.Files;
@@ -26,6 +29,11 @@ public class TestContextModule extends AbstractModule {
         return new BigInteger(1, bytes).toString(16);
     }
 
+    @Provides
+    @Singleton
+    static TestRuns providesTestRunTracker() {
+        return new ScenarioTestRuns();
+    }
 
     @Provides
     @ScenarioScoped
