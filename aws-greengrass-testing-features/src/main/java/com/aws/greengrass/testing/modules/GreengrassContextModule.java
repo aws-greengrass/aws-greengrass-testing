@@ -36,6 +36,7 @@ public class GreengrassContextModule extends AbstractModule {
                 final Path contentPath = stagingPath.resolve(entry.getName());
                 if (entry.isDirectory()) {
                     Files.createDirectories(contentPath);
+                    entry = zipStream.getNextEntry();
                     continue;
                 } else if (!Files.exists(contentPath.getParent())) {
                     Files.createDirectories(contentPath.getParent());

@@ -7,7 +7,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.stream.Stream;
 
 public abstract class AbstractAWSResourceLifecycle<C> implements AWSResourceLifecycle<C> {
@@ -15,14 +17,14 @@ public abstract class AbstractAWSResourceLifecycle<C> implements AWSResourceLife
     protected C client;
     protected List<Class<? extends ResourceSpec<C, ? extends AWSResource<C>>>> specClasses;
     protected List<ResourceSpec<C, ? extends AWSResource<C>>> specs;
-    protected List<AWSResource<C>> resources;
+    protected UUID uuid;
 
     @SafeVarargs
     public AbstractAWSResourceLifecycle(C client, Class<? extends ResourceSpec<C, ? extends AWSResource<C>>> ... specClass) {
         this.client = client;
         this.specClasses = Arrays.asList(specClass);
         this.specs = new ArrayList<>();
-        this.resources = new ArrayList<>();
+        this.uuid = UUID.randomUUID();
     }
 
     @Override
@@ -30,7 +32,6 @@ public abstract class AbstractAWSResourceLifecycle<C> implements AWSResourceLife
     public <U extends ResourceSpec<C, R>, R extends AWSResource<C>> U create(U spec, AWSResources resources) {
         ResourceSpec<C,R> update = spec.create(client, resources);
         specs.add(update);
-        this.resources.add(update.resource());
         LOGGER.info("Created {} in {}",
                 update.resource().getClass().getSimpleName(),
                 getClass().getSimpleName().split("\\$", 2)[0]);
@@ -49,17 +50,17 @@ public abstract class AbstractAWSResourceLifecycle<C> implements AWSResourceLife
 
     @Override
     public void close() {
-        final Iterator<? extends AWSResource<C>> iterator = resources.listIterator();
+        final ListIterator<ResourceSpec<C, ? extends AWSResource<C>>> iterator = specs.listIterator();
         while (iterator.hasNext()) {
-            final AWSResource<C> resource = iterator.next();
+            final ResourceSpec<C, ? extends AWSResource<C>> spec = iterator.next();
             try {
-                resource.remove(client);
+                spec.resource().remove(client);
                 LOGGER.info("Removed {} in {}",
-                        resource.getClass().getSimpleName(),
-                        getClass().getSimpleName().split("\\$", 2));
+                        spec.resource().getClass().getSimpleName(),
+                        getClass().getSimpleName().split("\\$", 2)[0]);
             } catch (Throwable ex) {
                 // Don't prevent SDK failures from removing other resources being tracked.
-                LOGGER.error("Failed to remove {} in {}", resource, getClass().getSimpleName(), ex);
+                LOGGER.error("Failed to remove {} in {}", spec.resource(), getClass().getSimpleName(), ex);
             }
             iterator.remove();
         }
@@ -72,12 +73,11 @@ public abstract class AbstractAWSResourceLifecycle<C> implements AWSResourceLife
         AbstractAWSResourceLifecycle<?> that = (AbstractAWSResourceLifecycle<?>) o;
         return Objects.equals(client, that.client)
                 && Objects.equals(specClasses, that.specClasses)
-                && Objects.equals(specs, that.specs)
-                && Objects.equals(resources, that.resources);
+                && Objects.equals(uuid, that.uuid);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(client, specClasses, specs, resources);
+        return Objects.hash(client, specClasses, uuid);
     }
 }

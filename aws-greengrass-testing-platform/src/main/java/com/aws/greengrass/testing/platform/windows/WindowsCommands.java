@@ -5,6 +5,7 @@ import com.aws.greengrass.testing.api.device.exception.CommandExecutionException
 import com.aws.greengrass.testing.api.device.model.CommandInput;
 import com.aws.greengrass.testing.platform.Commands;
 
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 import java.util.StringJoiner;
@@ -34,12 +35,17 @@ public class WindowsCommands implements Commands {
     }
 
     @Override
-    public List<Integer> findProcesses(String ofType) throws CommandExecutionException {
+    public List<Integer> findDescendants(int pid) throws CommandExecutionException {
         throw new UnsupportedOperationException("No Windows yet");
     }
 
     @Override
     public void kill(List<Integer> processIds) throws CommandExecutionException {
+        throw new UnsupportedOperationException("No Windows yet");
+    }
+
+    @Override
+    public void makeExecutable(Path file) throws CommandExecutionException {
         throw new UnsupportedOperationException("No Windows yet");
     }
 }

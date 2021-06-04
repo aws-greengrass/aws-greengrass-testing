@@ -28,7 +28,7 @@ public class AWSResourcesCleanupModule extends AbstractModule {
 
         @Override
         public void run() {
-            LOGGER.info("Cleaning up orphaned resources");
+            LOGGER.info("Cleaning up orphaned resources: {}", closers);
             for (Closeable closer : closers) {
                 try {
                     closer.close();
@@ -67,7 +67,7 @@ public class AWSResourcesCleanupModule extends AbstractModule {
         public Object invoke(MethodInvocation methodInvocation) throws Throwable {
             LOGGER.debug("Cleanup interceptor found {}", methodInvocation.getMethod());
             if (methodInvocation.getMethod().getName().equals("close") && closers.remove(methodInvocation.getThis())) {
-                LOGGER.debug("{} removed a resource", methodInvocation.getMethod().getDeclaringClass());
+                LOGGER.debug("{} removed a resource", methodInvocation.getThis().getClass().getSimpleName());
             }
             return methodInvocation.proceed();
         }

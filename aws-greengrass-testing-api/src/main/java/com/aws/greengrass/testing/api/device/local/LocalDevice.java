@@ -7,6 +7,8 @@ import com.aws.greengrass.testing.api.device.exception.CopyException;
 import com.aws.greengrass.testing.api.device.model.CommandInput;
 import com.aws.greengrass.testing.api.device.model.PlatformOS;
 import com.google.auto.service.AutoService;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -24,6 +26,7 @@ import java.util.stream.Stream;
 
 @AutoService(Device.class)
 public class LocalDevice implements Device {
+    private static final Logger LOGGER = LogManager.getLogger(LocalDevice.class);
     private static final String TYPE = "LOCAL";
 
     @Override
@@ -42,7 +45,9 @@ public class LocalDevice implements Device {
         Optional.ofNullable(input.args()).ifPresent(args -> {
             args.forEach(builder.command()::add);
         });
+        Optional.ofNullable(input.workingDirectory()).map(Path::toFile).ifPresent(builder::directory);
         try {
+            LOGGER.debug("Runninng process: {}", builder.command());
             final Process process = builder.start();
             if (Objects.isNull(input.timeout())) {
                 process.waitFor();
@@ -65,7 +70,7 @@ public class LocalDevice implements Device {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8))) {
             String line = reader.readLine();
             while (Objects.nonNull(line)) {
-                builder.append(line);
+                builder.append(line).append("\n");
                 line = reader.readLine();
             }
         }

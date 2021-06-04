@@ -5,6 +5,7 @@ import com.aws.greengrass.testing.api.device.exception.CommandExecutionException
 import com.aws.greengrass.testing.api.device.model.CommandInput;
 
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -15,7 +16,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public abstract class UnixCommands implements Commands {
-    private static final Pattern PID_REGEX = Pattern.compile("^(\\d*)\\s");
+    private static final Pattern PID_REGEX = Pattern.compile("^(\\d*)\\s*");
     protected final Device device;
 
     public UnixCommands(final Device device) {
@@ -27,6 +28,7 @@ public abstract class UnixCommands implements Commands {
         final StringJoiner joiner = new StringJoiner(" ").add(input.line());
         Optional.ofNullable(input.args()).ifPresent(args -> args.forEach(joiner::add));
         return device.execute(CommandInput.builder()
+                .workingDirectory(input.workingDirectory())
                 .line("sh")
                 .addArgs("-c", joiner.toString())
                 .input(input.input())
@@ -36,19 +38,27 @@ public abstract class UnixCommands implements Commands {
 
     @Override
     public int executeInBackground(CommandInput input) throws CommandExecutionException {
-        final byte[] rawBytes = execute(CommandInput.builder()
+        byte[] rawBytes = execute(CommandInput.builder()
                 .from(input)
-                .addArgs("2>&1", "&", "echo", "$!")
+                .addArgs("1> output.log 2>&1 & echo $!")
                 .build());
         return Integer.parseInt(new String(rawBytes, StandardCharsets.UTF_8).trim());
     }
 
     @Override
-    public List<Integer> findProcesses(String ofType) throws CommandExecutionException {
-        final byte[] rawBytes = execute(CommandInput.of("ps -ef | grep -i " + ofType));
+    public void makeExecutable(Path file) throws CommandExecutionException {
+        execute(CommandInput.builder()
+                .line("chmod +x " + file.toString())
+                .build());
+    }
+
+    @Override
+    public List<Integer> findDescendants(int pid) throws CommandExecutionException {
+        final byte[] rawBytes = execute(CommandInput.builder()
+                .line("pstree -p " + pid + " | grep -o '([0-9]\\+)' | grep -o '[0-9]\\+'")
+                .build());
         final String result = new String(rawBytes, StandardCharsets.UTF_8);
-        System.out.println(result);
-        return Arrays.stream(result.split("\\n")).map(String::trim).flatMap(line -> {
+        return Arrays.stream(result.split("\\r?\\n")).map(String::trim).flatMap(line -> {
             final Matcher matcher = PID_REGEX.matcher(line);
             final List<Integer> pids = new ArrayList<>();
             while (matcher.find()) {
@@ -60,6 +70,10 @@ public abstract class UnixCommands implements Commands {
 
     @Override
     public void kill(List<Integer> processIds) throws CommandExecutionException {
-        processIds.forEach(id -> execute(CommandInput.of("kill " + id)));
+        execute(CommandInput.builder()
+                .line("kill " + processIds.stream()
+                        .map(i -> Integer.toString(i))
+                        .collect(Collectors.joining(" ")))
+                .build());
     }
 }

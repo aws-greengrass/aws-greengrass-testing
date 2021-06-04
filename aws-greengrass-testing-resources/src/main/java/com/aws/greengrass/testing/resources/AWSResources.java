@@ -5,6 +5,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
@@ -14,7 +15,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-public final class AWSResources implements Closeable {
+public class AWSResources implements Closeable {
     private static final Logger LOGGER = LogManager.getLogger(AWSResources.class);
     private final Set<AWSResourceLifecycle> lifecycles;
 
@@ -50,6 +51,19 @@ public final class AWSResources implements Closeable {
         return find(specClass)
                 .map(lc -> lc.trackingSpecs(specClass))
                 .orElseGet(Stream::empty);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        AWSResources that = (AWSResources) o;
+        return Objects.equals(lifecycles, that.lifecycles);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(lifecycles);
     }
 
     @SuppressWarnings("unchecked")
