@@ -3,30 +3,37 @@ package com.aws.greengrass.testing;
 import com.aws.greengrass.testing.api.Greengrass;
 import com.aws.greengrass.testing.api.device.exception.CommandExecutionException;
 import com.aws.greengrass.testing.api.device.model.CommandInput;
+import com.aws.greengrass.testing.model.TestContext;
 import com.aws.greengrass.testing.platform.Platform;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
-import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class DefaultGreengrass implements Greengrass {
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultGreengrass.class);
+    private static final long TIMEOUT_IN_SECONDS = 30L;
     private final Path rootPath;
     private final String envStage;
     private final String region;
     private final Platform platform;
     private int greengrassProcess;
+    private final TestContext testContext;
 
     public DefaultGreengrass(
             final Platform platform,
             String envStage,
             String region,
-            Path rootPath) {
+            Path rootPath,
+            TestContext testContext) {
         this.platform = platform;
         this.rootPath = rootPath;
         this.envStage = envStage;
         this.region = region;
+        this.testContext = testContext;
     }
 
     @Override
@@ -39,28 +46,27 @@ public class DefaultGreengrass implements Greengrass {
                         "--aws-region", region,
                         "--env-stage", envStage,
                         "--start", "false")
+                .timeout(TIMEOUT_IN_SECONDS)
                 .build());
     }
 
     @Override
     public void start() {
-        Path loaderScriptPath = rootPath.resolve("alts/current/distro/bin/loader");
+        String loaderPath = "alts/current/distro/bin/loader";
+        platform.commands().makeExecutable(rootPath.resolve(loaderPath));
         greengrassProcess = platform.commands().executeInBackground(CommandInput.builder()
-                .line(loaderScriptPath.toString())
+                .workingDirectory(rootPath)
+                .line(loaderPath)
+                .timeout(TIMEOUT_IN_SECONDS)
                 .build());
         LOGGER.info("Starting greengrass on pid {}", greengrassProcess);
-        try {
-            Thread.sleep(10_000L);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
     }
 
     @Override
     synchronized public void stop() {
         try {
             if (greengrassProcess != 0) {
-                platform.commands().kill(Arrays.asList(greengrassProcess));
+                platform.commands().killAll(greengrassProcess);
                 LOGGER.info("Stopped greengrass on pid {}", greengrassProcess);
                 greengrassProcess = 0;
             }

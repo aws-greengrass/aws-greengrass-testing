@@ -66,11 +66,8 @@ public class AWSResourcesCleanupModule extends AbstractModule {
         @Override
         public Object invoke(MethodInvocation methodInvocation) throws Throwable {
             LOGGER.debug("Cleanup interceptor found {}", methodInvocation.getMethod());
-            if (methodInvocation.getMethod().getName().equals("close")) {
-                LOGGER.info("Found close on {}", methodInvocation.getThis());
-            }
             if (methodInvocation.getMethod().getName().equals("close") && closers.remove(methodInvocation.getThis())) {
-                LOGGER.info("{} removed a resource", methodInvocation.getThis().getClass().getSimpleName());
+                LOGGER.debug("{} removed a resource", methodInvocation.getThis().getClass().getSimpleName());
             }
             return methodInvocation.proceed();
         }
