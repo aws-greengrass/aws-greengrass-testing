@@ -11,6 +11,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -28,6 +29,7 @@ import java.util.stream.Stream;
 public class LocalDevice implements Device {
     private static final Logger LOGGER = LogManager.getLogger(LocalDevice.class);
     private static final String TYPE = "LOCAL";
+    private static final int BUFFER = 100_000;
 
     @Override
     public String id() {
@@ -59,10 +61,23 @@ public class LocalDevice implements Device {
                 String error = flushStream(process.getErrorStream());
                 throw new CommandExecutionException(error, exitCode, input);
             }
-            return flushStream(process.getInputStream()).getBytes(StandardCharsets.UTF_8);
+            return pump(process.getInputStream());
         } catch (IOException | InterruptedException ie) {
             throw new CommandExecutionException(ie, input);
         }
+    }
+
+    private byte[] pump(InputStream input) throws IOException {
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        byte[] buffer = new byte[BUFFER];
+        int read;
+        do {
+            read = input.read(buffer);
+            if (read >= 0) {
+                baos.write(buffer, 0, read);
+            }
+        } while (read > 0);
+        return baos.toByteArray();
     }
 
     private String flushStream(final InputStream input) throws IOException {
@@ -91,7 +106,7 @@ public class LocalDevice implements Device {
     }
 
     @Override
-    public void copy(Path source, Path destination) {
+    public void copyTo(Path source, Path destination) {
         try {
             Files.copy(source, destination);
             if (Files.isDirectory(source)) {

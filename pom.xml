@@ -17,16 +17,13 @@
     </licenses>
 
     <modules>
-        <module>aws-greengrass-testing-resources</module>
         <module>aws-greengrass-testing-features</module>
         <module>aws-greengrass-testing-api</module>
         <module>aws-greengrass-testing-platform</module>
         <module>aws-greengrass-testing-modules</module>
         <module>aws-greengrass-testing-launcher</module>
         <module>aws-greengrass-testing-examples</module>
-        <module>aws-greengrass-testing-resources-iam</module>
-        <module>aws-greengrass-testing-resources-iot</module>
-        <module>aws-greengrass-testing-resources-greengrass</module>
+        <module>aws-greengrass-testing-resources</module>
     </modules>
 
     <properties>

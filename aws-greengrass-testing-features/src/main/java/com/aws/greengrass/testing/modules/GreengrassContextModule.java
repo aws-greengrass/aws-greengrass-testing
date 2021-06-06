@@ -41,7 +41,7 @@ public class GreengrassContextModule extends AbstractModule {
                 } else if (!Files.exists(contentPath.getParent())) {
                     Files.createDirectories(contentPath.getParent());
                 }
-                LOGGER.info("Extracting {} into {}", entry.getName(), contentPath);
+                LOGGER.debug("Extracting {} into {}", entry.getName(), contentPath);
                 try (FileOutputStream output = new FileOutputStream(contentPath.toFile())) {
                     final byte[] buffer = new byte[MAX_BUFFER];
                     int read = 0;

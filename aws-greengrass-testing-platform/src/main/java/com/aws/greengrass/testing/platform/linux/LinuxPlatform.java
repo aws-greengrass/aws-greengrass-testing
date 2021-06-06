@@ -2,6 +2,7 @@ package com.aws.greengrass.testing.platform.linux;
 
 import com.aws.greengrass.testing.api.device.Device;
 import com.aws.greengrass.testing.platform.Platform;
+import com.aws.greengrass.testing.platform.PlatformFiles;
 import com.google.auto.service.AutoService;
 
 @AutoService(Platform.class)
@@ -12,7 +13,13 @@ public class LinuxPlatform implements Platform {
         this.device = device;
     }
 
+    @Override
     public LinuxCommands commands() {
         return new LinuxCommands(device);
+    }
+
+    @Override
+    public PlatformFiles files() {
+        return new LinuxFiles(commands());
     }
 }
