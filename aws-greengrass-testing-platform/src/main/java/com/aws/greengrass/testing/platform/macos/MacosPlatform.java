@@ -1,6 +1,7 @@
 package com.aws.greengrass.testing.platform.macos;
 
 import com.aws.greengrass.testing.api.device.Device;
+import com.aws.greengrass.testing.platform.DevicePredicatePlatformFiles;
 import com.aws.greengrass.testing.platform.Platform;
 import com.aws.greengrass.testing.platform.PlatformFiles;
 import com.google.auto.service.AutoService;
@@ -20,6 +21,6 @@ public class MacosPlatform implements Platform {
 
     @Override
     public PlatformFiles files() {
-        return new MacosFiles(commands());
+        return DevicePredicatePlatformFiles.localOrRemote(device, new MacosFiles(commands()));
     }
 }

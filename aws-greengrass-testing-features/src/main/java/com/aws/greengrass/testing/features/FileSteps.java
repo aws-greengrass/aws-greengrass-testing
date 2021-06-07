@@ -13,7 +13,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ScenarioScoped
 public class FileSteps {
-    private static final long DEFAULT_TIMEOUT = 10L;
+    private static final long DEFAULT_INTERVAL = 100L;
+    private static final long DEFAULT_TIMEOUT = 30L;
     private final Device device;
     private final Platform platform;
     private final TestContext testContext;
@@ -43,13 +44,14 @@ public class FileSteps {
     public void containsTimeout(String file, String contents, long seconds) throws InterruptedException {
         checkFileExists(file);
         boolean found = false;
+        long startTime = System.currentTimeMillis();
         do {
             found = platform.files().readString(testContext.testDirectory().resolve(file)).contains(contents);
             if (found) {
                 break;
             }
-            Thread.sleep(TimeUnit.SECONDS.toMillis(seconds));
-        } while (!found);
+            Thread.sleep(DEFAULT_INTERVAL);
+        } while (System.currentTimeMillis() - startTime < TimeUnit.SECONDS.toMillis(seconds));
         assertTrue(found, "file " + file + " did not contain " + contents);
     }
 }
