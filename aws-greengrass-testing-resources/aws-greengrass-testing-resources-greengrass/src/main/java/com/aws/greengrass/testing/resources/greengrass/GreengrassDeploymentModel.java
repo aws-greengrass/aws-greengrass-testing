@@ -37,7 +37,7 @@ interface GreengrassDeploymentModel extends AWSResource<GreengrassV2Client> {
                             .coreDeviceThingName(thingName)
                             .build());
                 } catch (GreengrassV2Exception e) {
-                    LOGGER.info("Could not delete core device {}", thingName);
+                    LOGGER.warn("Could not delete core device {}", thingName);
                 }
             });
         });

@@ -28,7 +28,7 @@ public class AWSResourcesCleanupModule extends AbstractModule {
 
         @Override
         public void run() {
-            LOGGER.info("Cleaning up orphaned resources: {}", closers);
+            LOGGER.debug("Cleaning up orphaned resources: {}", closers);
             for (Closeable closer : closers) {
                 try {
                     closer.close();
@@ -51,7 +51,7 @@ public class AWSResourcesCleanupModule extends AbstractModule {
         public <T> void onProvision(ProvisionInvocation<T> provisionInvocation) {
             final T instance = provisionInvocation.provision();
             if (instance instanceof Closeable && closers.add((Closeable) instance)) {
-                LOGGER.info("Provisioning {} for cleanup", instance.getClass());
+                LOGGER.debug("Provisioning {} for cleanup", instance.getClass());
             }
         }
     }

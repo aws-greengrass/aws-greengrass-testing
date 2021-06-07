@@ -54,10 +54,9 @@ public abstract class UnixCommands implements Commands {
 
     @Override
     public List<Integer> findDescendants(int pid) throws CommandExecutionException {
-        final byte[] rawBytes = execute(CommandInput.builder()
+        final String result = executeToString(CommandInput.builder()
                 .line("pstree -p " + pid + " | grep -o '([0-9]\\+)' | grep -o '[0-9]\\+'")
                 .build());
-        final String result = new String(rawBytes, StandardCharsets.UTF_8);
         return Arrays.stream(result.split("\\r?\\n")).map(String::trim).flatMap(line -> {
             final Matcher matcher = PID_REGEX.matcher(line);
             final List<Integer> pids = new ArrayList<>();

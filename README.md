@@ -7,9 +7,9 @@ blocks to qualify software changes on variable devices.
 
 ## What's inside?
 
-- AWS Resource Management
+- AWS Resource Management (`aws-greengrass-testing-resources`)
 - A platform abstraction over Java Process API
-- A bunch of common steps
+- A bunch of common steps (`aws-greengrass-testing-features`)
 - Ability for the features to be driven through IDT.
 - Service discovery for extensions like other AWS resources, steps, and configuration.
 

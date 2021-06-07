@@ -26,7 +26,7 @@ public class TestContextModule extends AbstractModule {
     static String randomString(int size) {
         final byte[] bytes = new byte[size];
         RANDOM.nextBytes(bytes);
-        return new BigInteger(1, bytes).toString(16);
+        return new BigInteger(1, bytes).toString(16).substring(size);
     }
 
     @Provides

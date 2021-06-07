@@ -25,13 +25,13 @@ public interface Device {
     byte[] execute(CommandInput input) throws CommandExecutionException;
 
     default String executeToString(CommandInput input) throws CommandExecutionException {
-        return new String (execute(input), StandardCharsets.UTF_8);
+        return new String(execute(input), StandardCharsets.UTF_8);
     }
 
-    void copy(Path source, Path destination) throws CopyException;
+    void copyTo(Path source, Path destination) throws CopyException;
 
     default void sync(Path source) throws CopyException {
-        copy(source, source);
+        copyTo(source, source);
     }
 
     boolean exists(Path file);
