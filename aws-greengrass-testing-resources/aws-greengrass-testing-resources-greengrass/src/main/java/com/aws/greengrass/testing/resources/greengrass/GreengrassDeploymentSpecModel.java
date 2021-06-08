@@ -46,6 +46,7 @@ interface GreengrassDeploymentSpecModel extends ResourceSpec<GreengrassV2Client,
     DeploymentPolicies deploymentPolicies();
 
     @Override
+    @Nullable
     GreengrassDeployment resource();
 
     @Override

@@ -7,6 +7,7 @@ import com.aws.greengrass.testing.resources.iam.IamRoleSpec;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.cucumber.guice.ScenarioScoped;
 import io.cucumber.java.en.Given;
+import io.cucumber.java.en.When;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -22,34 +23,31 @@ public class IamSteps {
     private final TestId testId;
 
     @Inject
-    public IamSteps(TestId testId, @Named(JacksonModule.YAML) ObjectMapper mapper, AWSResources resources) {
+    public IamSteps(
+            TestId testId,
+            @Named(JacksonModule.YAML) ObjectMapper mapper,
+            AWSResources resources) {
         this.resources = resources;
         this.mapper = mapper;
         this.testId = testId;
     }
 
     @Given("I create a default IAM role for Greengrass")
-    public IamRoleSpec createIamRole() throws IOException {
-        return createIamRole(null);
+    public IamRoleSpec createDefaultIamRole() {
+        try {
+            return createIamRole(DEFAULT_CONFIG);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Given("I create an IAM role from {word}")
     public IamRoleSpec createIamRole(String roleFile) throws IOException {
-        final String configFile = Optional.ofNullable(roleFile).orElse(DEFAULT_CONFIG);
-
-        try (InputStream in = getClass().getResourceAsStream(configFile)) {
+        try (InputStream in = getClass().getResourceAsStream(roleFile)) {
             IamRoleSpec spec = mapper.readValue(in, IamRoleSpec.class);
             return resources.create(IamRoleSpec.builder().from(spec)
                     .roleName(testId.idFor(spec.roleName()))
                     .build());
-        }
-    }
-
-    public IamRoleSpec createDefaultIamRole() {
-        try {
-            return createIamRole(null);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
         }
     }
 }

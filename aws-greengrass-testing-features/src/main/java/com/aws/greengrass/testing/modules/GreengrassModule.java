@@ -21,7 +21,6 @@ public class GreengrassModule extends AbstractModule {
         return new DefaultGreengrass(platform,
                 resourcesContext.envStage(),
                 resourcesContext.region().id(),
-                testContext.testDirectory(),
                 testContext);
     }
 }

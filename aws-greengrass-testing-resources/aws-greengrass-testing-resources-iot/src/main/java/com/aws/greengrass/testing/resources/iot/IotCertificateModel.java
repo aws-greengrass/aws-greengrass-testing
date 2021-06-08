@@ -6,7 +6,10 @@ import org.immutables.value.Value;
 import software.amazon.awssdk.services.iot.IotClient;
 import software.amazon.awssdk.services.iot.model.CertificateStatus;
 import software.amazon.awssdk.services.iot.model.DeleteCertificateRequest;
+import software.amazon.awssdk.services.iot.model.DetachPolicyRequest;
 import software.amazon.awssdk.services.iot.model.KeyPair;
+import software.amazon.awssdk.services.iot.model.ListAttachedPoliciesRequest;
+import software.amazon.awssdk.services.iot.model.Policy;
 import software.amazon.awssdk.services.iot.model.UpdateCertificateRequest;
 
 @TestingModel
@@ -19,6 +22,15 @@ interface IotCertificateModel extends AWSResource<IotClient> {
 
     @Override
     default void remove(IotClient client) {
+        for (Policy policy : client.listAttachedPoliciesPaginator(ListAttachedPoliciesRequest.builder()
+                .target(certificateArn())
+                .build())
+                .policies()) {
+            client.detachPolicy(DetachPolicyRequest.builder()
+                    .policyName(policy.policyName())
+                    .target(certificateArn())
+                    .build());
+        }
         client.updateCertificate(UpdateCertificateRequest.builder()
                 .newStatus(CertificateStatus.INACTIVE)
                 .certificateId(certificateId())

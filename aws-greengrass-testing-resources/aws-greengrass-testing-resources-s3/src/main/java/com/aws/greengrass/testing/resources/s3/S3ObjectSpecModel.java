@@ -9,12 +9,18 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 
+import javax.annotation.Nullable;
+
 @TestingModel
 @Value.Immutable
 interface S3ObjectSpecModel extends ResourceSpec<S3Client, S3Object> {
     String key();
     String bucket();
     RequestBody content();
+
+    @Nullable
+    @Override
+    S3Object resource();
 
     @Override
     default S3ObjectSpec create(S3Client client, AWSResources resources) {

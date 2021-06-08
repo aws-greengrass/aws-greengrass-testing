@@ -13,20 +13,22 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ScenarioScoped
 public class FileSteps {
-    private static final long DEFAULT_INTERVAL = 100L;
-    private static final long DEFAULT_TIMEOUT = 30L;
+    private static final int DEFAULT_TIMEOUT = 30;
     private final Device device;
     private final Platform platform;
     private final TestContext testContext;
+    private final WaitSteps waits;
 
     @Inject
     public FileSteps(
             Device device,
             Platform platform,
-            TestContext testContext) {
+            TestContext testContext,
+            WaitSteps waits) {
         this.device = device;
         this.platform = platform;
         this.testContext = testContext;
+        this.waits = waits;
     }
 
     @Then("the file {word} on device exists")
@@ -41,17 +43,10 @@ public class FileSteps {
     }
 
     @Then("the file {word} on device contains {word} within {int} seconds")
-    public void containsTimeout(String file, String contents, long seconds) throws InterruptedException {
+    public void containsTimeout(String file, String contents, int seconds) throws InterruptedException {
         checkFileExists(file);
-        boolean found = false;
-        long startTime = System.currentTimeMillis();
-        do {
-            found = platform.files().readString(testContext.testDirectory().resolve(file)).contains(contents);
-            if (found) {
-                break;
-            }
-            Thread.sleep(DEFAULT_INTERVAL);
-        } while (System.currentTimeMillis() - startTime < TimeUnit.SECONDS.toMillis(seconds));
+        boolean found = waits.untilTrue(() -> platform.files()
+                .readString(testContext.testDirectory().resolve(file)).contains(contents), seconds, TimeUnit.SECONDS);
         assertTrue(found, "file " + file + " did not contain " + contents);
     }
 }

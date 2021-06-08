@@ -16,7 +16,6 @@ import java.util.stream.Stream;
 public class DefaultGreengrass implements Greengrass {
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultGreengrass.class);
     private static final long TIMEOUT_IN_SECONDS = 30L;
-    private final Path rootPath;
     private final String envStage;
     private final String region;
     private final Platform platform;
@@ -27,10 +26,8 @@ public class DefaultGreengrass implements Greengrass {
             final Platform platform,
             String envStage,
             String region,
-            Path rootPath,
             TestContext testContext) {
         this.platform = platform;
-        this.rootPath = rootPath;
         this.envStage = envStage;
         this.region = region;
         this.testContext = testContext;
@@ -40,9 +37,9 @@ public class DefaultGreengrass implements Greengrass {
     public void install() {
         platform.commands().execute(CommandInput.builder()
                 .line("java").addArgs(
-                        "-Droot=" + rootPath.toString(),
+                        "-Droot=" + testContext.installRoot(),
                         "-Dlog.store=FILE",
-                        "-jar", rootPath.resolve("greengrass/lib/Greengrass.jar").toString(),
+                        "-jar", testContext.installRoot().resolve("greengrass/lib/Greengrass.jar").toString(),
                         "--aws-region", region,
                         "--env-stage", envStage,
                         "--start", "false")
@@ -53,9 +50,9 @@ public class DefaultGreengrass implements Greengrass {
     @Override
     public void start() {
         String loaderPath = "alts/current/distro/bin/loader";
-        platform.commands().makeExecutable(rootPath.resolve(loaderPath));
+        platform.commands().makeExecutable(testContext.installRoot().resolve(loaderPath));
         greengrassProcess = platform.commands().executeInBackground(CommandInput.builder()
-                .workingDirectory(rootPath)
+                .workingDirectory(testContext.installRoot())
                 .line(loaderPath)
                 .timeout(TIMEOUT_IN_SECONDS)
                 .build());

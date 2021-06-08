@@ -5,6 +5,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
@@ -30,8 +31,12 @@ public abstract class AbstractAWSResourceLifecycle<C> implements AWSResourceLife
     @Override
     @SuppressWarnings("unchecked")
     public <U extends ResourceSpec<C, R>, R extends AWSResource<C>> U create(U spec, AWSResources resources) {
+        if (spec.created()) {
+            return spec;
+        }
         ResourceSpec<C,R> update = spec.create(client, resources);
-        specs.add(update);
+        // Prepend so as to reverse the deletion
+        specs.add(0, update);
         LOGGER.info("Created {} in {}",
                 update.resource().getClass().getSimpleName(),
                 getClass().getSimpleName().split("\\$", 2)[0]);

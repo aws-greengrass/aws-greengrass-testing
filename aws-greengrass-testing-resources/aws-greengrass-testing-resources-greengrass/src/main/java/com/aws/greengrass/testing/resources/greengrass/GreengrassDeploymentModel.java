@@ -9,6 +9,7 @@ import software.amazon.awssdk.services.greengrassv2.GreengrassV2Client;
 import software.amazon.awssdk.services.greengrassv2.model.CancelDeploymentRequest;
 import software.amazon.awssdk.services.greengrassv2.model.DeleteCoreDeviceRequest;
 import software.amazon.awssdk.services.greengrassv2.model.GreengrassV2Exception;
+import software.amazon.awssdk.services.greengrassv2.model.ValidationException;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -26,10 +27,6 @@ interface GreengrassDeploymentModel extends AWSResource<GreengrassV2Client> {
 
     @Override
     default void remove(GreengrassV2Client client) {
-        client.cancelDeployment(CancelDeploymentRequest.builder()
-                .deploymentId(deploymentId())
-                .build());
-
         Optional.ofNullable(thingNames()).ifPresent(thingNames -> {
             thingNames.forEach(thingName -> {
                 try {
@@ -41,5 +38,12 @@ interface GreengrassDeploymentModel extends AWSResource<GreengrassV2Client> {
                 }
             });
         });
+        try {
+            client.cancelDeployment(CancelDeploymentRequest.builder()
+                    .deploymentId(deploymentId())
+                    .build());
+        } catch (ValidationException ve) {
+            LOGGER.warn("Could not cancel deployment {}", deploymentId());
+        }
     }
 }

@@ -1,0 +1,16 @@
+policyName: "ggc-iot-policy"
+policyDocument: >
+  {
+    "Version": "2012-10-17",
+    "Statement": [{
+      "Effect": "Allow",
+      "Action": [
+        "iot:Connect",
+        "iot:Publish",
+        "iot:Receive",
+        "iot:Subscribe",
+        "greengrass:*"
+      ],
+      "Resource": "*"
+    }]
+  }
