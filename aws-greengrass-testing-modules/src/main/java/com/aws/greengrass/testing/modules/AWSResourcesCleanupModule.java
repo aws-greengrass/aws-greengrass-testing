@@ -75,12 +75,10 @@ public class AWSResourcesCleanupModule extends AbstractModule {
 
     @Override
     protected void configure() {
-        /**
         final Set<Closeable> closers = Sets.newConcurrentHashSet();
         final MethodInterceptor cleanup = new CleanupInterceptor(closers);
         Runtime.getRuntime().addShutdownHook(new Thread(new CleanupRunnable(closers)));
         bindListener(Matchers.any(), new CleanupProvisioner(closers));
         bindInterceptor(Matchers.subclassesOf(Closeable.class), Matchers.any(), cleanup);
-         */
     }
 }

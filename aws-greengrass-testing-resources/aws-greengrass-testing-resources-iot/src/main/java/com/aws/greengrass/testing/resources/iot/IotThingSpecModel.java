@@ -24,6 +24,9 @@ interface IotThingSpecModel extends ResourceSpec<IotClient, IotThing> {
 
     IotRoleAliasSpec roleAliasSpec();
 
+    @Nullable
+    IotPolicySpec policySpec();
+
     @Override
     default IotThingSpec create(IotClient client, AWSResources resources) {
         Set<IotThingGroupSpec> createdGroups = Optional.ofNullable(thingGroups())
@@ -38,6 +41,7 @@ interface IotThingSpecModel extends ResourceSpec<IotClient, IotThing> {
         if (createCertificate()) {
             certificate = resources.create(IotCertificateSpec.builder()
                     .thingName(thingName())
+                    .policy(resources.create(policySpec()))
                     .build())
                     .resource();
         }

@@ -22,7 +22,8 @@ public class IotLifecycle extends AbstractAWSResourceLifecycle<IotClient> {
                 IotThingSpec.class,
                 IotCertificateSpec.class,
                 IotThingGroupSpec.class,
-                IotRoleAliasSpec.class);
+                IotRoleAliasSpec.class,
+                IotPolicySpec.class);
     }
 
     public IotLifecycle() {

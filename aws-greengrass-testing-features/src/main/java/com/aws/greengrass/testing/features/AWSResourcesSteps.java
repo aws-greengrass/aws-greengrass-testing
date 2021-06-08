@@ -28,8 +28,8 @@ public class AWSResourcesSteps implements Closeable {
     @After(order = 11000)
     @Override
     public void close() throws IOException {
-        // resources.close();
-        // testContext.close();
+        resources.close();
+        testContext.close();
         LOGGER.info("Successfully removed externally created resourcess");
     }
 }

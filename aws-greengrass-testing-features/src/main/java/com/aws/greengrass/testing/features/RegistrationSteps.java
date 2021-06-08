@@ -6,19 +6,23 @@ import com.aws.greengrass.testing.model.GreengrassContext;
 import com.aws.greengrass.testing.model.RegistrationContext;
 import com.aws.greengrass.testing.model.TestContext;
 import com.aws.greengrass.testing.modules.AWSResourcesContext;
+import com.aws.greengrass.testing.modules.JacksonModule;
 import com.aws.greengrass.testing.resources.AWSResources;
 import com.aws.greengrass.testing.resources.iam.IamRoleSpec;
 import com.aws.greengrass.testing.resources.iot.IotLifecycle;
+import com.aws.greengrass.testing.resources.iot.IotPolicySpec;
 import com.aws.greengrass.testing.resources.iot.IotRoleAliasSpec;
 import com.aws.greengrass.testing.resources.iot.IotThing;
 import com.aws.greengrass.testing.resources.iot.IotThingGroupSpec;
 import com.aws.greengrass.testing.resources.iot.IotThingSpec;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.cucumber.guice.ScenarioScoped;
 import io.cucumber.java.en.Given;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -41,6 +45,7 @@ public class RegistrationSteps {
     private final GreengrassContext greengrassContext;
     private final AWSResources resources;
     private final IamSteps iamSteps;
+    private final IotSteps iotSteps;
     private final Device device;
 
     @Inject
@@ -48,6 +53,7 @@ public class RegistrationSteps {
             Device device,
             AWSResources resources,
             IamSteps iamSteps,
+            IotSteps iotSteps,
             TestContext testContext,
             RegistrationContext registrationContext,
             GreengrassContext greengrassContext,
@@ -59,11 +65,12 @@ public class RegistrationSteps {
         this.registrationContext = registrationContext;
         this.greengrassContext = greengrassContext;
         this.resourcesContext = resourcesContext;
+        this.iotSteps = iotSteps;
     }
 
     @Given("my device is registered as a Thing using config {word}")
     public void registerAsThing(String configName) throws IOException {
-        registerAsThing(configName, testContext.testId().idFor("group"));
+        registerAsThing(configName, testContext.testId().idFor("ggc-group"));
     }
 
     @Given("my device is registered as a Thing")
@@ -74,10 +81,15 @@ public class RegistrationSteps {
     private void registerAsThing(String configName, String thingGroupName) throws IOException {
         final String configFile = Optional.ofNullable(configName).orElse(DEFAULT_CONFIG);
 
+        // TODO: move this into iot steps.
         IotThingSpec thingSpec = resources.create(IotThingSpec.builder()
                 .thingName(testContext.testId().idFor("ggc-thing"))
                 .addThingGroups(IotThingGroupSpec.of(thingGroupName))
                 .createCertificate(true)
+                .policySpec(resources.trackingSpecs(IotPolicySpec.class)
+                        .filter(p -> p.policyName().equals(testContext.testId().idFor("ggc-iot-policy")))
+                        .findFirst()
+                        .orElseGet(iotSteps::createDefaultPolicy))
                 .roleAliasSpec(IotRoleAliasSpec.builder()
                         .name(testContext.testId().idFor("ggc-role-alias"))
                         .iamRole(resources.trackingSpecs(IamRoleSpec.class)
@@ -140,11 +152,9 @@ public class RegistrationSteps {
         config = config.replace("{posix_user}", testContext.currentUser());
         config = config.replace("{data_plane_port}", "8443");
 
-        LOGGER.info("Effective config: {}", config);
-
         Files.write(testContext.testDirectory().resolve("rootCA.pem"), registrationContext.rootCA().getBytes(StandardCharsets.UTF_8));
         Files.write(configFilePath.resolve("config.yaml"), config.getBytes(StandardCharsets.UTF_8));
         // Copy to where the nucleus will read it
-        device.sync(testContext.testDirectory());
+        device.copyTo(testContext.testDirectory(), testContext.installRoot());
     }
 }

@@ -5,15 +5,18 @@ policyDocument: >
     "Statement": [{
       "Effect": "Allow",
       "Action": [
-        "greengrass:*",
         "iot:DescribeCertificate",
-        "iot:ListThingPrincipals",
-        "iot:Connect",
-        "iot:Publish",
-        "iot:Subscribe",
-        "iot:Receive",
-        "iot:GetThingShadow",
-        "iot:UpdateThingShadow"
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents",
+        "logs:DescribeLogStreams",
+        "s3:GetBucketLocation"
+      ],
+      "Resource": "*"
+    }, {
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject"
       ],
       "Resource": "*"
     }]

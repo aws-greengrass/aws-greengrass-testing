@@ -41,7 +41,7 @@ public class GreengrassSteps implements Closeable {
 
     @When("I install Greengrass")
     public void install() {
-        device.copyTo(greengrassContext.greengrassPath(), testContext.testDirectory().resolve("greengrass"));
+        device.copyTo(greengrassContext.greengrassPath(), testContext.installRoot().resolve("greengrass"));
         greengrass.install();
         files.checkFileExists("logs/greengrass.log");
     }
@@ -56,7 +56,7 @@ public class GreengrassSteps implements Closeable {
 
     @Then("Greengrass core is running on my device")
     public void launchedSuccessfully() throws InterruptedException {
-        files.contains("output.log", "successfully");
+        files.contains("output.log", "Launched Nucleus successfully");
     }
 
     @When("I stop Greengrass")
@@ -72,6 +72,6 @@ public class GreengrassSteps implements Closeable {
 
     @After(order = 99999)
     public void close() {
-        //stop();
+        stop();
     }
 }

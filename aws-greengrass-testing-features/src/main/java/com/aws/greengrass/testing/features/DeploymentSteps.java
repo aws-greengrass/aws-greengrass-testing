@@ -16,7 +16,6 @@ import io.cucumber.java.en.When;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import software.amazon.awssdk.services.greengrassv2.model.ComponentDeploymentSpecification;
-import software.amazon.awssdk.services.greengrassv2.model.EffectiveDeploymentExecutionStatus;
 
 import javax.inject.Inject;
 import java.util.HashMap;
