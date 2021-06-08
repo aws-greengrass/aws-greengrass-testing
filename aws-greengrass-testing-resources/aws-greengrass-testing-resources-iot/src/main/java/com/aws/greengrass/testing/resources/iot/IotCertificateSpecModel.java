@@ -25,6 +25,7 @@ interface IotCertificateSpecModel extends ResourceSpec<IotClient, IotCertificate
         CreateKeysAndCertificateResponse created = client.createKeysAndCertificate(CreateKeysAndCertificateRequest.builder()
                 .setAsActive(active())
                 .build());
+
         return IotCertificateSpec.builder()
                 .from(this)
                 .created(true)

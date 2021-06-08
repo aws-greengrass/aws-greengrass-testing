@@ -34,7 +34,6 @@ interface IotThingSpecModel extends ResourceSpec<IotClient, IotThing> {
                 .thingName(thingName())
                 .build());
 
-
         IotCertificate certificate = null;
         if (createCertificate()) {
             certificate = resources.create(IotCertificateSpec.builder()

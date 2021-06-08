@@ -13,14 +13,16 @@ import java.util.Optional;
 @AutoService(Module.class)
 public class ComponentOverridesModule extends AbstractModule {
     private static final int MAX_SPLIT_LIMIT = 2;
-    private static final String COMPONENT_OVERRIDES = "component.overrides";
+    private static final String COMPONENT_BUCKET = "gg.component.bucket";
+    private static final String COMPONENT_OVERRIDES = "gg.component.overrides";
 
     @Provides
     @Singleton
     static ComponentOverrides providesComponentOverrides() {
-        ComponentOverrides.Builder builder = ComponentOverrides.builder();
+        ComponentOverrides.Builder builder = ComponentOverrides.builder()
+                .bucketName(System.getProperty(COMPONENT_BUCKET));
         Optional.ofNullable(System.getProperty(COMPONENT_OVERRIDES)).ifPresent(overrideString -> {
-            // -Dcomponent.overrides=aws.greengrass.Nucleus:cloud:LATEST,aws.greengrass.LocalDebugConsole:file:/path/to/recipe.yml
+            // -Dgg.component.overrides=aws.greengrass.Nucleus:cloud:LATEST,aws.greengrass.LocalDebugConsole:file:/path/to/recipe.yml
             final String[] components = overrideString.split("\\s*,\\s*");
             for (String component : components) {
                 final String[] nameVersionParts = component.split(":", MAX_SPLIT_LIMIT);

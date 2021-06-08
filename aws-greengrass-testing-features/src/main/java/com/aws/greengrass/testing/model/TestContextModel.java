@@ -21,6 +21,6 @@ interface TestContextModel extends Closeable, DirectoryCleanupMixin {
 
     @Override
     default void close() throws IOException {
-        recursivelyDelete(testDirectory());
+        // recursivelyDelete(testDirectory());
     }
 }

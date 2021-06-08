@@ -11,7 +11,7 @@ import javax.inject.Inject;
 public class S3Lifecycle extends AbstractAWSResourceLifecycle<S3Client> {
     @Inject
     public S3Lifecycle(S3Client client) {
-        super(client);
+        super(client, S3ObjectSpec.class);
     }
 
     public S3Lifecycle() {

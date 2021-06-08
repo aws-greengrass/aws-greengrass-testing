@@ -22,6 +22,7 @@ interface GreengrassComponentSpecModel extends ResourceSpec<GreengrassV2Client, 
     LambdaFunctionRecipeSource lambdaFunction();
 
     @Override
+    @Nullable
     GreengrassComponent resource();
 
     @Override

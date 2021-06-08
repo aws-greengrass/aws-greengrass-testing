@@ -72,6 +72,6 @@ public class GreengrassSteps implements Closeable {
 
     @After(order = 99999)
     public void close() {
-        stop();
+        //stop();
     }
 }

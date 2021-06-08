@@ -40,7 +40,7 @@ public class DefaultGreengrass implements Greengrass {
     public void install() {
         platform.commands().execute(CommandInput.builder()
                 .line("java").addArgs(
-                        "-Droot=" + rootPath.toString(),
+                        "-Droot=" + rootPath.toAbsolutePath().toString(),
                         "-Dlog.store=FILE",
                         "-jar", rootPath.resolve("greengrass/lib/Greengrass.jar").toString(),
                         "--aws-region", region,

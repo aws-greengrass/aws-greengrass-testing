@@ -15,6 +15,8 @@ import com.aws.greengrass.testing.resources.iot.IotThingGroupSpec;
 import com.aws.greengrass.testing.resources.iot.IotThingSpec;
 import io.cucumber.guice.ScenarioScoped;
 import io.cucumber.java.en.Given;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.inject.Inject;
 import java.io.BufferedReader;
@@ -31,6 +33,7 @@ import java.util.Optional;
 
 @ScenarioScoped
 public class RegistrationSteps {
+    private static final Logger LOGGER = LogManager.getLogger(RegistrationSteps.class);
     private static final String DEFAULT_CONFIG = "/nucleus/configs/basic_config.yaml";
     private final TestContext testContext;
     private final RegistrationContext registrationContext;
@@ -136,6 +139,8 @@ public class RegistrationSteps {
         config = config.replace("{env_stage}", resourcesContext.envStage());
         config = config.replace("{posix_user}", testContext.currentUser());
         config = config.replace("{data_plane_port}", "8443");
+
+        LOGGER.info("Effective config: {}", config);
 
         Files.write(testContext.testDirectory().resolve("rootCA.pem"), registrationContext.rootCA().getBytes(StandardCharsets.UTF_8));
         Files.write(configFilePath.resolve("config.yaml"), config.getBytes(StandardCharsets.UTF_8));

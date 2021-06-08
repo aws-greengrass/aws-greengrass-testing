@@ -1,8 +1,10 @@
 package com.aws.greengrass.testing.modules;
 
 import com.aws.greengrass.testing.api.ComponentPreparationService;
+import com.aws.greengrass.testing.component.ClasspathComponentPreparationService;
 import com.aws.greengrass.testing.component.CloudComponentPreparationService;
 import com.aws.greengrass.testing.component.CompositeComponentPreparationService;
+import com.aws.greengrass.testing.component.FileComponentPreparationService;
 import com.aws.greengrass.testing.resources.greengrass.GreengrassV2Lifecycle;
 import com.google.auto.service.AutoService;
 import com.google.inject.AbstractModule;
@@ -23,6 +25,21 @@ public class ComponentPreparationModule extends AbstractModule {
     @StringMapKey("cloud")
     @ScenarioScoped
     static ComponentPreparationService providesCloudPreparationService(CloudComponentPreparationService service) {
+        return service;
+    }
+
+    @ProvidesIntoMap
+    @StringMapKey("file")
+    @ScenarioScoped
+    static ComponentPreparationService providesFilePreparationService(FileComponentPreparationService service) {
+        return service;
+    }
+
+    @ProvidesIntoMap
+    @StringMapKey("classpath")
+    @ScenarioScoped
+    static ComponentPreparationService providesClasspathPreparationService(
+            ClasspathComponentPreparationService service) {
         return service;
     }
 }

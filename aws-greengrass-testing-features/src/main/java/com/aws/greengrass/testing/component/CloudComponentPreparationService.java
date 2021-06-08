@@ -43,13 +43,13 @@ public class CloudComponentPreparationService implements ComponentPreparationSer
                 .from(original)
                 .version(ComponentOverrideVersion.builder()
                         .from(original.version())
-                        .version(componentVersion)
+                        .value(componentVersion)
                         .build())
                 .build();
     }
 
     private String pinpointViableVersion(ComponentOverrideNameVersion nameVersion, Component component) {
-        String requirement = nameVersion.version().version();
+        String requirement = nameVersion.version().value();
         Semver targetVersion = null;
         for (ComponentVersionListItem item : ggv2.listComponentVersions(component.arn()).componentVersions()) {
             Semver currentVersion = new Semver(item.componentVersion());
@@ -68,7 +68,7 @@ public class CloudComponentPreparationService implements ComponentPreparationSer
     public Optional<ComponentOverrideNameVersion> prepare(final ComponentOverrideNameVersion nameVersion) {
         return pinpointComponent(nameVersion)
                 .map(component -> {
-                    if (nameVersion.version().version().equals(LATEST)) {
+                    if (nameVersion.version().value().equals(LATEST)) {
                         return convert(nameVersion, component.latestVersion().componentVersion());
                     } else {
                         return convert(nameVersion, pinpointViableVersion(nameVersion, component));
