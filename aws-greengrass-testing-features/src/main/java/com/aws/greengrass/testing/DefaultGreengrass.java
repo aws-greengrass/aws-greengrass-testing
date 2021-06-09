@@ -49,11 +49,11 @@ public class DefaultGreengrass implements Greengrass {
 
     @Override
     public void start() {
-        String loaderPath = "alts/current/distro/bin/loader";
+        Path loaderPath = testContext.installRoot().resolve("alts/current/distro/bin/loader");
         platform.commands().makeExecutable(testContext.installRoot().resolve(loaderPath));
         greengrassProcess = platform.commands().executeInBackground(CommandInput.builder()
                 .workingDirectory(testContext.installRoot())
-                .line(loaderPath)
+                .line(loaderPath.toString())
                 .timeout(TIMEOUT_IN_SECONDS)
                 .build());
         LOGGER.info("Starting greengrass on pid {}", greengrassProcess);

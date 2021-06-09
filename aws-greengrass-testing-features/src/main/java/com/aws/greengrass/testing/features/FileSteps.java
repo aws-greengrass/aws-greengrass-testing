@@ -33,8 +33,8 @@ public class FileSteps {
 
     @Then("the file {word} on device exists")
     public void checkFileExists(String file) {
-        assertTrue(device.exists(testContext.testDirectory().resolve(file)),
-                "file " + file + " does not exist in " + testContext.testDirectory());
+        assertTrue(device.exists(testContext.installRoot().resolve(file)),
+                "file " + file + " does not exist in " + testContext.installRoot());
     }
 
     @Then("the file {word} on device contains {word}")
@@ -46,7 +46,7 @@ public class FileSteps {
     public void containsTimeout(String file, String contents, int seconds) throws InterruptedException {
         checkFileExists(file);
         boolean found = waits.untilTrue(() -> platform.files()
-                .readString(testContext.testDirectory().resolve(file)).contains(contents), seconds, TimeUnit.SECONDS);
+                .readString(testContext.installRoot().resolve(file)).contains(contents), seconds, TimeUnit.SECONDS);
         assertTrue(found, "file " + file + " did not contain " + contents);
     }
 }

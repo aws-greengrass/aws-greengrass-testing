@@ -28,7 +28,7 @@ interface TestContextModel extends Closeable, DirectoryCleanupMixin {
 
     @Value.Default
     default String currentUser() {
-        return System.getProperty("user.name");
+        return System.getProperty("ggc.user.name", System.getProperty("user.name"));
     }
 
     @Override

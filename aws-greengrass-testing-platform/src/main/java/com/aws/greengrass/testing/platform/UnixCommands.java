@@ -9,6 +9,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.StringJoiner;
 import java.util.regex.Matcher;
@@ -38,9 +39,13 @@ public abstract class UnixCommands implements Commands {
 
     @Override
     public int executeInBackground(CommandInput input) throws CommandExecutionException {
+        String output = "output.log";
+        if (Objects.nonNull(input.workingDirectory())) {
+            output = input.workingDirectory().resolve(output).toString();
+        }
         byte[] rawBytes = execute(CommandInput.builder()
                 .from(input)
-                .addArgs("1> output.log 2>&1 & echo $!")
+                .addArgs("1> " + output + " 2>&1 & echo $!")
                 .build());
         return Integer.parseInt(new String(rawBytes, StandardCharsets.UTF_8).trim());
     }
