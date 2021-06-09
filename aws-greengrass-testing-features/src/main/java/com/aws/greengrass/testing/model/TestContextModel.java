@@ -15,6 +15,12 @@ import java.util.Objects;
 interface TestContextModel extends Closeable, DirectoryCleanupMixin {
     TestId testId();
     Path testDirectory();
+    Path testResultsPath();
+
+    @Value.Default
+    default String logLevel() {
+        return System.getProperty("ggc.log.level", "INFO");
+    }
 
     @Value.Default
     default Path installRoot() {

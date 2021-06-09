@@ -9,9 +9,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class DefaultGreengrass implements Greengrass {
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultGreengrass.class);
@@ -39,6 +36,7 @@ public class DefaultGreengrass implements Greengrass {
                 .line("java").addArgs(
                         "-Droot=" + testContext.installRoot(),
                         "-Dlog.store=FILE",
+                        "-Dlog.level=" + testContext.logLevel(),
                         "-jar", testContext.installRoot().resolve("greengrass/lib/Greengrass.jar").toString(),
                         "--aws-region", region,
                         "--env-stage", envStage,
