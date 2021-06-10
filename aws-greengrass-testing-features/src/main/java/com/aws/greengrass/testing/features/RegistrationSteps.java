@@ -2,7 +2,6 @@ package com.aws.greengrass.testing.features;
 
 import com.aws.greengrass.testing.api.device.Device;
 import com.aws.greengrass.testing.api.model.ProxyConfig;
-import com.aws.greengrass.testing.api.util.IOUtils;
 import com.aws.greengrass.testing.model.GreengrassContext;
 import com.aws.greengrass.testing.model.RegistrationContext;
 import com.aws.greengrass.testing.model.TestContext;
@@ -19,6 +18,7 @@ import io.cucumber.guice.ScenarioScoped;
 import io.cucumber.java.en.Given;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import software.amazon.awssdk.utils.IoUtils;
 
 import javax.inject.Inject;
 import java.io.IOException;
@@ -100,7 +100,7 @@ public class RegistrationSteps {
             setupConfig(
                     thingSpec.resource(),
                     thingSpec.roleAliasSpec(),
-                    IOUtils.toString(input),
+                    IoUtils.toUtf8String(input),
                     new HashMap<>());
         }
     }

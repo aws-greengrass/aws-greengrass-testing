@@ -4,7 +4,6 @@ import com.aws.greengrass.testing.api.ComponentPreparationService;
 import com.aws.greengrass.testing.api.model.ComponentOverrideNameVersion;
 import com.aws.greengrass.testing.api.model.ComponentOverrideVersion;
 import com.aws.greengrass.testing.api.model.ComponentOverrides;
-import com.aws.greengrass.testing.api.util.IOUtils;
 import com.aws.greengrass.testing.model.GreengrassContext;
 import com.aws.greengrass.testing.model.TestContext;
 import com.aws.greengrass.testing.resources.AWSResources;
@@ -18,6 +17,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.utils.IoUtils;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -79,7 +79,7 @@ public class RecipeComponentPreparationService implements ComponentPreparationSe
                 Files.createDirectories(componentArtifact);
                 componentArtifact = componentArtifact.resolve(contentPath.getFileName());
                 try (FileOutputStream fos = new FileOutputStream(componentArtifact.toFile())) {
-                    IOUtils.pumpStreams(content, fos);
+                    IoUtils.copy(content, fos);
                 }
                 break;
             case "file":

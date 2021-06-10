@@ -3,7 +3,6 @@ package com.aws.greengrass.testing.features;
 import com.aws.greengrass.testing.api.device.Device;
 import com.aws.greengrass.testing.model.TestContext;
 import com.aws.greengrass.testing.platform.Platform;
-import com.google.common.io.Files;
 import io.cucumber.guice.ScenarioScoped;
 import io.cucumber.java.After;
 import io.cucumber.java.Scenario;
@@ -13,6 +12,7 @@ import org.apache.logging.log4j.Logger;
 
 import javax.inject.Inject;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 
@@ -66,7 +66,7 @@ public class FileSteps {
                 byte[] bytes = platform.files().readBytes(logFile);
                 scenario.attach(bytes, "text/plain", logFile.getFileName().toString());
                 try {
-                    Files.write(bytes, testContext.testResultsPath().resolve(logFile.getFileName()).toFile());
+                    Files.write(testContext.testResultsPath().resolve(logFile.getFileName()), bytes);
                 } catch (IOException ie) {
                     LOGGER.warn("Could not copy {} into the results path {}",
                             logFile, testContext.testResultsPath(), ie);

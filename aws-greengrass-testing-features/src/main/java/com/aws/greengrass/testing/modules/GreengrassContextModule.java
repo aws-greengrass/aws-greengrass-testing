@@ -1,6 +1,5 @@
 package com.aws.greengrass.testing.modules;
 
-import com.aws.greengrass.testing.api.util.IOUtils;
 import com.aws.greengrass.testing.model.GreengrassContext;
 import com.aws.greengrass.testing.modules.exception.ModuleProvisionException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -12,6 +11,7 @@ import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.utils.IoUtils;
 
 import javax.inject.Named;
 import java.io.FileInputStream;
@@ -47,7 +47,7 @@ public class GreengrassContextModule extends AbstractModule {
                 }
                 LOGGER.debug("Extracting {} into {}", entry.getName(), contentPath);
                 try (FileOutputStream output = new FileOutputStream(contentPath.toFile())) {
-                    IOUtils.pumpStreams(zipStream, output);
+                    IoUtils.copy(zipStream, output);
                 }
                 if (entry.getName().contains("recipe.yaml")) {
                     JsonNode node = mapper.readTree(contentPath.toFile());
