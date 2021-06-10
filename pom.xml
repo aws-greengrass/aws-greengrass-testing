@@ -17,8 +17,8 @@
     </licenses>
 
     <modules>
-        <module>aws-greengrass-testing-features</module>
         <module>aws-greengrass-testing-api</module>
+        <module>aws-greengrass-testing-features</module>
         <module>aws-greengrass-testing-platform</module>
         <module>aws-greengrass-testing-modules</module>
         <module>aws-greengrass-testing-launcher</module>

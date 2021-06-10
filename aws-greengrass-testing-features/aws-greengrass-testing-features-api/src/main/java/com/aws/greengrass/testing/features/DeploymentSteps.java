@@ -10,17 +10,27 @@ import com.aws.greengrass.testing.resources.AWSResources;
 import com.aws.greengrass.testing.resources.greengrass.GreengrassDeploymentSpec;
 import com.aws.greengrass.testing.resources.greengrass.GreengrassV2Lifecycle;
 import com.aws.greengrass.testing.resources.iot.IotThingSpec;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.cucumber.guice.ScenarioScoped;
+import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import software.amazon.awssdk.services.greengrassv2.model.ComponentConfigurationUpdate;
 import software.amazon.awssdk.services.greengrassv2.model.ComponentDeploymentSpecification;
+import software.amazon.awssdk.services.greengrassv2.model.EffectiveDeployment;
+import software.amazon.awssdk.services.greengrassv2.model.EffectiveDeploymentExecutionStatus;
 
 import javax.inject.Inject;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -34,6 +44,8 @@ public class DeploymentSteps {
     private final TestContext testContext;
     private final GreengrassContext greengrassContext;
     private final WaitSteps waits;
+    private final ObjectMapper mapper;
+    private GreengrassDeploymentSpec deployment;
 
     @Inject
     public DeploymentSteps(
@@ -42,16 +54,18 @@ public class DeploymentSteps {
             final TestContext testContext,
             final GreengrassContext greengrassContext,
             final ComponentPreparationService componentPreparation,
-            final WaitSteps waits) {
+            final WaitSteps waits,
+            final ObjectMapper mapper) {
         this.resources = resources;
         this.overrides = overrides;
         this.testContext = testContext;
         this.greengrassContext = greengrassContext;
         this.componentPreparation = componentPreparation;
         this.waits = waits;
+        this.mapper = mapper;
     }
 
-    @When("I create a Greengrass deployment with components")
+    @Given("I create a Greengrass deployment with components")
     public void createDeployment(List<List<String>> componentNames) {
         IotThingSpec thingSpec = resources.trackingSpecs(IotThingSpec.class)
                 .filter(thing -> thing.resource().thingName().equals(testContext.testId().idFor("ggc-thing")))
@@ -79,21 +93,58 @@ public class DeploymentSteps {
             });
             components.put(name, builder.build());
         });
-        LOGGER.info("Creating deployment with components to {}: {}", thingSpec.thingName(), components);
-        resources.create(GreengrassDeploymentSpec.builder()
+        LOGGER.info("Creating deployment configuration with components to {}: {}", thingSpec.thingName(), components);
+        deployment = GreengrassDeploymentSpec.builder()
                 .deploymentName(testContext.testId().idFor("gg-deployment"))
                 .thingArn(thingSpec.resource().thingArn())
                 .putAllComponents(components)
-                .build());
+                .build();
     }
 
-    @Then("the Greengrass deployment is {word} on the device after {int} seconds")
-    public void deploymentSucceeds(String status, int seconds) throws InterruptedException {
-        assertTrue(waits.untilTrue(() -> effectivelyDeployedOnDevice(status), seconds, TimeUnit.SECONDS),
-                "Deployment " + testContext.testId().idFor("gg-deployment") + " did not complete");
+    @SuppressWarnings("unchecked")
+    @When("I update my Greengrass deployment configuration, setting the component {word} configuration to:")
+    public void updateDeployment(String componentName, String configurationUpdate) throws JsonProcessingException {
+        Map<String, Object> json = mapper.readValue(configurationUpdate, new TypeReference<Map<String, Object>>() {});
+        deployment = GreengrassDeploymentSpec.builder()
+                .from(deployment)
+                .putComponents(componentName, ComponentDeploymentSpecification.builder()
+                        .componentVersion(deployment.components().get(componentName).componentVersion())
+                        .configurationUpdate(ComponentConfigurationUpdate.builder()
+                                .merge(mapper.writeValueAsString(json.get("MERGE")))
+                                .reset((List<String>) json.get("RESET"))
+                                .build())
+                        .build())
+                .build();
     }
 
-    private boolean effectivelyDeployedOnDevice(String status) {
+    @When("I deploy the Greengrass deployment configuration")
+    public void startDeployment() {
+        deployment = resources.create(deployment);
+        LOGGER.info("Created Greengrass deployment: {}", deployment.resource().deploymentId());
+    }
+
+    @Then("the Greengrass deployment is {word} on the device after {int} {word}")
+    public void deploymentSucceeds(String status, int value, String unit) throws InterruptedException {
+        TimeUnit timeUnit = TimeUnit.valueOf(unit);
+        Set<EffectiveDeploymentExecutionStatus> terminalStatuses = new HashSet<>();
+        terminalStatuses.add(EffectiveDeploymentExecutionStatus.COMPLETED);
+        terminalStatuses.add(EffectiveDeploymentExecutionStatus.CANCELED);
+        terminalStatuses.add(EffectiveDeploymentExecutionStatus.FAILED);
+        terminalStatuses.add(EffectiveDeploymentExecutionStatus.REJECTED);
+        terminalStatuses.add(EffectiveDeploymentExecutionStatus.TIMED_OUT);
+
+        final EffectiveDeploymentExecutionStatus effectiveStatus = EffectiveDeploymentExecutionStatus.valueOf(status);
+        assertTrue(terminalStatuses.contains(effectiveStatus),
+                "Please target a terminal status: " + terminalStatuses);
+
+        assertTrue(waits.untilTerminal(
+                () -> this.effectivelyDeploymentStatus().orElse(null),
+                effectiveStatus::equals,
+                terminalStatuses::contains, value, timeUnit),
+                "Deployment " + testContext.testId().idFor("gg-deployment") + " did not reach " + status);
+    }
+
+    private Optional<EffectiveDeploymentExecutionStatus> effectivelyDeploymentStatus() {
         GreengrassV2Lifecycle ggv2 = resources.lifecycle(GreengrassV2Lifecycle.class);
         String deploymentName = testContext.testId().idFor("gg-deployment");
         GreengrassDeploymentSpec ggcDeployment = ggv2.trackingSpecs(GreengrassDeploymentSpec.class)
@@ -102,8 +153,7 @@ public class DeploymentSteps {
                 .orElseThrow(() -> new IllegalStateException("Could not find a deployment " + deploymentName));
         return ggv2.listDeviceDeployments(testContext.testId().idFor("ggc-thing")).effectiveDeployments().stream()
                 .filter(deployment -> deployment.deploymentId().equals(ggcDeployment.resource().deploymentId()))
-                .filter(deployment -> deployment.coreDeviceExecutionStatusAsString().equals(status))
                 .findFirst()
-                .isPresent();
+                .map(EffectiveDeployment::coreDeviceExecutionStatus);
     }
 }
