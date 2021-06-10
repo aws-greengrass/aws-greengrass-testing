@@ -2,6 +2,7 @@ package com.aws.greengrass.testing.model;
 
 import com.aws.greengrass.testing.api.model.TestId;
 import com.aws.greengrass.testing.api.model.TestingModel;
+import com.aws.greengrass.testing.api.util.FileUtils;
 import org.immutables.value.Value;
 
 import java.io.Closeable;
@@ -12,9 +13,15 @@ import java.util.Objects;
 
 @TestingModel
 @Value.Immutable
-interface TestContextModel extends Closeable, DirectoryCleanupMixin {
+interface TestContextModel extends Closeable {
     TestId testId();
     Path testDirectory();
+    Path testResultsPath();
+
+    @Value.Default
+    default String logLevel() {
+        return System.getProperty("ggc.log.level", "INFO");
+    }
 
     @Value.Default
     default Path installRoot() {
@@ -33,6 +40,6 @@ interface TestContextModel extends Closeable, DirectoryCleanupMixin {
 
     @Override
     default void close() throws IOException {
-        recursivelyDelete(testDirectory());
+        FileUtils.recursivelyDelete(testDirectory());
     }
 }

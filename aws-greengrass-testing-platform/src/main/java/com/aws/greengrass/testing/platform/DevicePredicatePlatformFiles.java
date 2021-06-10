@@ -42,6 +42,14 @@ public class DevicePredicatePlatformFiles implements PlatformFiles {
     }
 
     @Override
+    public void delete(Path filePath) throws CommandExecutionException {
+        delegate(files -> {
+            files.delete(filePath);
+            return null;
+        });
+    }
+
+    @Override
     public byte[] readBytes(Path filePath) throws CommandExecutionException {
         return delegate(files -> files.readBytes(filePath));
     }

@@ -6,7 +6,6 @@ import com.aws.greengrass.testing.model.GreengrassContext;
 import com.aws.greengrass.testing.model.RegistrationContext;
 import com.aws.greengrass.testing.model.TestContext;
 import com.aws.greengrass.testing.modules.AWSResourcesContext;
-import com.aws.greengrass.testing.modules.JacksonModule;
 import com.aws.greengrass.testing.resources.AWSResources;
 import com.aws.greengrass.testing.resources.iam.IamRoleSpec;
 import com.aws.greengrass.testing.resources.iot.IotLifecycle;
@@ -15,18 +14,15 @@ import com.aws.greengrass.testing.resources.iot.IotRoleAliasSpec;
 import com.aws.greengrass.testing.resources.iot.IotThing;
 import com.aws.greengrass.testing.resources.iot.IotThingGroupSpec;
 import com.aws.greengrass.testing.resources.iot.IotThingSpec;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.cucumber.guice.ScenarioScoped;
 import io.cucumber.java.en.Given;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import software.amazon.awssdk.utils.IoUtils;
 
 import javax.inject.Inject;
-import javax.inject.Named;
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -101,18 +97,10 @@ public class RegistrationSteps {
                 .build());
 
         try (InputStream input = getClass().getResourceAsStream(DEFAULT_CONFIG)) {
-            StringBuilder configBuilder = new StringBuilder();
-            final BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(input, StandardCharsets.UTF_8));
-            String line = reader.readLine();
-            while (Objects.nonNull(line)) {
-                configBuilder.append(line).append("\n");
-                line = reader.readLine();
-            }
             setupConfig(
                     thingSpec.resource(),
                     thingSpec.roleAliasSpec(),
-                    configBuilder.toString(),
+                    IoUtils.toUtf8String(input),
                     new HashMap<>());
         }
     }

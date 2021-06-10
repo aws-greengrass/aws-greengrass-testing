@@ -2,6 +2,7 @@ package com.aws.greengrass.testing.platform;
 
 import com.aws.greengrass.testing.api.device.exception.CommandExecutionException;
 import com.aws.greengrass.testing.api.device.model.CommandInput;
+import com.aws.greengrass.testing.api.util.FileUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -20,6 +21,15 @@ public class LocalFiles implements PlatformFiles {
             return Files.readAllBytes(filePath);
         } catch (IOException e) {
             throw new CommandExecutionException(e, CommandInput.of("read: " + filePath));
+        }
+    }
+
+    @Override
+    public void delete(Path filePath) throws CommandExecutionException {
+        try {
+            FileUtils.recursivelyDelete(filePath);
+        } catch (IOException ie) {
+            throw new CommandExecutionException(ie, CommandInput.of("delete: " + filePath));
         }
     }
 

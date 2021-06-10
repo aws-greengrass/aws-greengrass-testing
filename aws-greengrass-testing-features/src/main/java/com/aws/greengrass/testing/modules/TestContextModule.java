@@ -21,6 +21,7 @@ import java.security.SecureRandom;
 
 @AutoService(Module.class)
 public class TestContextModule extends AbstractModule {
+    private static final String TEST_RESULTS_PATH = "test.log.path";
     private static final SecureRandom RANDOM = new SecureRandom();
 
     static String randomString(int size) {
@@ -47,13 +48,16 @@ public class TestContextModule extends AbstractModule {
     @ScenarioScoped
     static TestContext providesTestContext(final TestId testId) {
         Path testDirectory = Paths.get(testId.id());
+        Path testResultsPath = Paths.get(System.getProperty(TEST_RESULTS_PATH, "testResults"));
         try {
             Files.createDirectory(testDirectory);
+            Files.createDirectories(testResultsPath);
         } catch (IOException ie) {
             throw new ModuleProvisionException(ie);
         }
         return TestContext.builder()
                 .testId(testId)
+                .testResultsPath(testResultsPath)
                 .testDirectory(testDirectory)
                 .build();
     }

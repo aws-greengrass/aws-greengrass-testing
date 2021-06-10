@@ -4,7 +4,10 @@ import com.aws.greengrass.testing.resources.AWSResourceLifecycle;
 import com.aws.greengrass.testing.resources.AbstractAWSResourceLifecycle;
 import com.google.auto.service.AutoService;
 import software.amazon.awssdk.services.greengrassv2.GreengrassV2Client;
+import software.amazon.awssdk.services.greengrassv2.model.ComponentVersionListItem;
 import software.amazon.awssdk.services.greengrassv2.model.ComponentVisibilityScope;
+import software.amazon.awssdk.services.greengrassv2.model.DescribeComponentRequest;
+import software.amazon.awssdk.services.greengrassv2.model.GetComponentRequest;
 import software.amazon.awssdk.services.greengrassv2.model.GetCoreDeviceRequest;
 import software.amazon.awssdk.services.greengrassv2.model.GetCoreDeviceResponse;
 import software.amazon.awssdk.services.greengrassv2.model.GetDeploymentRequest;
@@ -57,6 +60,16 @@ public class GreengrassV2Lifecycle extends AbstractAWSResourceLifecycle<Greengra
         return client.listComponentVersionsPaginator(ListComponentVersionsRequest.builder()
                 .arn(arn)
                 .build());
+    }
+
+    public Optional<ComponentVersionListItem> latestVersionFor(String arn) {
+        return client.listComponentVersions(ListComponentVersionsRequest.builder()
+                .arn(arn)
+                .maxResults(1)
+                .build())
+                .componentVersions()
+                .stream()
+                .findFirst();
     }
 
     public ListComponentsIterable listComponents(ComponentVisibilityScope scope) {

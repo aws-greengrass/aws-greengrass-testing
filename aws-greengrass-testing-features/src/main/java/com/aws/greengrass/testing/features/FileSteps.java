@@ -4,15 +4,23 @@ import com.aws.greengrass.testing.api.device.Device;
 import com.aws.greengrass.testing.model.TestContext;
 import com.aws.greengrass.testing.platform.Platform;
 import io.cucumber.guice.ScenarioScoped;
+import io.cucumber.java.After;
+import io.cucumber.java.Scenario;
 import io.cucumber.java.en.Then;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.inject.Inject;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ScenarioScoped
 public class FileSteps {
+    private static final Logger LOGGER = LogManager.getLogger(FileSteps.class);
     private static final int DEFAULT_TIMEOUT = 30;
     private final Device device;
     private final Platform platform;
@@ -48,5 +56,24 @@ public class FileSteps {
         boolean found = waits.untilTrue(() -> platform.files()
                 .readString(testContext.installRoot().resolve(file)).contains(contents), seconds, TimeUnit.SECONDS);
         assertTrue(found, "file " + file + " did not contain " + contents);
+    }
+
+    @After(order = 99899)
+    public void copyLogs(final Scenario scenario) {
+        Path logFolder = testContext.installRoot().resolve("logs");
+        if (device.exists(logFolder)) {
+            platform.files().listContents(logFolder).forEach(logFile -> {
+                byte[] bytes = platform.files().readBytes(logFile);
+                scenario.attach(bytes, "text/plain", logFile.getFileName().toString());
+                try {
+                    Files.write(testContext.testResultsPath().resolve(logFile.getFileName()), bytes);
+                } catch (IOException ie) {
+                    LOGGER.warn("Could not copy {} into the results path {}",
+                            logFile, testContext.testResultsPath(), ie);
+                }
+            });
+            // Remove the rest
+            platform.files().delete(testContext.installRoot());
+        }
     }
 }

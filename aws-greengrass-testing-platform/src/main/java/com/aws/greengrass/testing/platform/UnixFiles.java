@@ -23,6 +23,11 @@ public abstract class UnixFiles implements PlatformFiles {
     }
 
     @Override
+    public void delete(Path filePath) throws CommandExecutionException {
+        commands.execute(CommandInput.of("rm -rf " + filePath.toString()));
+    }
+
+    @Override
     public List<Path> listContents(final Path filePath) throws CommandExecutionException {
         final String[] files = commands.executeToString(CommandInput.builder()
                 .line("find").addArgs(filePath.toString(), "-type", "f")
