@@ -30,7 +30,7 @@ public class IotSteps {
         this.mapper = mapper;
     }
 
-    @Given("I create the default IoT Policy for Greengrass")
+    @Given("I create the default IoT policy for Greengrass")
     public IotPolicySpec createDefaultPolicy() {
         try {
             return createPolicy(DEFAULT_POLICY_CONFIG);

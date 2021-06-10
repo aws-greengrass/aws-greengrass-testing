@@ -16,6 +16,8 @@ public interface PlatformFiles {
         return new String(readBytes(filePath), StandardCharsets.UTF_8);
     }
 
+    void delete(Path filePath) throws  CommandExecutionException;
+
     List<Path> listContents(Path filePath) throws CommandExecutionException;
 
     default void copyFrom(Path source, Path destination) throws CopyException, CommandExecutionException {

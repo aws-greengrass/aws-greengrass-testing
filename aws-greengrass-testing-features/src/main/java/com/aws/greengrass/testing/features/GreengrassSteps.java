@@ -13,9 +13,6 @@ import io.cucumber.java.en.When;
 import javax.inject.Inject;
 import java.io.Closeable;
 import java.io.IOException;
-import java.nio.file.Files;
-
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ScenarioScoped
 public class GreengrassSteps implements Closeable {
