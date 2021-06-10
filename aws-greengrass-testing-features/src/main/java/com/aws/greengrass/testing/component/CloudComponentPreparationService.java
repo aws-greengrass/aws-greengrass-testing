@@ -4,7 +4,10 @@ import com.aws.greengrass.testing.api.ComponentPreparationService;
 import com.aws.greengrass.testing.api.model.ComponentOverrideNameVersion;
 import com.aws.greengrass.testing.api.model.ComponentOverrideVersion;
 import com.aws.greengrass.testing.resources.greengrass.GreengrassV2Lifecycle;
+import software.amazon.awssdk.arns.Arn;
+import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.greengrassv2.model.Component;
+import software.amazon.awssdk.services.greengrassv2.model.ComponentLatestVersion;
 import software.amazon.awssdk.services.greengrassv2.model.ComponentVersionListItem;
 import software.amazon.awssdk.services.greengrassv2.model.ComponentVisibilityScope;
 
@@ -16,13 +19,16 @@ import java.util.Optional;
 public class CloudComponentPreparationService implements ComponentPreparationService {
     private static final String LATEST = "LATEST";
     private final GreengrassV2Lifecycle ggv2;
+    private final Region currentRegion;
 
     @Inject
-    public CloudComponentPreparationService(final GreengrassV2Lifecycle ggv2) {
+    public CloudComponentPreparationService(final GreengrassV2Lifecycle ggv2, final Region currentRegion) {
+        this.currentRegion = currentRegion;
         this.ggv2 = ggv2;
     }
 
     private Optional<Component> pinpointComponent(ComponentOverrideNameVersion nameVersion) {
+        // We'll scan through private component override
         final Optional<Component> privateComponent = ggv2.listComponents(ComponentVisibilityScope.PRIVATE)
                 .components()
                 .stream()
@@ -31,11 +37,23 @@ public class CloudComponentPreparationService implements ComponentPreparationSer
         if (privateComponent.isPresent()) {
             return privateComponent;
         }
-        return ggv2.listComponents(ComponentVisibilityScope.PUBLIC)
-                .components()
-                .stream()
-                .filter(component -> component.componentName().equals(nameVersion.name()))
-                .findFirst();
+        // We'll assume that if occlusion is not used, we'll format the arn to public components
+        final Arn componentArn = Arn.builder()
+                .accountId("aws")
+                .partition(currentRegion.metadata().partition().id())
+                .region(currentRegion.metadata().id())
+                .service("greengrass")
+                .resource("components")
+                .build();
+        return ggv2.latestVersionFor(componentArn.toString())
+                .map(version -> Component.builder()
+                        .componentName(nameVersion.name())
+                        .arn(componentArn.toString())
+                        .latestVersion(ComponentLatestVersion.builder()
+                                .arn(version.arn())
+                                .componentVersion(version.componentVersion())
+                                .build())
+                        .build());
     }
 
     private ComponentOverrideNameVersion convert(ComponentOverrideNameVersion original, String componentVersion) {
