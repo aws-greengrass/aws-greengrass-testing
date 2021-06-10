@@ -1,6 +1,5 @@
 package com.aws.greengrass.testing.modules;
 
-import com.aws.greengrass.testing.api.util.IOUtils;
 import com.aws.greengrass.testing.model.GreengrassContext;
 import com.aws.greengrass.testing.modules.exception.ModuleProvisionException;
 import com.fasterxml.jackson.databind.JsonNode;

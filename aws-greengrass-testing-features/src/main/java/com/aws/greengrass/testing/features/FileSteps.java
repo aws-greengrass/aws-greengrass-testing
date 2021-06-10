@@ -3,7 +3,6 @@ package com.aws.greengrass.testing.features;
 import com.aws.greengrass.testing.api.device.Device;
 import com.aws.greengrass.testing.model.TestContext;
 import com.aws.greengrass.testing.platform.Platform;
-import com.google.common.io.Files;
 import io.cucumber.guice.ScenarioScoped;
 import io.cucumber.java.After;
 import io.cucumber.java.Scenario;
