@@ -5,6 +5,7 @@ import com.aws.greengrass.testing.api.model.ComponentOverrideNameVersion;
 import com.aws.greengrass.testing.api.model.ComponentOverrideVersion;
 import com.aws.greengrass.testing.api.model.ComponentOverrides;
 import com.aws.greengrass.testing.model.GreengrassContext;
+import com.aws.greengrass.testing.model.ScenarioContext;
 import com.aws.greengrass.testing.model.TestContext;
 import com.aws.greengrass.testing.resources.AWSResources;
 import com.aws.greengrass.testing.resources.greengrass.GreengrassDeploymentSpec;
@@ -45,6 +46,7 @@ public class DeploymentSteps {
     private final GreengrassContext greengrassContext;
     private final WaitSteps waits;
     private final ObjectMapper mapper;
+    private final ScenarioContext scenarioContext;
     private GreengrassDeploymentSpec deployment;
 
     @Inject
@@ -54,6 +56,7 @@ public class DeploymentSteps {
             final TestContext testContext,
             final GreengrassContext greengrassContext,
             final ComponentPreparationService componentPreparation,
+            final ScenarioContext scenarioContext,
             final WaitSteps waits,
             final ObjectMapper mapper) {
         this.resources = resources;
@@ -61,6 +64,7 @@ public class DeploymentSteps {
         this.testContext = testContext;
         this.greengrassContext = greengrassContext;
         this.componentPreparation = componentPreparation;
+        this.scenarioContext = scenarioContext;
         this.waits = waits;
         this.mapper = mapper;
     }
@@ -93,7 +97,8 @@ public class DeploymentSteps {
             });
             components.put(name, builder.build());
         });
-        LOGGER.info("Creating deployment configuration with components to {}: {}", thingSpec.thingName(), components);
+        LOGGER.debug("Creating deployment configuration with components to {}: {}",
+                thingSpec.thingName(), components);
         deployment = GreengrassDeploymentSpec.builder()
                 .deploymentName(testContext.testId().idFor("gg-deployment"))
                 .thingArn(thingSpec.resource().thingArn())
@@ -104,7 +109,8 @@ public class DeploymentSteps {
     @SuppressWarnings("unchecked")
     @When("I update my Greengrass deployment configuration, setting the component {word} configuration to:")
     public void updateDeployment(String componentName, String configurationUpdate) throws JsonProcessingException {
-        Map<String, Object> json = mapper.readValue(configurationUpdate, new TypeReference<Map<String, Object>>() {});
+        Map<String, Object> json = mapper.readValue(scenarioContext.applyInline(configurationUpdate),
+                new TypeReference<Map<String, Object>>() {});
         deployment = GreengrassDeploymentSpec.builder()
                 .from(deployment)
                 .putComponents(componentName, ComponentDeploymentSpecification.builder()
@@ -125,7 +131,7 @@ public class DeploymentSteps {
 
     @Then("the Greengrass deployment is {word} on the device after {int} {word}")
     public void deploymentSucceeds(String status, int value, String unit) throws InterruptedException {
-        TimeUnit timeUnit = TimeUnit.valueOf(unit);
+        TimeUnit timeUnit = TimeUnit.valueOf(unit.toUpperCase());
         Set<EffectiveDeploymentExecutionStatus> terminalStatuses = new HashSet<>();
         terminalStatuses.add(EffectiveDeploymentExecutionStatus.COMPLETED);
         terminalStatuses.add(EffectiveDeploymentExecutionStatus.CANCELED);
@@ -153,6 +159,8 @@ public class DeploymentSteps {
                 .orElseThrow(() -> new IllegalStateException("Could not find a deployment " + deploymentName));
         return ggv2.listDeviceDeployments(testContext.testId().idFor("ggc-thing")).effectiveDeployments().stream()
                 .filter(deployment -> deployment.deploymentId().equals(ggcDeployment.resource().deploymentId()))
+                .peek(deployment -> LOGGER.debug("Greengrass Deployment {} is in {}",
+                        deployment.deploymentId(), deployment.coreDeviceExecutionStatusAsString()))
                 .findFirst()
                 .map(EffectiveDeployment::coreDeviceExecutionStatus);
     }
