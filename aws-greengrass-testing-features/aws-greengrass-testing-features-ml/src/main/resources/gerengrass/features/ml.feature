@@ -8,9 +8,9 @@ Feature: Greengrass V2 Machine Learning
   Scenario: I can receive inference results on an MQTT topic after installing aws.greengrass.DLRImageClassification
     Given I subscribe to the following IoT MQTT topics
       | image-classification |
-    When I create a Greengrass deployment configuration with components
+    And I create a Greengrass deployment with components
       | aws.greengrass.DLRImageClassification | LATEST |
-    And I update my deployment configuration, setting the component aws.greengrass.DLRImageClassification configuration:
+    When I update my Greengrass deployment configuration, setting the component aws.greengrass.DLRImageClassification configuration to:
       """
         {
           "MERGE": {
@@ -28,5 +28,5 @@ Feature: Greengrass V2 Machine Learning
           }
         }
       """
-    And I deploy the deployment configuration
+    And I deploy the Greengrass deployment configuration
     Then the Greengrass deployment is COMPLETED on the device after 15 minutes

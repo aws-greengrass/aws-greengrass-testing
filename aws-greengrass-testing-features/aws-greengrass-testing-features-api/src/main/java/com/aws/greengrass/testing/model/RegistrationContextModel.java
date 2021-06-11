@@ -6,5 +6,10 @@ import org.immutables.value.Value;
 @TestingModel
 @Value.Immutable
 interface RegistrationContextModel {
+    @Value.Default
+    default int connectionPort() {
+        return 8443;
+    }
+
     String rootCA();
 }

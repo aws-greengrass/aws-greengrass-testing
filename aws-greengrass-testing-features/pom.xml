@@ -15,6 +15,7 @@
     <modules>
         <module>aws-greengrass-testing-features-api</module>
         <module>aws-greengrass-testing-features-ml</module>
+        <module>aws-greengrass-testing-features-mqtt</module>
     </modules>
 
 </project>
