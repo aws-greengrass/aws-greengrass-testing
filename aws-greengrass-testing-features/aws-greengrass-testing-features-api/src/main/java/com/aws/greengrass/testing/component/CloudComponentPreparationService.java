@@ -43,7 +43,7 @@ public class CloudComponentPreparationService implements ComponentPreparationSer
                 .partition(currentRegion.metadata().partition().id())
                 .region(currentRegion.metadata().id())
                 .service("greengrass")
-                .resource("components")
+                .resource("components:" + nameVersion.name())
                 .build();
         return ggv2.latestVersionFor(componentArn.toString())
                 .map(version -> Component.builder()

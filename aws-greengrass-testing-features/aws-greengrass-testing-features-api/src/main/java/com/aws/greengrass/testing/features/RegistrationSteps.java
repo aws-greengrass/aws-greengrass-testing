@@ -96,7 +96,7 @@ public class RegistrationSteps {
                         .build())
                 .build());
 
-        try (InputStream input = getClass().getResourceAsStream(DEFAULT_CONFIG)) {
+        try (InputStream input = getClass().getResourceAsStream(configFile)) {
             setupConfig(
                     thingSpec.resource(),
                     thingSpec.roleAliasSpec(),
@@ -138,7 +138,7 @@ public class RegistrationSteps {
         config = config.replace("{nucleus_version}", greengrassContext.version());
         config = config.replace("{env_stage}", resourcesContext.envStage());
         config = config.replace("{posix_user}", testContext.currentUser());
-        config = config.replace("{data_plane_port}", "8443");
+        config = config.replace("{data_plane_port}", Integer.toString(registrationContext.connectionPort()));
 
         Files.write(testContext.testDirectory().resolve("rootCA.pem"), registrationContext.rootCA().getBytes(StandardCharsets.UTF_8));
         Files.write(configFilePath.resolve("config.yaml"), config.getBytes(StandardCharsets.UTF_8));

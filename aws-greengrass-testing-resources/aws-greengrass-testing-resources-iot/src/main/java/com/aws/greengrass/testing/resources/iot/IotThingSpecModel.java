@@ -23,6 +23,7 @@ interface IotThingSpecModel extends ResourceSpec<IotClient, IotThing> {
 
     String thingName();
 
+    @Nullable
     IotRoleAliasSpec roleAliasSpec();
 
     @Nullable
@@ -38,29 +39,33 @@ interface IotThingSpecModel extends ResourceSpec<IotClient, IotThing> {
                 .thingName(thingName())
                 .build());
 
-        IotRoleAliasSpec updatedRoleAlias = resources.create(roleAliasSpec());
-
+        IotRoleAliasSpec updatedRoleAlias = null;
+        IotPolicySpec assumeRolePolicy = null;
         IotCertificate certificate = null;
-        if (createCertificate()) {
-            // TODO: consider making a helper for this
-            IotPolicySpec assumeRolePolicy = resources.create(IotPolicySpec.builder()
+
+        if (roleAliasSpec() != null) {
+            updatedRoleAlias = resources.create(roleAliasSpec());
+            assumeRolePolicy = resources.create(IotPolicySpec.builder()
                     .policyName(policySpec().policyName() + "-credentials")
                     .policyDocument("{\"Version\":\"2012-10-17\",\"Statement\":[{" +
                             "\"Effect\":\"Allow\"," +
                             "\"Action\":\"iot:AssumeRoleWithCertificate\"," +
                             "\"Resource\":\"" + updatedRoleAlias.resource().roleAliasArn() + "\"}]}")
                     .build());
+        }
 
+        if (createCertificate()) {
             certificate = resources.create(IotCertificateSpec.builder()
                     .thingName(thingName())
                     .policy(resources.create(policySpec()))
                     .build())
                     .resource();
-
-            client.attachPolicy(AttachPolicyRequest.builder()
-                    .policyName(assumeRolePolicy.policyName())
-                    .target(certificate.certificateArn())
-                    .build());
+            if (assumeRolePolicy != null) {
+                client.attachPolicy(AttachPolicyRequest.builder()
+                        .policyName(assumeRolePolicy.policyName())
+                        .target(certificate.certificateArn())
+                        .build());
+            }
         }
 
         return IotThingSpec.builder()

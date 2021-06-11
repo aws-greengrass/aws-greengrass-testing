@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Objects;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -56,7 +57,9 @@ public class ExampleSteps implements Closeable {
     @After
     @Override
     public void close() throws IOException {
-        Files.delete(testFile);
-        Files.delete(testDirectory);
+        if (Objects.nonNull(testFile)) {
+            Files.deleteIfExists(testFile);
+        }
+        Files.deleteIfExists(testDirectory);
     }
 }

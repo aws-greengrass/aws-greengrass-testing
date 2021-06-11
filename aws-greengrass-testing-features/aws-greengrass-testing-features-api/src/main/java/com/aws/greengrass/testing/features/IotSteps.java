@@ -12,6 +12,7 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Optional;
 
 @ScenarioScoped
 public class IotSteps {
@@ -32,20 +33,28 @@ public class IotSteps {
 
     @Given("I create the default IoT policy for Greengrass")
     public IotPolicySpec createDefaultPolicy() {
+        return createDefaultPolicy(null);
+    }
+
+    @Given("I create an IoT policy from {word}")
+    public IotPolicySpec createPolicy(String config) throws IOException {
+        return createPolicy(config, null);
+    }
+
+    public IotPolicySpec createDefaultPolicy(String policyNameOverride) {
         try {
-            return createPolicy(DEFAULT_POLICY_CONFIG);
+            return createPolicy(DEFAULT_POLICY_CONFIG, policyNameOverride);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    @Given("I create an IoT policy from {word}")
-    public IotPolicySpec createPolicy(String config) throws IOException {
+    public IotPolicySpec createPolicy(String config, String policyNameOverride) throws IOException {
         try (InputStream in = getClass().getResourceAsStream(config)) {
             IotPolicySpec spec = mapper.readValue(in, IotPolicySpec.class);
             return resources.create(IotPolicySpec.builder()
                     .from(spec)
-                    .policyName(testId.idFor(spec.policyName()))
+                    .policyName(testId.idFor(Optional.ofNullable(policyNameOverride).orElseGet(spec::policyName)))
                     .build());
         }
     }

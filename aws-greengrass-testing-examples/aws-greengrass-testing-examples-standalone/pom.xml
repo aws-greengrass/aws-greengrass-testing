@@ -51,7 +51,7 @@
         </dependency>
         <dependency>
             <groupId>com.aws.greengrass</groupId>
-            <artifactId>aws-greengrass-testing-features</artifactId>
+            <artifactId>aws-greengrass-testing-features-ml</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
