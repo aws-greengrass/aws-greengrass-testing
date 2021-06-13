@@ -6,14 +6,16 @@ import com.aws.greengrass.testing.resources.ResourceSpec;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import org.immutables.value.Value;
 import software.amazon.awssdk.services.iam.IamClient;
-import software.amazon.awssdk.services.iam.model.*;
+import software.amazon.awssdk.services.iam.model.AttachRolePolicyRequest;
+import software.amazon.awssdk.services.iam.model.CreateRoleRequest;
+import software.amazon.awssdk.services.iam.model.CreateRoleResponse;
 
 import javax.annotation.Nullable;
 
 @TestingModel
 @Value.Immutable
 @JsonDeserialize(builder = IamRoleSpec.Builder.class)
-interface IamRoleSpecModel extends ResourceSpec<IamClient, IamRole> {
+interface IamRoleSpecModel extends ResourceSpec<IamClient, IamRole>, IamTaggingMixin {
     @Nullable
     String policyArn();
     String roleName();
@@ -25,6 +27,7 @@ interface IamRoleSpecModel extends ResourceSpec<IamClient, IamRole> {
         CreateRoleResponse createdRole = client.createRole(CreateRoleRequest.builder()
                 .roleName(roleName())
                 .assumeRolePolicyDocument(trustDocument())
+                .tags(convertTags(resources.generateResourceTags()))
                 .build());
 
         IamPolicySpec policySpec = resources.create(IamPolicySpec.builder()

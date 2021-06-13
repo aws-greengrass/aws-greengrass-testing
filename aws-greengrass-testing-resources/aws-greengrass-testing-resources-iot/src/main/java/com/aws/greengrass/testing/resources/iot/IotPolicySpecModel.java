@@ -15,7 +15,7 @@ import javax.annotation.Nullable;
 @TestingModel
 @Value.Immutable
 @JsonDeserialize(builder = IotPolicySpec.Builder.class)
-interface IotPolicySpecModel extends ResourceSpec<IotClient, IotPolicy> {
+interface IotPolicySpecModel extends ResourceSpec<IotClient, IotPolicy>, IotTaggingMixin {
     String policyName();
     String policyDocument();
 
@@ -28,6 +28,7 @@ interface IotPolicySpecModel extends ResourceSpec<IotClient, IotPolicy> {
         CreatePolicyResponse response = client.createPolicy(CreatePolicyRequest.builder()
                 .policyDocument(policyDocument())
                 .policyName(policyName())
+                .tags(convertTags(resources.generateResourceTags()))
                 .build());
         return IotPolicySpec.builder()
                 .from(this)

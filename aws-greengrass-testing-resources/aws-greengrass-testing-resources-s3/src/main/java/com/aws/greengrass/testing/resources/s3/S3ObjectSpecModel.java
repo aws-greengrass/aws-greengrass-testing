@@ -8,12 +8,13 @@ import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
+import software.amazon.awssdk.services.s3.model.Tagging;
 
 import javax.annotation.Nullable;
 
 @TestingModel
 @Value.Immutable
-interface S3ObjectSpecModel extends ResourceSpec<S3Client, S3Object> {
+interface S3ObjectSpecModel extends ResourceSpec<S3Client, S3Object>, S3TaggingMixin {
     String key();
     String bucket();
     RequestBody content();
@@ -27,6 +28,9 @@ interface S3ObjectSpecModel extends ResourceSpec<S3Client, S3Object> {
         final PutObjectRequest putRequest = PutObjectRequest.builder()
                 .bucket(bucket())
                 .key(key())
+                .tagging(Tagging.builder()
+                        .tagSet(convertTags(resources.generateResourceTags()))
+                        .build())
                 .build();
         final PutObjectResponse putResponse = client.putObject(putRequest, content());
 

@@ -12,7 +12,7 @@ import javax.annotation.Nullable;
 
 @TestingModel
 @Value.Immutable
-interface IamPolicySpecModel extends ResourceSpec<IamClient, IamPolicy> {
+interface IamPolicySpecModel extends ResourceSpec<IamClient, IamPolicy>, IamTaggingMixin {
     String policyName();
     String policyDocument();
 
@@ -21,6 +21,7 @@ interface IamPolicySpecModel extends ResourceSpec<IamClient, IamPolicy> {
         CreatePolicyResponse createdPolicy = client.createPolicy(CreatePolicyRequest.builder()
                 .policyDocument(policyDocument())
                 .policyName(policyName())
+                .tags(convertTags(resources.generateResourceTags()))
                 .build());
         return IamPolicySpec.builder()
                 .from(this)

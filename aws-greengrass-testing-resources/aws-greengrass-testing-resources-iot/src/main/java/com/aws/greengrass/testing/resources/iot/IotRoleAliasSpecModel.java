@@ -13,7 +13,7 @@ import javax.annotation.Nullable;
 
 @TestingModel
 @Value.Immutable
-interface IotRoleAliasSpecModel extends ResourceSpec<IotClient, IotRoleAlias> {
+interface IotRoleAliasSpecModel extends ResourceSpec<IotClient, IotRoleAlias>, IotTaggingMixin {
     String name();
     IamRole iamRole();
 
@@ -22,6 +22,7 @@ interface IotRoleAliasSpecModel extends ResourceSpec<IotClient, IotRoleAlias> {
         CreateRoleAliasResponse createdAlias = client.createRoleAlias(CreateRoleAliasRequest.builder()
                 .roleAlias(name())
                 .roleArn(iamRole().roleArn())
+                .tags(convertTags(resources.generateResourceTags()))
                 .build());
         return IotRoleAliasSpec.builder()
                 .from(this)

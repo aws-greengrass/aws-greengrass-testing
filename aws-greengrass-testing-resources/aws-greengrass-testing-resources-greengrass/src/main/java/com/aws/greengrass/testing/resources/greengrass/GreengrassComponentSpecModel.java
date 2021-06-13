@@ -30,6 +30,7 @@ interface GreengrassComponentSpecModel extends ResourceSpec<GreengrassV2Client, 
         CreateComponentVersionResponse created = client.createComponentVersion(CreateComponentVersionRequest.builder()
                 .inlineRecipe(inlineRecipe())
                 .lambdaFunction(lambdaFunction())
+                .tags(resources.generateResourceTags())
                 .build());
         return GreengrassComponentSpec.builder()
                 .from(this)
