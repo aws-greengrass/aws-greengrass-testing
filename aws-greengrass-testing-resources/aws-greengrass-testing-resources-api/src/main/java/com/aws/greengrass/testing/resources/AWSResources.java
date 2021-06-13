@@ -1,5 +1,6 @@
 package com.aws.greengrass.testing.resources;
 
+import com.aws.greengrass.testing.api.model.CleanupContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -18,9 +19,15 @@ import java.util.stream.StreamSupport;
 public class AWSResources implements Closeable {
     private static final Logger LOGGER = LogManager.getLogger(AWSResources.class);
     private final Set<AWSResourceLifecycle> lifecycles;
+    private final CleanupContext cleanupContext;
+
+    public AWSResources(Set<AWSResourceLifecycle> lifecycles, CleanupContext cleanupContext) {
+        this.lifecycles = lifecycles;
+        this.cleanupContext = cleanupContext;
+    }
 
     public AWSResources(Set<AWSResourceLifecycle> lifecycles) {
-        this.lifecycles = lifecycles;
+        this(lifecycles, CleanupContext.builder().build());
     }
 
     public static AWSResources loadFromSystem() {
@@ -78,6 +85,9 @@ public class AWSResources implements Closeable {
     public void close() {
         for (AWSResourceLifecycle<?> lifecycle : lifecycles) {
             try {
+                if (cleanupContext.persistAWSResources()) {
+                    lifecycle.persist();
+                }
                 lifecycle.close();
             } catch (IOException ie) {
                 LOGGER.error("Failed to clean resources from {}", lifecycle, ie);

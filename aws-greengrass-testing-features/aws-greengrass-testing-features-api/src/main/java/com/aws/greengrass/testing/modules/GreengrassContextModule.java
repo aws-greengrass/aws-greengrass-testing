@@ -1,5 +1,6 @@
 package com.aws.greengrass.testing.modules;
 
+import com.aws.greengrass.testing.api.model.CleanupContext;
 import com.aws.greengrass.testing.model.GreengrassContext;
 import com.aws.greengrass.testing.modules.exception.ModuleProvisionException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -61,7 +62,9 @@ public class GreengrassContextModule extends AbstractModule {
 
     @Provides
     @Singleton
-    static GreengrassContext providesNucleusContext(@Named(JacksonModule.YAML) ObjectMapper mapper) {
+    static GreengrassContext providesNucleusContext(
+            @Named(JacksonModule.YAML) ObjectMapper mapper,
+            final CleanupContext cleanupContext) {
         try {
             final Path archivePath = Paths.get(Objects.requireNonNull(System.getProperty(NUCLEUS_ARCHIVE_PATH),
                     "Parameter " + NUCLEUS_ARCHIVE_PATH + " is required!"));
@@ -71,6 +74,7 @@ public class GreengrassContextModule extends AbstractModule {
                     .version(System.getProperty(NUCLEUS_VERSION, DEFAULT_NUCLEUS_VERSION))
                     .archivePath(archivePath)
                     .tempDirectory(tempDirectory)
+                    .cleanupContext(cleanupContext)
                     .build();
         } catch (NullPointerException | IOException ie) {
             throw new ModuleProvisionException(ie);
