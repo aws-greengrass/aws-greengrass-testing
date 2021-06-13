@@ -37,9 +37,7 @@ public abstract class AbstractAWSResourceLifecycle<C> implements AWSResourceLife
         ResourceSpec<C,R> update = spec.create(client, resources);
         // Prepend so as to reverse the deletion
         specs.add(0, update);
-        LOGGER.info("Created {} in {}",
-                update.resource().getClass().getSimpleName(),
-                getClass().getSimpleName().split("\\$", 2)[0]);
+        LOGGER.info("Created {} in {}", update.resource().getClass().getSimpleName(), displayName());
         return (U) update;
     }
 
@@ -54,18 +52,23 @@ public abstract class AbstractAWSResourceLifecycle<C> implements AWSResourceLife
     }
 
     @Override
+    public void persist() {
+        // TODO: dump to a place where it can be deserialized for later.
+        specs.clear();
+        LOGGER.info("Persisting resources tracked in {}", displayName());
+    }
+
+    @Override
     public void close() {
         final ListIterator<ResourceSpec<C, ? extends AWSResource<C>>> iterator = specs.listIterator();
         while (iterator.hasNext()) {
             final ResourceSpec<C, ? extends AWSResource<C>> spec = iterator.next();
             try {
                 spec.resource().remove(client);
-                LOGGER.info("Removed {} in {}",
-                        spec.resource().getClass().getSimpleName(),
-                        getClass().getSimpleName().split("\\$", 2)[0]);
+                LOGGER.info("Removed {} in {}", spec.resource().getClass().getSimpleName(), displayName());
             } catch (Throwable ex) {
                 // Don't prevent SDK failures from removing other resources being tracked.
-                LOGGER.error("Failed to remove {} in {}", spec.resource(), getClass().getSimpleName(), ex);
+                LOGGER.error("Failed to remove {} in {}", spec.resource(), displayName(), ex);
             }
             iterator.remove();
         }
@@ -84,5 +87,9 @@ public abstract class AbstractAWSResourceLifecycle<C> implements AWSResourceLife
     @Override
     public int hashCode() {
         return Objects.hash(client, specClasses, uuid);
+    }
+
+    private String displayName() {
+        return getClass().getSimpleName().split("\\$", 2)[0];
     }
 }

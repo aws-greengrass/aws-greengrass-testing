@@ -1,4 +1,4 @@
-package com.aws.greengrass.testing.modules;
+package com.aws.greengrass.testing.modules.model;
 
 import com.aws.greengrass.testing.api.model.ProxyConfig;
 import com.aws.greengrass.testing.api.model.TestingModel;

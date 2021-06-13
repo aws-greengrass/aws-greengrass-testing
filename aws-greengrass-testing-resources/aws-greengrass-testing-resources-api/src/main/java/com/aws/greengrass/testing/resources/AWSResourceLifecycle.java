@@ -12,5 +12,7 @@ public interface AWSResourceLifecycle<Client> extends Closeable {
 
     <U extends ResourceSpec<Client, R>, R extends AWSResource<Client>> Stream<U> trackingSpecs(Class<U> specClass);
 
+    void persist();
+
     void close() throws IOException;
 }

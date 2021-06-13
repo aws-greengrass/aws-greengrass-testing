@@ -47,22 +47,32 @@ public class DefaultGreengrass implements Greengrass {
 
     @Override
     public void start() {
-        Path loaderPath = testContext.installRoot().resolve("alts/current/distro/bin/loader");
-        platform.commands().makeExecutable(testContext.installRoot().resolve(loaderPath));
-        greengrassProcess = platform.commands().executeInBackground(CommandInput.builder()
-                .workingDirectory(testContext.installRoot())
-                .line(loaderPath.toString())
-                .timeout(TIMEOUT_IN_SECONDS)
-                .build());
-        LOGGER.info("Starting greengrass on pid {}", greengrassProcess);
+        if (isRunning()) {
+            Path loaderPath = testContext.installRoot().resolve("alts/current/distro/bin/loader");
+            platform.commands().makeExecutable(testContext.installRoot().resolve(loaderPath));
+            greengrassProcess = platform.commands().executeInBackground(CommandInput.builder()
+                    .workingDirectory(testContext.installRoot())
+                    .line(loaderPath.toString())
+                    .timeout(TIMEOUT_IN_SECONDS)
+                    .build());
+        }
+        LOGGER.info("Starting Greengrass on pid {}", greengrassProcess);
+    }
+
+    private boolean isRunning() {
+        return greengrassProcess != 0;
     }
 
     @Override
     synchronized public void stop() {
         try {
-            if (greengrassProcess != 0) {
+            if (testContext.cleanupContext().persistInstalledSofware()) {
+                LOGGER.info("Leaving Greengrass running on pid: {}", greengrassProcess);
+                greengrassProcess = 0;
+            }
+            if (isRunning()) {
                 platform.commands().killAll(greengrassProcess);
-                LOGGER.info("Stopped greengrass on pid {}", greengrassProcess);
+                LOGGER.info("Stopped Greengrass on pid {}", greengrassProcess);
                 greengrassProcess = 0;
             }
         } catch (CommandExecutionException e) {

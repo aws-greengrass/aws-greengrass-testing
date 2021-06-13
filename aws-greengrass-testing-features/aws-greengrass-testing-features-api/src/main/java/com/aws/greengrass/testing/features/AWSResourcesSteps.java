@@ -30,6 +30,6 @@ public class AWSResourcesSteps implements Closeable {
     public void close() throws IOException {
         resources.close();
         testContext.close();
-        LOGGER.info("Successfully removed externally created resourcess");
+        LOGGER.info("Successfully removed externally created resources");
     }
 }

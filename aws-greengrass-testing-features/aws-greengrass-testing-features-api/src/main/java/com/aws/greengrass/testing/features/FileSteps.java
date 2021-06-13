@@ -72,8 +72,10 @@ public class FileSteps {
                             logFile, testContext.testResultsPath(), ie);
                 }
             });
-            // Remove the rest
-            platform.files().delete(testContext.installRoot());
+            if (!testContext.cleanupContext().persistInstalledSofware()) {
+                // Remove the rest
+                platform.files().delete(testContext.installRoot());
+            }
         }
     }
 }

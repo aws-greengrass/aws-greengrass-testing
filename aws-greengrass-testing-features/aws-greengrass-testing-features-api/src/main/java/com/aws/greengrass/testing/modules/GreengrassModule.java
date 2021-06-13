@@ -3,6 +3,7 @@ package com.aws.greengrass.testing.modules;
 import com.aws.greengrass.testing.DefaultGreengrass;
 import com.aws.greengrass.testing.api.Greengrass;
 import com.aws.greengrass.testing.model.TestContext;
+import com.aws.greengrass.testing.modules.model.AWSResourcesContext;
 import com.aws.greengrass.testing.platform.Platform;
 import com.google.auto.service.AutoService;
 import com.google.inject.AbstractModule;

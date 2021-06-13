@@ -1,5 +1,6 @@
 package com.aws.greengrass.testing.model;
 
+import com.aws.greengrass.testing.api.model.CleanupContext;
 import com.aws.greengrass.testing.api.model.TestId;
 import com.aws.greengrass.testing.api.model.TestingModel;
 import com.aws.greengrass.testing.api.util.FileUtils;
@@ -17,6 +18,7 @@ interface TestContextModel extends Closeable {
     TestId testId();
     Path testDirectory();
     Path testResultsPath();
+    CleanupContext cleanupContext();
 
     @Value.Default
     default String logLevel() {
@@ -40,6 +42,8 @@ interface TestContextModel extends Closeable {
 
     @Override
     default void close() throws IOException {
-        FileUtils.recursivelyDelete(testDirectory());
+        if (!cleanupContext().persistGeneratedFiles()) {
+            FileUtils.recursivelyDelete(testDirectory());
+        }
     }
 }

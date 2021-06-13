@@ -1,5 +1,6 @@
 package com.aws.greengrass.testing.model;
 
+import com.aws.greengrass.testing.api.model.CleanupContext;
 import com.aws.greengrass.testing.api.model.TestingModel;
 import com.aws.greengrass.testing.api.util.FileUtils;
 import org.immutables.value.Value;
@@ -17,12 +18,16 @@ interface GreengrassContextModel extends Closeable {
 
     Path tempDirectory();
 
+    CleanupContext cleanupContext();
+
     default Path greengrassPath() {
         return tempDirectory().resolve("greengrass");
     }
 
     @Override
     default void close() throws IOException {
-        FileUtils.recursivelyDelete(tempDirectory());
+        if (!cleanupContext().persistGeneratedFiles()) {
+            FileUtils.recursivelyDelete(tempDirectory());
+        }
     }
 }

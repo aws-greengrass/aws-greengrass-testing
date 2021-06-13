@@ -68,7 +68,8 @@ public class GreengrassSteps implements Closeable {
     }
 
     @After(order = 99999)
-    public void close() {
+    public void close() throws IOException {
         stop();
+        greengrassContext.close();
     }
 }
