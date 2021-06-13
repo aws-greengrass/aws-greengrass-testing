@@ -7,12 +7,14 @@ import org.immutables.value.Value;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
 import software.amazon.awssdk.services.s3.model.CreateBucketResponse;
+import software.amazon.awssdk.services.s3.model.PutBucketTaggingRequest;
+import software.amazon.awssdk.services.s3.model.Tagging;
 
 import javax.annotation.Nullable;
 
 @TestingModel
 @Value.Immutable
-interface S3BucketSpecModel extends ResourceSpec<S3Client, S3Bucket> {
+interface S3BucketSpecModel extends ResourceSpec<S3Client, S3Bucket>, S3TaggingMixin {
     String bucketName();
 
     @Nullable
@@ -23,6 +25,12 @@ interface S3BucketSpecModel extends ResourceSpec<S3Client, S3Bucket> {
     default S3BucketSpec create(S3Client client, AWSResources resources) {
         CreateBucketResponse response = client.createBucket(CreateBucketRequest.builder()
                 .bucket(bucketName())
+                .build());
+        client.putBucketTagging(PutBucketTaggingRequest.builder()
+                .bucket(bucketName())
+                .tagging(Tagging.builder()
+                        .tagSet(convertTags(resources.generateResourceTags()))
+                        .build())
                 .build());
         return S3BucketSpec.builder()
                 .from(this)

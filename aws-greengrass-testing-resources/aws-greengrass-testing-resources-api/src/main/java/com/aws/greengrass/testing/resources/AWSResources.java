@@ -1,17 +1,22 @@
 package com.aws.greengrass.testing.resources;
 
 import com.aws.greengrass.testing.api.model.CleanupContext;
+import com.aws.greengrass.testing.api.model.TestId;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.Spliterator;
 import java.util.Spliterators;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -20,14 +25,23 @@ public class AWSResources implements Closeable {
     private static final Logger LOGGER = LogManager.getLogger(AWSResources.class);
     private final Set<AWSResourceLifecycle> lifecycles;
     private final CleanupContext cleanupContext;
+    private final TestId testId;
 
-    public AWSResources(Set<AWSResourceLifecycle> lifecycles, CleanupContext cleanupContext) {
+    public AWSResources(
+            Set<AWSResourceLifecycle> lifecycles,
+            CleanupContext cleanupContext,
+            TestId testId) {
         this.lifecycles = lifecycles;
         this.cleanupContext = cleanupContext;
+        this.testId = testId;
     }
 
     public AWSResources(Set<AWSResourceLifecycle> lifecycles) {
-        this(lifecycles, CleanupContext.builder().build());
+        this(lifecycles,
+                CleanupContext.builder().build(),
+                TestId.builder()
+                        .id(UUID.randomUUID().toString())
+                        .build());
     }
 
     public static AWSResources loadFromSystem() {
@@ -45,6 +59,13 @@ public class AWSResources implements Closeable {
                 .map(lifecycleType::cast)
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Could not find " + lifecycleType));
+    }
+
+    public Map<String, String> generateResourceTags() {
+        return Collections.unmodifiableMap(new HashMap<String, String>() {{
+            put("Testing", "GG");
+            put("TestId", testId.id());
+        }});
     }
 
     @SuppressWarnings("unchecked")

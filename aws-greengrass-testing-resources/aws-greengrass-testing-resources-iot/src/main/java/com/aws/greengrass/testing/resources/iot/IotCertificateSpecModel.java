@@ -9,13 +9,14 @@ import software.amazon.awssdk.services.iot.model.AttachPolicyRequest;
 import software.amazon.awssdk.services.iot.model.AttachThingPrincipalRequest;
 import software.amazon.awssdk.services.iot.model.CreateKeysAndCertificateRequest;
 import software.amazon.awssdk.services.iot.model.CreateKeysAndCertificateResponse;
+import software.amazon.awssdk.services.iot.model.TagResourceRequest;
 
 import javax.annotation.Nullable;
 import java.util.Optional;
 
 @TestingModel
 @Value.Immutable
-interface IotCertificateSpecModel extends ResourceSpec<IotClient, IotCertificate> {
+interface IotCertificateSpecModel extends ResourceSpec<IotClient, IotCertificate>, IotTaggingMixin {
     @Value.Default
     default boolean active() {
         return true;
@@ -30,6 +31,11 @@ interface IotCertificateSpecModel extends ResourceSpec<IotClient, IotCertificate
     default IotCertificateSpec create(IotClient client, AWSResources resources) {
         CreateKeysAndCertificateResponse created = client.createKeysAndCertificate(CreateKeysAndCertificateRequest.builder()
                 .setAsActive(active())
+                .build());
+
+        client.tagResource(TagResourceRequest.builder()
+                .resourceArn(created.certificateArn())
+                .tags(convertTags(resources.generateResourceTags()))
                 .build());
 
         client.attachThingPrincipal(AttachThingPrincipalRequest.builder()

@@ -12,7 +12,7 @@ import javax.annotation.Nullable;
 
 @TestingModel
 @Value.Immutable
-interface IotThingGroupSpecModel extends ResourceSpec<IotClient, IotThingGroup> {
+interface IotThingGroupSpecModel extends ResourceSpec<IotClient, IotThingGroup>, IotTaggingMixin {
     String groupName();
     @Nullable
     String parentGroupName();
@@ -22,6 +22,7 @@ interface IotThingGroupSpecModel extends ResourceSpec<IotClient, IotThingGroup> 
         CreateThingGroupResponse createdGroup = client.createThingGroup(CreateThingGroupRequest.builder()
                 .parentGroupName(parentGroupName())
                 .thingGroupName(groupName())
+                .tags(convertTags(resources.generateResourceTags()))
                 .build());
         return IotThingGroupSpec.builder()
                 .from(this)

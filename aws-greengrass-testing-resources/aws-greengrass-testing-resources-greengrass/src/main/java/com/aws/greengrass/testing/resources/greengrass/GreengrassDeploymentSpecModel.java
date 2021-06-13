@@ -78,6 +78,7 @@ interface GreengrassDeploymentSpecModel extends ResourceSpec<GreengrassV2Client,
                 .components(components())
                 .deploymentPolicies(deploymentPolicies())
                 .iotJobConfiguration(deploymentJobConfiguration())
+                .tags(resources.generateResourceTags())
                 .build());
         return GreengrassDeploymentSpec.builder()
                 .from(this)

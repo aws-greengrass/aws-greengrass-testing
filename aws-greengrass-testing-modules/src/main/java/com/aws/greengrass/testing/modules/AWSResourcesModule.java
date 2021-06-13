@@ -2,6 +2,7 @@ package com.aws.greengrass.testing.modules;
 
 import com.aws.greengrass.testing.api.model.CleanupContext;
 import com.aws.greengrass.testing.api.model.ProxyConfig;
+import com.aws.greengrass.testing.api.model.TestId;
 import com.aws.greengrass.testing.modules.model.AWSResourcesContext;
 import com.aws.greengrass.testing.resources.AWSResourceLifecycle;
 import com.aws.greengrass.testing.resources.AWSResources;
@@ -31,8 +32,11 @@ public class AWSResourcesModule extends AbstractModule {
 
     @Provides
     @ScenarioScoped
-    static AWSResources providesAWSResources(Set<AWSResourceLifecycle> lifecycles, CleanupContext cleanupContext) {
-        return new AWSResources(lifecycles, cleanupContext);
+    static AWSResources providesAWSResources(
+            Set<AWSResourceLifecycle> lifecycles,
+            CleanupContext cleanupContext,
+            TestId testId) {
+        return new AWSResources(lifecycles, cleanupContext, testId);
     }
 
     @Provides
