@@ -16,6 +16,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ScenarioScoped
@@ -45,17 +46,29 @@ public class FileSteps {
                 "file " + file + " does not exist in " + testContext.installRoot());
     }
 
-    @Then("the file {word} on device contains {word}")
+    @Then("the file {word} on device contains {string}")
     public void contains(String file, String contents) throws InterruptedException {
-        containsTimeout(file, contents, DEFAULT_TIMEOUT);
+        containsTimeout(file, contents, DEFAULT_TIMEOUT, TimeUnit.SECONDS.name());
     }
 
-    @Then("the file {word} on device contains {word} within {int} seconds")
-    public void containsTimeout(String file, String contents, int seconds) throws InterruptedException {
+    @Then("the file {word} on device contains {string} within {int} {word}")
+    public void containsTimeout(String file, String contents, int value, String unit) throws InterruptedException {
         checkFileExists(file);
+        TimeUnit timeUnit = TimeUnit.valueOf(unit.toUpperCase());
         boolean found = waits.untilTrue(() -> platform.files()
-                .readString(testContext.installRoot().resolve(file)).contains(contents), seconds, TimeUnit.SECONDS);
+                .readString(testContext.installRoot().resolve(file)).contains(contents), value, timeUnit);
         assertTrue(found, "file " + file + " did not contain " + contents);
+    }
+
+    @Then("the {word} log on the device contains the line {string} within {int} {word}")
+    public void logContains(String component, String line, int value, String unit) throws InterruptedException {
+        containsTimeout("logs/" + component + ".log", line, value, unit);
+    }
+
+    @Then("the {word} log on the device not contains the line {string}")
+    public void logNotContains(String component, String line) {
+        assertFalse(platform.files().readString(testContext.installRoot().resolve("logs").resolve(component + ".log"))
+                .contains(line), component + " log contains '" + line + "'");
     }
 
     @After(order = 99899)

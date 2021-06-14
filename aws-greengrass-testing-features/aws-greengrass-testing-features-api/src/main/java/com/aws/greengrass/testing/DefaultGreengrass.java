@@ -47,7 +47,7 @@ public class DefaultGreengrass implements Greengrass {
 
     @Override
     public void start() {
-        if (isRunning()) {
+        if (!isRunning()) {
             Path loaderPath = testContext.installRoot().resolve("alts/current/distro/bin/loader");
             platform.commands().makeExecutable(testContext.installRoot().resolve(loaderPath));
             greengrassProcess = platform.commands().executeInBackground(CommandInput.builder()
