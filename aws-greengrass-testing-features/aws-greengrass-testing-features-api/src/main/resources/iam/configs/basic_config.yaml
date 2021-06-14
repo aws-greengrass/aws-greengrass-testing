@@ -30,5 +30,11 @@ trustDocument: >
         "Service": "credentials.iot.amazonaws.com"
       },
       "Action": "sts:AssumeRole"
+    }, {
+      "Effect": "Allow",
+      "Principal": {
+          "Service": "sagemaker.amazonaws.com"
+      },
+      "Action": "sts:AssumeRole"
     }]
   }

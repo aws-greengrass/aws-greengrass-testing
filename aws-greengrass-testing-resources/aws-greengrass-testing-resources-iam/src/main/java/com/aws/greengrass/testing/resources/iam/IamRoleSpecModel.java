@@ -9,6 +9,8 @@ import software.amazon.awssdk.services.iam.IamClient;
 import software.amazon.awssdk.services.iam.model.AttachRolePolicyRequest;
 import software.amazon.awssdk.services.iam.model.CreateRoleRequest;
 import software.amazon.awssdk.services.iam.model.CreateRoleResponse;
+import software.amazon.awssdk.services.iam.model.UpdateAssumeRolePolicyRequest;
+import software.amazon.awssdk.services.iam.model.UpdateRoleRequest;
 
 import javax.annotation.Nullable;
 

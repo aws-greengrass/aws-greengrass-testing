@@ -109,6 +109,7 @@ public class DeploymentSteps {
     @SuppressWarnings("unchecked")
     @When("I update my Greengrass deployment configuration, setting the component {word} configuration to:")
     public void updateDeployment(String componentName, String configurationUpdate) throws JsonProcessingException {
+        LOGGER.debug("Replaced content: {}", scenarioContext.applyInline(configurationUpdate));
         Map<String, Object> json = mapper.readValue(scenarioContext.applyInline(configurationUpdate),
                 new TypeReference<Map<String, Object>>() {});
         deployment = GreengrassDeploymentSpec.builder()

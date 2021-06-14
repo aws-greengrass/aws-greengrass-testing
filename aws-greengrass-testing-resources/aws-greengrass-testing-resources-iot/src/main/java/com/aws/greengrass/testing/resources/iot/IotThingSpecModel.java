@@ -8,7 +8,6 @@ import software.amazon.awssdk.services.iot.IotClient;
 import software.amazon.awssdk.services.iot.model.AttachPolicyRequest;
 import software.amazon.awssdk.services.iot.model.CreateThingRequest;
 import software.amazon.awssdk.services.iot.model.CreateThingResponse;
-import software.amazon.awssdk.services.iot.model.TagResourceRequest;
 
 import javax.annotation.Nullable;
 import java.util.Collections;
@@ -38,11 +37,6 @@ interface IotThingSpecModel extends ResourceSpec<IotClient, IotThing>, IotTaggin
 
         CreateThingResponse createdThing = client.createThing(CreateThingRequest.builder()
                 .thingName(thingName())
-                .build());
-
-        client.tagResource(TagResourceRequest.builder()
-                .resourceArn(createdThing.thingArn())
-                .tags(convertTags(resources.generateResourceTags()))
                 .build());
 
         IotRoleAliasSpec updatedRoleAlias = null;
