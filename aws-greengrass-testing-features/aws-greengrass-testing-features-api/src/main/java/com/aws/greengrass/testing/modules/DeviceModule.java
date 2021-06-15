@@ -2,6 +2,7 @@ package com.aws.greengrass.testing.modules;
 
 import com.aws.greengrass.testing.api.device.Device;
 import com.aws.greengrass.testing.api.device.local.LocalDevice;
+import com.aws.greengrass.testing.api.model.TimeoutMultiplier;
 import com.google.auto.service.AutoService;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
@@ -21,13 +22,13 @@ public class DeviceModule extends AbstractModule {
     @Provides
     @ScenarioScoped
     static Device providesDevice(Map<String, Device> devicePool) {
-        return devicePool.getOrDefault(System.getProperty(DEVICE_MODE, "LOCAL"), providesLocalDevice());
+        return devicePool.get(System.getProperty(DEVICE_MODE, "LOCAL"));
     }
 
     @Singleton
     @ProvidesIntoMap
     @StringMapKey("LOCAL")
-    static Device providesLocalDevice() {
-        return new LocalDevice();
+    static Device providesLocalDevice(TimeoutMultiplier multiplier) {
+        return new LocalDevice(multiplier);
     }
 }

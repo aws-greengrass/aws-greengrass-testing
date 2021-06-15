@@ -1,21 +1,27 @@
 package com.aws.greengrass.testing.features;
 
+import com.aws.greengrass.testing.api.model.TimeoutMultiplier;
 import io.cucumber.guice.ScenarioScoped;
 import io.cucumber.java.en.When;
 
+import javax.inject.Inject;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 @ScenarioScoped
 public class WaitSteps {
     private static final long DEFAULT_INTERVAL = 100L;
+    private final TimeoutMultiplier multiplier;
+
+    @Inject
+    public WaitSteps(TimeoutMultiplier multiplier) {
+        this.multiplier = multiplier;
+    }
 
     @When("I wait {int} {word}")
     public void until(int value, String unit) throws InterruptedException {
-        Thread.sleep(TimeUnit.valueOf(unit.toUpperCase()).toMillis(value));
+        Thread.sleep(TimeUnit.valueOf(unit.toUpperCase()).toMillis(multiplier.multiply(value)));
     }
 
     public <T> boolean untilTerminal(
@@ -36,7 +42,7 @@ public class WaitSteps {
                 break;
             }
             Thread.sleep(DEFAULT_INTERVAL);
-        } while (System.currentTimeMillis() - startTime < unit.toMillis(value));
+        } while (System.currentTimeMillis() - startTime < unit.toMillis(multiplier.multiply(value)));
         return result;
     }
 }
