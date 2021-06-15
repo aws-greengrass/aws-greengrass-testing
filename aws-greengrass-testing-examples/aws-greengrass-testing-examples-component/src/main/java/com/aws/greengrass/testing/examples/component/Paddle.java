@@ -34,7 +34,7 @@ abstract class Paddle {
         Type other = Arrays.stream(Type.values()).filter(Predicate.isEqual(type).negate()).findFirst().get();
         PublishMessage publishMessage = new PublishMessage();
         BinaryMessage binaryMessage = new BinaryMessage();
-        binaryMessage.setMessage(other.name().getBytes(StandardCharsets.UTF_8));
+        binaryMessage.setMessage(type.name().getBytes(StandardCharsets.UTF_8));
         publishMessage.setBinaryMessage(binaryMessage);
         PublishToTopicRequest publishToTopicRequest = new PublishToTopicRequest();
         publishToTopicRequest.setTopic("say/" + other.name().toLowerCase());
@@ -56,7 +56,7 @@ abstract class Paddle {
             public void onStreamEvent(SubscriptionResponseMessage subscriptionResponseMessage) {
                 String payload = new String(subscriptionResponseMessage.getBinaryMessage().getMessage(),
                         StandardCharsets.UTF_8);
-                System.out.println("Received " + payload + " from " + getClass().getSimpleName());
+                System.out.println("Received " + payload + " from " + type.name());
                 swing();
             }
 

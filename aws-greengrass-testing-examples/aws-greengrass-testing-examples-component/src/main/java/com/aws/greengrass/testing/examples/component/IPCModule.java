@@ -13,6 +13,8 @@ import software.amazon.awssdk.eventstreamrpc.GreengrassConnectMessageSupplier;
 
 import javax.inject.Named;
 import javax.inject.Singleton;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 @Module
 public class IPCModule {
@@ -55,7 +57,29 @@ public class IPCModule {
             EventStreamRPCConnectionConfig connectionConfig = new EventStreamRPCConnectionConfig(
                     clientBootstrap, loopGroup, socketOptions, null, ipcServerPath, DEFAULT_PORT,
                     GreengrassConnectMessageSupplier.connectMessageSupplier(authToken));
-            return new EventStreamRPCConnection(connectionConfig);
+            EventStreamRPCConnection connection = new EventStreamRPCConnection(connectionConfig);
+            CompletableFuture<Void> completed = new CompletableFuture<>();
+            connection.connect(new EventStreamRPCConnection.LifecycleHandler() {
+                @Override
+                public void onConnect() {
+                    System.out.println("Connected to IPC.");
+                    completed.complete(null);
+                }
+
+                @Override
+                public void onDisconnect(int i) {
+                }
+
+                @Override
+                public boolean onError(Throwable throwable) {
+                    completed.completeExceptionally(throwable);
+                    return true;
+                }
+            });
+            completed.get();
+            return connection;
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
         }
     }
 
