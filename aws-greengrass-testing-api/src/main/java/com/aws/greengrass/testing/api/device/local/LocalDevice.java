@@ -6,6 +6,7 @@ import com.aws.greengrass.testing.api.device.exception.CommandExecutionException
 import com.aws.greengrass.testing.api.device.exception.CopyException;
 import com.aws.greengrass.testing.api.device.model.CommandInput;
 import com.aws.greengrass.testing.api.device.model.PlatformOS;
+import com.aws.greengrass.testing.api.model.TimeoutMultiplier;
 import com.google.auto.service.AutoService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -30,6 +31,16 @@ public class LocalDevice implements Device {
     private static final Logger LOGGER = LogManager.getLogger(LocalDevice.class);
     private static final String TYPE = "LOCAL";
     private static final int BUFFER = 100_000;
+    private final TimeoutMultiplier multiplier;
+
+    public LocalDevice(final TimeoutMultiplier multiplier) {
+        this.multiplier = multiplier;
+    }
+
+    public LocalDevice() {
+        this(TimeoutMultiplier.builder().build());
+    }
+
 
     @Override
     public String id() {
@@ -54,7 +65,7 @@ public class LocalDevice implements Device {
             if (Objects.isNull(input.timeout())) {
                 process.waitFor();
             } else {
-                process.waitFor(input.timeout(), TimeUnit.SECONDS);
+                process.waitFor(multiplier.multiply(input.timeout()), TimeUnit.SECONDS);
             }
             final int exitCode = process.exitValue();
             if (exitCode != 0) {

@@ -4,6 +4,7 @@ import com.aws.greengrass.testing.ScenarioTestRuns;
 import com.aws.greengrass.testing.api.TestRuns;
 import com.aws.greengrass.testing.api.model.CleanupContext;
 import com.aws.greengrass.testing.api.model.TestId;
+import com.aws.greengrass.testing.api.model.TimeoutMultiplier;
 import com.aws.greengrass.testing.model.TestContext;
 import com.aws.greengrass.testing.modules.exception.ModuleProvisionException;
 import com.google.auto.service.AutoService;
@@ -35,6 +36,12 @@ public class TestContextModule extends AbstractModule {
     @Singleton
     static TestRuns providesTestRunTracker() {
         return new ScenarioTestRuns();
+    }
+
+    @Provides
+    @Singleton
+    static TimeoutMultiplier providesTimeoutMultiplier() {
+        return TimeoutMultiplier.builder().build();
     }
 
     @Provides
