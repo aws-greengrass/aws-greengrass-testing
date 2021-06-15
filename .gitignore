@@ -3,3 +3,4 @@ target
 *.iml
 TEST-*
 greengrass-nucleus-latest.zip
+dependency-reduced-pom.xml
