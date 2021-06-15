@@ -2,8 +2,10 @@ package com.aws.greengrass.testing.examples.component;
 
 import software.amazon.awssdk.eventstreamrpc.EventStreamRPCConnection;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 public class PingPong implements Runnable {
     PaddleComponent component;
@@ -16,23 +18,25 @@ public class PingPong implements Runnable {
     public void run() {
         try (EventStreamRPCConnection connection = component.connection()) {
             try {
+                CompletableFuture<Void> completed = new CompletableFuture<>();
                 connection.connect(new EventStreamRPCConnection.LifecycleHandler() {
                     @Override
                     public void onConnect() {
-                        System.out.println("Connected.");
+                        System.out.println("Connected to IPC.");
+                        completed.complete(null);
                     }
 
                     @Override
                     public void onDisconnect(int i) {
-
                     }
 
                     @Override
                     public boolean onError(Throwable throwable) {
-                        throwable.printStackTrace();
-                        return false;
+                        completed.completeExceptionally(throwable);
+                        return true;
                     }
-                }).get();
+                });
+                completed.get();
 
                 component.ping().watch();
                 component.pong().watch();
@@ -41,8 +45,9 @@ public class PingPong implements Runnable {
                 // hit back and forth for a few.
                 Thread.sleep(TimeUnit.SECONDS.toMillis(30));
             } catch (InterruptedException e) {
-            } catch (ExecutionException e) {
-                e.printStackTrace();
+                // No-op
+            } catch (TimeoutException | ExecutionException e) {
+                throw new RuntimeException(e);
             }
 
         }

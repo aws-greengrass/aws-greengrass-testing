@@ -17,6 +17,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Predicate;
 
 abstract class Paddle {
+    private static final int TIMEOUT = 5;
     enum Type {
         Ping, Pong;
     }
@@ -39,14 +40,15 @@ abstract class Paddle {
         publishToTopicRequest.setTopic("say/" + other.name().toLowerCase());
         publishToTopicRequest.setPublishMessage(publishMessage);
         try {
-            ipc.publishToTopic(publishToTopicRequest, Optional.empty()).getResponse().get(10, TimeUnit.SECONDS);
+            ipc.publishToTopic(publishToTopicRequest, Optional.empty()).getResponse().get(TIMEOUT, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
+            // No-op
         } catch (ExecutionException | TimeoutException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 
-    public void watch() {
+    public void watch() throws InterruptedException, ExecutionException, TimeoutException {
         SubscribeToTopicRequest subscribeToTopicRequest = new SubscribeToTopicRequest();
         subscribeToTopicRequest.setTopic("say/" + type.name().toLowerCase());
         ipc.subscribeToTopic(subscribeToTopicRequest, Optional.of(new StreamResponseHandler<SubscriptionResponseMessage>() {
@@ -60,6 +62,7 @@ abstract class Paddle {
 
             @Override
             public boolean onStreamError(Throwable throwable) {
+                System.err.println("Exception thrown in subscription: " + throwable.getMessage());
                 return false;
             }
 
@@ -67,6 +70,6 @@ abstract class Paddle {
             public void onStreamClosed() {
 
             }
-        }));
+        })).getResponse().get(TIMEOUT, TimeUnit.SECONDS);
     }
 }
