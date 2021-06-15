@@ -34,6 +34,15 @@ public class LocalFiles implements PlatformFiles {
     }
 
     @Override
+    public void makeDirectories(Path filePath) throws CommandExecutionException {
+        try {
+            Files.createDirectories(filePath);
+        } catch (IOException e) {
+            throw new CommandExecutionException(e, CommandInput.of("makeDirectories: " + filePath));
+        }
+    }
+
+    @Override
     public List<Path> listContents(Path filePath) throws CommandExecutionException {
         if (Files.isRegularFile(filePath)) {
             return Arrays.asList(filePath);

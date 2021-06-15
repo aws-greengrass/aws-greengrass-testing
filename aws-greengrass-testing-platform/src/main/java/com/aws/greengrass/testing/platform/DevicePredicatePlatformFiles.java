@@ -42,6 +42,14 @@ public class DevicePredicatePlatformFiles implements PlatformFiles {
     }
 
     @Override
+    public void makeDirectories(Path filePath) throws CommandExecutionException {
+        delegate(files -> {
+            files.makeDirectories(filePath);
+            return null;
+        });
+    }
+
+    @Override
     public void delete(Path filePath) throws CommandExecutionException {
         delegate(files -> {
             files.delete(filePath);

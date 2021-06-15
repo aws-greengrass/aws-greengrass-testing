@@ -6,6 +6,7 @@ import com.aws.greengrass.testing.model.GreengrassContext;
 import com.aws.greengrass.testing.model.RegistrationContext;
 import com.aws.greengrass.testing.model.TestContext;
 import com.aws.greengrass.testing.modules.model.AWSResourcesContext;
+import com.aws.greengrass.testing.platform.Platform;
 import com.aws.greengrass.testing.resources.AWSResources;
 import com.aws.greengrass.testing.resources.iam.IamRoleSpec;
 import com.aws.greengrass.testing.resources.iot.IotLifecycle;
@@ -43,10 +44,12 @@ public class RegistrationSteps {
     private final IamSteps iamSteps;
     private final IotSteps iotSteps;
     private final Device device;
+    private final Platform platform;
 
     @Inject
     public RegistrationSteps(
             Device device,
+            Platform platform,
             AWSResources resources,
             IamSteps iamSteps,
             IotSteps iotSteps,
@@ -55,6 +58,7 @@ public class RegistrationSteps {
             GreengrassContext greengrassContext,
             AWSResourcesContext resourcesContext) {
         this.device = device;
+        this.platform = platform;
         this.resources = resources;
         this.iamSteps = iamSteps;
         this.testContext = testContext;
@@ -143,6 +147,7 @@ public class RegistrationSteps {
         Files.write(testContext.testDirectory().resolve("rootCA.pem"), registrationContext.rootCA().getBytes(StandardCharsets.UTF_8));
         Files.write(configFilePath.resolve("config.yaml"), config.getBytes(StandardCharsets.UTF_8));
         // Copy to where the nucleus will read it
+        platform.files().makeDirectories(testContext.installRoot());
         device.copyTo(testContext.testDirectory(), testContext.installRoot());
     }
 }

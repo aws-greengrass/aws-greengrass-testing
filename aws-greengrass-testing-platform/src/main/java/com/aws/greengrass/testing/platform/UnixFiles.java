@@ -28,6 +28,11 @@ public abstract class UnixFiles implements PlatformFiles {
     }
 
     @Override
+    public void makeDirectories(Path filePath) throws CommandExecutionException {
+        commands.execute(CommandInput.of("mkdir -p " + filePath.toString()));
+    }
+
+    @Override
     public List<Path> listContents(final Path filePath) throws CommandExecutionException {
         final String[] files = commands.executeToString(CommandInput.builder()
                 .line("find").addArgs(filePath.toString(), "-type", "f")

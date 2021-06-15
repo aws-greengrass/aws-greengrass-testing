@@ -18,6 +18,8 @@ public interface PlatformFiles {
 
     void delete(Path filePath) throws  CommandExecutionException;
 
+    void makeDirectories(Path filePath) throws CommandExecutionException;
+
     List<Path> listContents(Path filePath) throws CommandExecutionException;
 
     default void copyFrom(Path source, Path destination) throws CopyException, CommandExecutionException {
