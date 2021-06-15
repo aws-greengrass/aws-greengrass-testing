@@ -4,6 +4,7 @@ import org.immutables.value.Value;
 
 import javax.annotation.Nullable;
 import java.util.Map;
+import java.util.Optional;
 
 @TestingModel
 @Value.Immutable
@@ -13,10 +14,10 @@ interface ComponentOverridesModel {
 
     Map<String, ComponentOverrideVersion> overrides();
 
-    default ComponentOverrideNameVersion component(final String name) {
-        return ComponentOverrideNameVersion.builder()
+    default Optional<ComponentOverrideNameVersion> component(final String name) {
+        return Optional.ofNullable(overrides().get(name)).map(version -> ComponentOverrideNameVersion.builder()
                 .name(name)
-                .version(overrides().getOrDefault(name, ComponentOverrideVersion.of("cloud", "LATEST")))
-                .build();
+                .version(version)
+                .build());
     }
 }

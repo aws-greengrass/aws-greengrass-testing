@@ -13,5 +13,10 @@
     <packaging>pom</packaging>
     <modules>
         <module>aws-greengrass-testing-examples-standalone</module>
+        <module>aws-greengrass-testing-examples-component</module>
     </modules>
+
+    <properties>
+        <dagger.version>2.37</dagger.version>
+    </properties>
 </project>
