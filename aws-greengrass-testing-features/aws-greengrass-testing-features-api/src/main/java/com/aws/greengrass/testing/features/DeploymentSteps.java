@@ -80,17 +80,19 @@ public class DeploymentSteps {
                     .componentVersion(greengrassContext.version())
                     .build());
         }};
+        LOGGER.debug("Potential overrides: {}", overrides);
         componentNames.forEach(tuple -> {
             String name = tuple.get(0);
             String value = tuple.get(1);
             ComponentOverrideNameVersion.Builder overrideNameVersion = ComponentOverrideNameVersion.builder()
-                    .from(overrides.component(name));
+                    .name(name);
             String[] parts = value.split(":", 2);
             if (parts.length == 2) {
                 overrideNameVersion.version(ComponentOverrideVersion.of(parts[0], parts[1]));
             } else {
                 overrideNameVersion.version(ComponentOverrideVersion.of("cloud", parts[0]));
             }
+            overrides.component(name).ifPresent(overrideNameVersion::from);
             ComponentDeploymentSpecification.Builder builder = ComponentDeploymentSpecification.builder();
             componentPreparation.prepare(overrideNameVersion.build()).ifPresent(nameVersion -> {
                 builder.componentVersion(nameVersion.version().value());
