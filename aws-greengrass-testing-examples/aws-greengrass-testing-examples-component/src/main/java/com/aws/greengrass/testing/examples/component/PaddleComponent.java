@@ -10,5 +10,4 @@ import javax.inject.Singleton;
 public interface PaddleComponent {
     Pong pong();
     Ping ping();
-    EventStreamRPCConnection connection();
 }
