@@ -147,7 +147,7 @@ public class RegistrationSteps {
         Files.write(testContext.testDirectory().resolve("rootCA.pem"), registrationContext.rootCA().getBytes(StandardCharsets.UTF_8));
         Files.write(configFilePath.resolve("config.yaml"), config.getBytes(StandardCharsets.UTF_8));
         // Copy to where the nucleus will read it
-        platform.files().makeDirectories(testContext.installRoot());
+        platform.files().makeDirectories(testContext.installRoot().getParent());
         device.copyTo(testContext.testDirectory(), testContext.installRoot());
     }
 }

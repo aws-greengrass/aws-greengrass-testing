@@ -2,9 +2,9 @@ package com.aws.greengrass.testing.resources.greengrass;
 
 import com.aws.greengrass.testing.api.model.TestingModel;
 import com.aws.greengrass.testing.resources.AWSResource;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.immutables.value.Value;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.greengrassv2.GreengrassV2Client;
 import software.amazon.awssdk.services.greengrassv2.model.CancelDeploymentRequest;
 import software.amazon.awssdk.services.greengrassv2.model.DeleteCoreDeviceRequest;
@@ -18,7 +18,7 @@ import java.util.Optional;
 @TestingModel
 @Value.Immutable
 interface GreengrassDeploymentModel extends AWSResource<GreengrassV2Client> {
-    static Logger LOGGER = LoggerFactory.getLogger(GreengrassDeployment.class);
+    Logger LOGGER = LogManager.getLogger(GreengrassDeployment.class);
 
     String deploymentId();
 

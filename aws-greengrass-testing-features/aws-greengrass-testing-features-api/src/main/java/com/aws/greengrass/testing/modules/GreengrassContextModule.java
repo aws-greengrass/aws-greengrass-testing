@@ -10,8 +10,8 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import software.amazon.awssdk.utils.IoUtils;
 
 import javax.inject.Named;
@@ -27,7 +27,7 @@ import java.util.zip.ZipInputStream;
 
 @AutoService(Module.class)
 public class GreengrassContextModule extends AbstractModule {
-    private static final Logger LOGGER = LoggerFactory.getLogger(GreengrassContextModule.class);
+    private static final Logger LOGGER = LogManager.getLogger(GreengrassContextModule.class);
     private static final String NUCLEUS_VERSION = "ggc.version";
     private static final String NUCLEUS_ARCHIVE_PATH = "ggc.archive";
     private static String DEFAULT_NUCLEUS_VERSION;
