@@ -4,3 +4,4 @@ target
 TEST-*
 greengrass-nucleus-latest.zip
 dependency-reduced-pom.xml
+testResults

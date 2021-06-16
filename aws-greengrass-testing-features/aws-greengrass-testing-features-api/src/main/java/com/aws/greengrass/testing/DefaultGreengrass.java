@@ -5,13 +5,13 @@ import com.aws.greengrass.testing.api.device.exception.CommandExecutionException
 import com.aws.greengrass.testing.api.device.model.CommandInput;
 import com.aws.greengrass.testing.model.TestContext;
 import com.aws.greengrass.testing.platform.Platform;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.nio.file.Path;
 
 public class DefaultGreengrass implements Greengrass {
-    private static final Logger LOGGER = LoggerFactory.getLogger(DefaultGreengrass.class);
+    private static final Logger LOGGER = LogManager.getLogger(DefaultGreengrass.class);
     private static final long TIMEOUT_IN_SECONDS = 30L;
     private final String envStage;
     private final String region;

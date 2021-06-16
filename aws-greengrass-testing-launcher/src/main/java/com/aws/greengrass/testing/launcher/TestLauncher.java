@@ -1,5 +1,6 @@
 package com.aws.greengrass.testing.launcher;
 
+import com.aws.greengrass.testing.launcher.reporting.StepTrackingReporting;
 import org.junit.platform.console.options.CommandLineOptions;
 import org.junit.platform.console.options.Details;
 import org.junit.platform.console.options.Theme;
@@ -39,6 +40,7 @@ public final class TestLauncher {
         options.setConfigurationParameters(new HashMap<String, String>() {{
            put("cucumber.glue", System.getProperty("glue.package", DEFAULT_GLUE_PATH));
            put("cucumber.plugin", new StringJoiner(",")
+                   .add(StepTrackingReporting.class.getName())
                    .add("junit:" + resultsXml.toString())
                    .toString());
         }});
