@@ -20,4 +20,4 @@ jobs:
         with:
           java-version: 1.8
       - name: Build with Maven
-        run: mvn -U -ntp clean compile
+        run: mvn -U -ntp clean verify

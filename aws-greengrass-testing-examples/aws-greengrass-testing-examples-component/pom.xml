@@ -23,7 +23,7 @@
                 <version>3.0.0-M5</version>
                 <configuration>
                     <!-- Disabled by default. Allow manual trigger -->
-                    <skipTests>${skipTests}</skipTests>
+                    <skip>${skipTests}</skip>
                 </configuration>
             </plugin>
             <plugin>
@@ -59,6 +59,7 @@
                             <goal>run</goal>
                         </goals>
                         <configuration>
+                            <skip>${skipTests}</skip>
                             <target>
                                 <echo message="Feature Test Suite"/>
                                 <java classname="com.aws.greengrass.testing.launcher.TestLauncher"
