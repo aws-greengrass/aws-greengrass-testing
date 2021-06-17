@@ -45,6 +45,7 @@ public class ScenarioContext {
         return Character.toUpperCase(name.charAt(0)) + name.substring(1);
     }
 
+    @SuppressWarnings("unchecked")
     public String get(final String key) {
         String[] parts = key.split(":");
         switch (parts[0]) {
