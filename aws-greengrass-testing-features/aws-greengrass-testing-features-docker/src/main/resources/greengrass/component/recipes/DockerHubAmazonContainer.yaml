@@ -1,0 +1,12 @@
+---
+RecipeFormatVersion: '2020-01-25'
+ComponentName: DockerHubAmazonContainer
+ComponentVersion: '1.0.0'
+ComponentDependencies:
+  aws.greengrass.DockerApplicationManager:
+    VersionRequirement: ~2.0.0
+Manifests:
+  - Platform:
+      os: all
+    Artifacts:
+      - URI: "docker:amazon/amazon-ec2-metadata-mock:v1.9.0"
