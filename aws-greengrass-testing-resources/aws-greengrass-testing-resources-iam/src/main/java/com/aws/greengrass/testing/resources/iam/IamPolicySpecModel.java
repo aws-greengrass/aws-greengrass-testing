@@ -14,6 +14,7 @@ import javax.annotation.Nullable;
 @Value.Immutable
 interface IamPolicySpecModel extends ResourceSpec<IamClient, IamPolicy>, IamTaggingMixin {
     String policyName();
+
     String policyDocument();
 
     @Override

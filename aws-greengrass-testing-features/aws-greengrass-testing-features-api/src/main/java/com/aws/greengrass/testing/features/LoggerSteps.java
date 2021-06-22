@@ -9,9 +9,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.ThreadContext;
 
-import javax.inject.Inject;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.inject.Inject;
 
 @ScenarioScoped
 public class LoggerSteps {
@@ -20,10 +20,15 @@ public class LoggerSteps {
     private final TestContext testContext;
 
     @Inject
-    public LoggerSteps(final TestContext testContext) {
+    LoggerSteps(final TestContext testContext) {
         this.testContext = testContext;
     }
 
+    /**
+     * Setup the logging context for the thread local context.
+     *
+     * @param scenario unique {@link Scenario}
+     */
     @Before
     public void addContext(final Scenario scenario) {
         final Matcher matcher = FEATURE.matcher(scenario.getId());
@@ -32,7 +37,7 @@ public class LoggerSteps {
         if (matcher.find()) {
             feature = matcher.group(1);
         }
-        ThreadContext.put("testId", testContext.testId().id());
+        ThreadContext.put("testId", testContext.testId().prefixedId());
         ThreadContext.put("feature", feature);
         ThreadContext.put("scenarioId", scenario.getName());
         LOGGER.info("Attaching thread context to scenario: '{}'", scenario.getName());

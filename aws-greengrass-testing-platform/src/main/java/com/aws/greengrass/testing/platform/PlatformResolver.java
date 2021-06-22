@@ -1,8 +1,8 @@
 package com.aws.greengrass.testing.platform;
 
 import com.aws.greengrass.testing.api.device.Device;
-import com.aws.greengrass.testing.platform.exception.PlatformResolutionException;
 import com.aws.greengrass.testing.api.device.model.CommandInput;
+import com.aws.greengrass.testing.platform.exception.PlatformResolutionException;
 import com.aws.greengrass.testing.platform.linux.LinuxPlatform;
 import com.aws.greengrass.testing.platform.macos.MacosPlatform;
 import com.aws.greengrass.testing.platform.windows.WindowsPlatform;
@@ -26,6 +26,11 @@ public class PlatformResolver {
         this.device = device;
     }
 
+    /**
+     * Resolve to a concrete {@link Platform} from the underlysing {@link Device} object.
+     *
+     * @return
+     */
     public Platform resolve() {
         final Map<String, Integer> ranks = createRanks();
         if (ranks.containsKey("linux")) {

@@ -25,7 +25,6 @@ import software.amazon.awssdk.services.greengrassv2.model.ComponentDeploymentSpe
 import software.amazon.awssdk.services.greengrassv2.model.EffectiveDeployment;
 import software.amazon.awssdk.services.greengrassv2.model.EffectiveDeploymentExecutionStatus;
 
-import javax.inject.Inject;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -33,6 +32,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import javax.inject.Inject;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -50,7 +50,7 @@ public class DeploymentSteps {
     private GreengrassDeploymentSpec deployment;
 
     @Inject
-    public DeploymentSteps(
+    DeploymentSteps(
             final AWSResources resources,
             final ComponentOverrides overrides,
             final TestContext testContext,
@@ -69,17 +69,23 @@ public class DeploymentSteps {
         this.mapper = mapper;
     }
 
+    /**
+     * Create a scenario based deployment configuration.
+     *
+     * @param componentNames collection of component name and version tuples
+     */
     @Given("I create a Greengrass deployment with components")
     public void createDeployment(List<List<String>> componentNames) {
         IotThingSpec thingSpec = resources.trackingSpecs(IotThingSpec.class)
                 .filter(thing -> thing.resource().thingName().equals(testContext.testId().idFor("ggc-thing")))
                 .findFirst()
                 .orElseThrow(() -> new IllegalStateException("A Greengrass deployment needs a valid target."));
-        final Map<String, ComponentDeploymentSpecification> components = new HashMap<String, ComponentDeploymentSpecification>() {{
-            put("aws.greengrass.Nucleus", ComponentDeploymentSpecification.builder()
-                    .componentVersion(greengrassContext.version())
-                    .build());
-        }};
+        final Map<String, ComponentDeploymentSpecification> components =
+                new HashMap<String, ComponentDeploymentSpecification>() {{
+                    put("aws.greengrass.Nucleus", ComponentDeploymentSpecification.builder()
+                            .componentVersion(greengrassContext.version())
+                            .build());
+                }};
         LOGGER.debug("Potential overrides: {}", overrides);
         componentNames.forEach(tuple -> {
             String name = tuple.get(0);
@@ -108,6 +114,13 @@ public class DeploymentSteps {
                 .build();
     }
 
+    /**
+     * Update a deployment configuration unique to this scenario.
+     *
+     * @param componentName unique string component name
+     * @param configurationUpdate full configuration for component and content replaced by {@link ScenarioContext}
+     * @throws JsonProcessingException failure to process configuration value
+     */
     @SuppressWarnings("unchecked")
     @When("I update my Greengrass deployment configuration, setting the component {word} configuration to:")
     public void updateDeployment(String componentName, String configurationUpdate) throws JsonProcessingException {
@@ -132,9 +145,16 @@ public class DeploymentSteps {
         LOGGER.info("Created Greengrass deployment: {}", deployment.resource().deploymentId());
     }
 
+    /**
+     * Checks the current deployment is in a terminal status after a time.
+     *
+     * @param status Terminal {@link EffectiveDeploymentExecutionStatus}
+     * @param value integer value duration
+     * @param unit {@link TimeUnit} for the duration
+     * @throws InterruptedException thread interrupted while waiting
+     */
     @Then("the Greengrass deployment is {word} on the device after {int} {word}")
     public void deploymentSucceeds(String status, int value, String unit) throws InterruptedException {
-        TimeUnit timeUnit = TimeUnit.valueOf(unit.toUpperCase());
         Set<EffectiveDeploymentExecutionStatus> terminalStatuses = new HashSet<>();
         terminalStatuses.add(EffectiveDeploymentExecutionStatus.COMPLETED);
         terminalStatuses.add(EffectiveDeploymentExecutionStatus.CANCELED);
@@ -146,6 +166,7 @@ public class DeploymentSteps {
         assertTrue(terminalStatuses.contains(effectiveStatus),
                 "Please target a terminal status: " + terminalStatuses);
 
+        TimeUnit timeUnit = TimeUnit.valueOf(unit.toUpperCase());
         assertTrue(waits.untilTerminal(
                 () -> this.effectivelyDeploymentStatus().orElse(null),
                 effectiveStatus::equals,

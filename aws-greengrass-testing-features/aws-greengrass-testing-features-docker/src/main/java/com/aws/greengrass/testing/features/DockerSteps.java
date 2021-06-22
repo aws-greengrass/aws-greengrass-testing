@@ -6,12 +6,12 @@ import io.cucumber.guice.ScenarioScoped;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 
-import javax.inject.Inject;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import javax.inject.Inject;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -20,10 +20,15 @@ public class DockerSteps {
     private final Platform platform;
 
     @Inject
-    public DockerSteps(final Platform platform) {
+    DockerSteps(final Platform platform) {
         this.platform = platform;
     }
 
+    /**
+     * Checks that the docker image does <strong>not</strong> exist on the {@link Platform} for this device.
+     *
+     * @param image fully qualified image name in <code>name:tag</code> representation
+     */
     @Given("the docker image {word} does not exist on the device")
     public void checkDockerImageIsMissing(String image) {
         Predicate<Set<String>> predicate = Set::isEmpty;

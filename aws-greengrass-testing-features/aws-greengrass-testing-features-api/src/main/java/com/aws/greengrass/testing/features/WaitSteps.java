@@ -4,10 +4,10 @@ import com.aws.greengrass.testing.api.model.TimeoutMultiplier;
 import io.cucumber.guice.ScenarioScoped;
 import io.cucumber.java.en.When;
 
-import javax.inject.Inject;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import javax.inject.Inject;
 
 @ScenarioScoped
 public class WaitSteps {
@@ -15,7 +15,7 @@ public class WaitSteps {
     private final TimeoutMultiplier multiplier;
 
     @Inject
-    public WaitSteps(TimeoutMultiplier multiplier) {
+    WaitSteps(TimeoutMultiplier multiplier) {
         this.multiplier = multiplier;
     }
 
@@ -33,6 +33,15 @@ public class WaitSteps {
          return result && isValid.test(obtain.get());
     }
 
+    /**
+     * Wait until the evaluated predicate is true for a time.
+     *
+     * @param evaluate {@link Predicate} to evaluate
+     * @param value integer for a duration
+     * @param unit {@link TimeUnit} duration
+     * @return boolean
+     * @throws InterruptedException thread interrupted while waiting
+     */
     public boolean untilTrue(Supplier<Boolean> evaluate, int value, TimeUnit unit) throws InterruptedException {
         boolean result = false;
         long startTime = System.currentTimeMillis();

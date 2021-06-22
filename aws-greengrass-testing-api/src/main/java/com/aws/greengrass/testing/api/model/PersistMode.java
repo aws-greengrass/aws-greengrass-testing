@@ -20,14 +20,20 @@ public enum PersistMode implements Function<ImmutableCleanupContext.Builder, Imm
         return name().toLowerCase().replace('_', '.');
     }
 
+    /**
+     * Pull a {@link PersistMode} from a string value like an input parameter from {@link System} getProperty.
+     *
+     * @param value String value to convert to {@link PersistMode}
+     * @return
+     */
     public static PersistMode fromConfig(String value) {
         for (PersistMode mode : values()) {
             if (mode.equals(PersistMode.valueOf(value.replace('.', '_').toUpperCase()))) {
                 return mode;
             }
         }
-        throw new IllegalArgumentException("Could not find a persist value mode for " + value
-                + ". Use any or all: " + Arrays.toString(values()));
+        throw new IllegalArgumentException(
+                "Could not find a persist value mode for " + value + ". Use any or all: " + Arrays.toString(values()));
     }
 
     @Override

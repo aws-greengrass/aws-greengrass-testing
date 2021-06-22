@@ -10,11 +10,11 @@ import io.cucumber.java.en.Then;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import javax.inject.Inject;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
+import javax.inject.Inject;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -29,7 +29,7 @@ public class FileSteps {
     private final WaitSteps waits;
 
     @Inject
-    public FileSteps(
+    FileSteps(
             Device device,
             Platform platform,
             TestContext testContext,
@@ -51,6 +51,15 @@ public class FileSteps {
         containsTimeout(file, contents, DEFAULT_TIMEOUT, TimeUnit.SECONDS.name());
     }
 
+    /**
+     * File contains content after a duration.
+     *
+     * @param file file on a {@link Device}
+     * @param contents file contents
+     * @param value integer value for a duration
+     * @param unit {@link TimeUnit} duration
+     * @throws InterruptedException thread was interrupted while waiting
+     */
     @Then("the file {word} on device contains {string} within {int} {word}")
     public void containsTimeout(String file, String contents, int value, String unit) throws InterruptedException {
         checkFileExists(file);
@@ -71,6 +80,11 @@ public class FileSteps {
                 .contains(line), component + " log contains '" + line + "'");
     }
 
+    /**
+     * Copy logs for the {@link Scenario} from the {@link Device} to the host.
+     *
+     * @param scenario the unique {@link Scenario}
+     */
     @After(order = 99899)
     public void copyLogs(final Scenario scenario) {
         Path logFolder = testContext.installRoot().resolve("logs");

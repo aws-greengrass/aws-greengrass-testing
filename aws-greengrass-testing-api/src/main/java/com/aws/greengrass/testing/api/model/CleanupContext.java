@@ -27,10 +27,15 @@ public abstract class CleanupContext {
         return ImmutableCleanupContext.builder();
     }
 
+    /**
+     * Create a concrete {@link CleanupContext} from a collection of {@link PersistMode}.
+     *
+     * @param modes User provided {@link PersistMode} to be used to bypass cleanup.
+     * @return
+     */
     public static CleanupContext fromModes(Collection<PersistMode> modes) {
         return modes.stream()
-                .reduce(CleanupContext.builder(),
-                        (builder, mode) -> mode.apply(builder),
-                        (left, right) -> left).build();
+                .reduce(CleanupContext.builder(), (builder, mode) -> mode.apply(builder), (left, right) -> left)
+                .build();
     }
 }

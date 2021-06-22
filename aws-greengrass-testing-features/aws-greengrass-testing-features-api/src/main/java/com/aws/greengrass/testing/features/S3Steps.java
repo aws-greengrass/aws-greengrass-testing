@@ -14,7 +14,7 @@ public class S3Steps {
     private final TestId testId;
 
     @Inject
-    public S3Steps(
+    S3Steps(
             final AWSResources resources,
             final TestId testId) {
         this.resources = resources;
@@ -26,6 +26,11 @@ public class S3Steps {
         createS3Bucket("gg-component-store");
     }
 
+    /**
+     * Create an S3 bucket based on a name.
+     *
+     * @param bucketName Name of the S3 bucket
+     */
     @When("I create an S3 bucket named {word}")
     public void createS3Bucket(String bucketName) {
         resources.create(S3BucketSpec.builder()

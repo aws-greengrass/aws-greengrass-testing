@@ -6,7 +6,6 @@ import com.aws.greengrass.testing.resources.ResourceSpec;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import org.immutables.value.Value;
 import software.amazon.awssdk.services.iot.IotClient;
-import software.amazon.awssdk.services.iot.model.AttachPolicyRequest;
 import software.amazon.awssdk.services.iot.model.CreatePolicyRequest;
 import software.amazon.awssdk.services.iot.model.CreatePolicyResponse;
 
@@ -17,6 +16,7 @@ import javax.annotation.Nullable;
 @JsonDeserialize(builder = IotPolicySpec.Builder.class)
 interface IotPolicySpecModel extends ResourceSpec<IotClient, IotPolicy>, IotTaggingMixin {
     String policyName();
+
     String policyDocument();
 
     @Override

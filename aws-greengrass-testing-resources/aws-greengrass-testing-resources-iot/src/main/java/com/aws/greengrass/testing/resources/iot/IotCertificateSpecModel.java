@@ -10,8 +10,8 @@ import software.amazon.awssdk.services.iot.model.AttachThingPrincipalRequest;
 import software.amazon.awssdk.services.iot.model.CreateKeysAndCertificateRequest;
 import software.amazon.awssdk.services.iot.model.CreateKeysAndCertificateResponse;
 
-import javax.annotation.Nullable;
 import java.util.Optional;
+import javax.annotation.Nullable;
 
 @TestingModel
 @Value.Immutable
@@ -28,9 +28,10 @@ interface IotCertificateSpecModel extends ResourceSpec<IotClient, IotCertificate
 
     @Override
     default IotCertificateSpec create(IotClient client, AWSResources resources) {
-        CreateKeysAndCertificateResponse created = client.createKeysAndCertificate(CreateKeysAndCertificateRequest.builder()
-                .setAsActive(active())
-                .build());
+        CreateKeysAndCertificateResponse created = client.createKeysAndCertificate(
+                CreateKeysAndCertificateRequest.builder()
+                        .setAsActive(active())
+                        .build());
 
         client.attachThingPrincipal(AttachThingPrincipalRequest.builder()
                 .thingName(thingName())

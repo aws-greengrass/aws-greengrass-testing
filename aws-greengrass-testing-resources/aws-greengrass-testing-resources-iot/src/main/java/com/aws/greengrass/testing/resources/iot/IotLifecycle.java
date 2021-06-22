@@ -16,6 +16,11 @@ public class IotLifecycle extends AbstractAWSResourceLifecycle<IotClient> {
     private static final String CREDENTIALS_ENDPOINT = "iot:CredentialProvider";
     private static final String DATA_ENDPOINT = "iot:Data-ATS";
 
+    /**
+     * Create a {@link IotLifecycle} with a customized {@link IotClient}.
+     *
+     * @param client Customized {@link IotClient}
+     */
     @Inject
     public IotLifecycle(final IotClient client) {
         super(client,
@@ -38,6 +43,12 @@ public class IotLifecycle extends AbstractAWSResourceLifecycle<IotClient> {
         return endpointType(DATA_ENDPOINT);
     }
 
+    /**
+     * List things for a group by name.
+     *
+     * @param thingGroupName String thing group name
+     * @return
+     */
     public ListThingsInThingGroupIterable listThingsForGroup(String thingGroupName) {
         return client.listThingsInThingGroupPaginator(ListThingsInThingGroupRequest.builder()
                 .recursive(true)

@@ -19,6 +19,14 @@ public class DefaultGreengrass implements Greengrass {
     private int greengrassProcess;
     private final TestContext testContext;
 
+    /**
+     * Creates a {@link Greengrass} software instance.
+     *
+     * @param platform Abstract {@link Platform}
+     * @param envStage String environment
+     * @param region AWS region name
+     * @param testContext The underlying {@link TestContext}
+     */
     public DefaultGreengrass(
             final Platform platform,
             String envStage,
@@ -28,6 +36,10 @@ public class DefaultGreengrass implements Greengrass {
         this.envStage = envStage;
         this.region = region;
         this.testContext = testContext;
+    }
+
+    private boolean isRunning() {
+        return greengrassProcess != 0;
     }
 
     @Override
@@ -59,12 +71,8 @@ public class DefaultGreengrass implements Greengrass {
         LOGGER.info("Starting Greengrass on pid {}", greengrassProcess);
     }
 
-    private boolean isRunning() {
-        return greengrassProcess != 0;
-    }
-
     @Override
-    synchronized public void stop() {
+    public synchronized void stop() {
         try {
             if (testContext.cleanupContext().persistInstalledSofware()) {
                 LOGGER.info("Leaving Greengrass running on pid: {}", greengrassProcess);

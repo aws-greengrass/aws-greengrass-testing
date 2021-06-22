@@ -11,6 +11,8 @@ import java.util.Optional;
 @Value.Immutable
 interface AWSResourcesContextModel {
     String envStage();
+
     Optional<ProxyConfig> proxyConfig();
+
     Region region();
 }

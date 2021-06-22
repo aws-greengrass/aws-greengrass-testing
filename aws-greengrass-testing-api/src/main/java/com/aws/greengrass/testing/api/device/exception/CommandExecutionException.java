@@ -9,6 +9,13 @@ public class CommandExecutionException extends RuntimeException {
     private int exitCode;
     private final CommandInput input;
 
+    /**
+     * Creates a {@link CommandExecutionException}.
+     *
+     * @param message The underlying reason for the failure.
+     * @param exitCode The resulting exit code from the command.
+     * @param input The source input provided by the customer.
+     */
     public CommandExecutionException(String message, int exitCode, CommandInput input) {
         super(message);
         this.exitCode = exitCode;

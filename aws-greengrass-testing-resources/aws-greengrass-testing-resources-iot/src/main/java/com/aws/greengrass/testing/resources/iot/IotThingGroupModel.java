@@ -10,7 +10,9 @@ import software.amazon.awssdk.services.iot.model.DeleteThingGroupRequest;
 @Value.Immutable
 interface IotThingGroupModel extends AWSResource<IotClient> {
     String groupId();
+
     String groupArn();
+
     String groupName();
 
     @Override

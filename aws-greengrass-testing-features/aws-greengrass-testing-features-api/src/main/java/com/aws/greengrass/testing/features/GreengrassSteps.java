@@ -10,9 +10,9 @@ import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 
-import javax.inject.Inject;
 import java.io.Closeable;
 import java.io.IOException;
+import javax.inject.Inject;
 
 @ScenarioScoped
 public class GreengrassSteps implements Closeable {
@@ -23,7 +23,7 @@ public class GreengrassSteps implements Closeable {
     private final FileSteps files;
 
     @Inject
-    public GreengrassSteps(
+    GreengrassSteps(
             final Device device,
             final Greengrass greengrass,
             final GreengrassContext greengrassContext,
@@ -36,6 +36,9 @@ public class GreengrassSteps implements Closeable {
         this.files = files;
     }
 
+    /**
+     * Installs {@link Greengrass} for testing.
+     */
     @When("I install Greengrass")
     public void install() {
         device.copyTo(greengrassContext.greengrassPath(), testContext.installRoot().resolve("greengrass"));
@@ -43,9 +46,14 @@ public class GreengrassSteps implements Closeable {
         files.checkFileExists("logs/greengrass.log");
     }
 
+    /**
+     * Starts a {@link Greengrass} software instance.
+     *
+     * @throws InterruptedException Thread is interrupted while waiting for {@link Greengrass} to start
+     */
     @Given("my device is running Greengrass")
     @When("I start Greengrass")
-    public void start() throws IOException, InterruptedException {
+    public void start() throws InterruptedException {
         install();
         greengrass.start();
         launchedSuccessfully();

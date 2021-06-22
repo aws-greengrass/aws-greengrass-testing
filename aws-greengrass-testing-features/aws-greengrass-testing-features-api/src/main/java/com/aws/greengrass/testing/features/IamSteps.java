@@ -7,13 +7,11 @@ import com.aws.greengrass.testing.resources.iam.IamRoleSpec;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.cucumber.guice.ScenarioScoped;
 import io.cucumber.java.en.Given;
-import io.cucumber.java.en.When;
 
-import javax.inject.Inject;
-import javax.inject.Named;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Optional;
+import javax.inject.Inject;
+import javax.inject.Named;
 
 @ScenarioScoped
 public class IamSteps {
@@ -23,7 +21,7 @@ public class IamSteps {
     private final TestId testId;
 
     @Inject
-    public IamSteps(
+    IamSteps(
             TestId testId,
             @Named(JacksonModule.YAML) ObjectMapper mapper,
             AWSResources resources) {
@@ -32,6 +30,12 @@ public class IamSteps {
         this.testId = testId;
     }
 
+    /**
+     * Create a default IAM role to get a working {@link com.aws.greengrass.testing.api.Greengrass} instance.
+     *
+     * @return IamRoleSpec
+     * @throws RuntimeException failed to a default IAM policy
+     */
     @Given("I create a default IAM role for Greengrass")
     public IamRoleSpec createDefaultIamRole() {
         try {
@@ -41,6 +45,13 @@ public class IamSteps {
         }
     }
 
+    /**
+     * Create an IAM role from a configuration file.
+     *
+     * @param roleFile configuration file to create an IAM role from
+     * @return IamRoleSpec
+     * @throws IOException failed to read configuration from a file
+     */
     @Given("I create an IAM role from {word}")
     public IamRoleSpec createIamRole(String roleFile) throws IOException {
         try (InputStream in = getClass().getResourceAsStream(roleFile)) {

@@ -23,7 +23,6 @@ import software.amazon.awssdk.crt.mqtt.MqttMessage;
 import software.amazon.awssdk.crt.mqtt.QualityOfService;
 import software.amazon.awssdk.iot.AwsIotMqttConnectionBuilder;
 
-import javax.inject.Inject;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -36,6 +35,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import javax.inject.Inject;
 
 
 @ScenarioScoped
@@ -51,7 +51,7 @@ public class MQTTSteps {
     private MqttClientConnection connection;
 
     @Inject
-    public MQTTSteps(
+    MQTTSteps(
             final AWSResources resources,
             final TestContext testContext,
             final ScenarioContext scenarioContext,
@@ -67,6 +67,12 @@ public class MQTTSteps {
         mqttResponses = new ConcurrentHashMap<>();
     }
 
+    /**
+     * Connects a scenario based MQTT client.
+     *
+     * @throws ExecutionException failed to connect an MQTT client to IoT core
+     * @throws InterruptedException thread interrupted while waiting to connect
+     */
     @Given("I connect an MQTT client to IoT")
     public void connect() throws ExecutionException, InterruptedException {
         if (Objects.isNull(connection)) {
@@ -102,6 +108,13 @@ public class MQTTSteps {
         return Objects.nonNull(connection);
     }
 
+    /**
+     * Subscribe to MQTT topics.
+     *
+     * @param topics collection of topic names to subscribe to
+     * @throws ExecutionException failed to subscribe to topics
+     * @throws InterruptedException thread interrupted while waiting
+     */
     @Given("I subscribe to the following IoT MQTT topics")
     public void subcribeToTopics(final List<String> topics) throws ExecutionException, InterruptedException {
         if (!isConnected()) {
@@ -113,18 +126,26 @@ public class MQTTSteps {
                     .add(topic)
                     .toString();
             scenarioContext.put(topic, realTopic);
-            CompletableFuture<Integer> subscription = connection.subscribe(realTopic, QualityOfService.AT_LEAST_ONCE, message -> {
-                LOGGER.debug("Received MQTT message on {}", message.getTopic());
-                mqttResponses.compute(topic, (key, list) -> {
-                    List<MqttMessage> ls = Optional.ofNullable(list).orElseGet(ArrayList::new);
-                    ls.add(message);
-                    return ls;
-                });
-            });
+            CompletableFuture<Integer> subscription = connection.subscribe(realTopic, QualityOfService.AT_LEAST_ONCE,
+                    message -> {
+                        LOGGER.debug("Received MQTT message on {}", message.getTopic());
+                        mqttResponses.compute(topic, (key, list) -> {
+                            List<MqttMessage> ls = Optional.ofNullable(list).orElseGet(ArrayList::new);
+                            ls.add(message);
+                            return ls;
+                        });
+                    });
             subscription.get();
         }
     }
 
+    /**
+     * Publish messages to MQTT topics.
+     *
+     * @param topicTuples collection of tuples representing topic names to topic values
+     * @throws ExecutionException failed to publish to MQTT topic
+     * @throws InterruptedException thread interrupted while waiting
+     */
     @When("I publish messages on the following IoT MQTT topics")
     public void publishMessages(List<List<String>> topicTuples) throws ExecutionException, InterruptedException {
         if (!isConnected()) {
@@ -146,6 +167,14 @@ public class MQTTSteps {
         }
     }
 
+    /**
+     * Wait for receive the payload from subscribed topics.
+     *
+     * @param value integer value duration
+     * @param unit {@link TimeUnit} o support a duration
+     * @param topicTuples collection of tuples representing topic names to expected values
+     * @throws InterruptedException thread interrupted while waiting
+     */
     @Then("I receive messages on the following IoT MQTT topics after {int} {word}")
     public void checkReceived(int value, String unit, List<List<String>> topicTuples) throws InterruptedException {
         waits.untilTerminal(
@@ -166,6 +195,12 @@ public class MQTTSteps {
                 .anyMatch(message -> new String(message.getPayload(), StandardCharsets.UTF_8).contains(tuple.get(1)));
     }
 
+    /**
+     * Disconnect an MQTT client from the {@link io.cucumber.java.Scenario} under test.
+     *
+     * @throws ExecutionException failed to disconnect the MQTT client
+     * @throws InterruptedException thread interrupted while waiting for disconnect
+     */
     @After(order = 997899)
     public void disconnect() throws ExecutionException, InterruptedException {
         if (Objects.nonNull(connection)) {

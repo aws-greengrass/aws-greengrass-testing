@@ -16,8 +16,11 @@ import software.amazon.awssdk.services.iot.model.UpdateCertificateRequest;
 @Value.Immutable
 interface IotCertificateModel extends AWSResource<IotClient> {
     String certificateArn();
+
     String certificateId();
+
     String certificatePem();
+
     KeyPair keyPair();
 
     @Override

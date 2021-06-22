@@ -9,8 +9,6 @@ import software.amazon.awssdk.services.iam.IamClient;
 import software.amazon.awssdk.services.iam.model.AttachRolePolicyRequest;
 import software.amazon.awssdk.services.iam.model.CreateRoleRequest;
 import software.amazon.awssdk.services.iam.model.CreateRoleResponse;
-import software.amazon.awssdk.services.iam.model.UpdateAssumeRolePolicyRequest;
-import software.amazon.awssdk.services.iam.model.UpdateRoleRequest;
 
 import javax.annotation.Nullable;
 
@@ -20,8 +18,11 @@ import javax.annotation.Nullable;
 interface IamRoleSpecModel extends ResourceSpec<IamClient, IamRole>, IamTaggingMixin {
     @Nullable
     String policyArn();
+
     String roleName();
+
     String policyDocument();
+
     String trustDocument();
 
     @Override

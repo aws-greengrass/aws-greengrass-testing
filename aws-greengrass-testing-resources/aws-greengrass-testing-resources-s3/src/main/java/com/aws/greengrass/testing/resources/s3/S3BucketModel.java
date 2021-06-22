@@ -10,6 +10,7 @@ import software.amazon.awssdk.services.s3.model.DeleteBucketRequest;
 @Value.Immutable
 interface S3BucketModel extends AWSResource<S3Client> {
     String location();
+
     String bucketName();
 
     @Override

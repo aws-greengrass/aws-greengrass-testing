@@ -20,6 +20,12 @@ public class S3Lifecycle extends AbstractAWSResourceLifecycle<S3Client> {
         this(S3Client.create());
     }
 
+    /**
+     * Checks if the bucket exists by name.
+     *
+     * @param bucketName Name of the bucket to check
+     * @return
+     */
     public boolean bucketExists(String bucketName) {
         try {
             client.headBucket(HeadBucketRequest.builder()

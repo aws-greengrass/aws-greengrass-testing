@@ -28,11 +28,16 @@ public class ExampleSteps implements Closeable {
     private Path testFile;
 
     @Inject
-    public ExampleSteps(final TestId testId, final Path testDirectory) {
+    ExampleSteps(final TestId testId, final Path testDirectory) {
         this.testId = testId;
         this.testDirectory = testDirectory;
     }
 
+    /**
+     * Prepares scenario for testing.
+     *
+     * @throws IOException fails to prepare the scenario
+     */
     @Given("I have created the test directory")
     public void createTestDirectory() throws IOException {
         assertFalse(Files.exists(testDirectory));
@@ -46,6 +51,11 @@ public class ExampleSteps implements Closeable {
         Files.write(testFile, (FILE_CONTENTS + testId.idFor("contents")).getBytes(StandardCharsets.UTF_8));
     }
 
+    /**
+     * Validate that a test file is created.
+     *
+     * @throws IOException fails to validate file
+     */
     @Then("the file is created with test information")
     public void validateTestFile() throws IOException {
         assertNotNull(testFile, "Create the file with 'I create a test file...'");

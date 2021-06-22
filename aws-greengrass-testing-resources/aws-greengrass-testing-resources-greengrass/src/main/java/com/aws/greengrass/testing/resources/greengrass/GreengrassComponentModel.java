@@ -10,7 +10,9 @@ import software.amazon.awssdk.services.greengrassv2.model.DeleteComponentRequest
 @Value.Immutable
 interface GreengrassComponentModel extends AWSResource<GreengrassV2Client> {
     String componentName();
+
     String componentVersion();
+
     String componentArn();
 
     @Override

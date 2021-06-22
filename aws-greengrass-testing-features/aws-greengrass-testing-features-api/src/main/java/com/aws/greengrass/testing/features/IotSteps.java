@@ -8,11 +8,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.cucumber.guice.ScenarioScoped;
 import io.cucumber.java.en.Given;
 
-import javax.inject.Inject;
-import javax.inject.Named;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Optional;
+import javax.inject.Inject;
+import javax.inject.Named;
 
 @ScenarioScoped
 public class IotSteps {
@@ -22,7 +22,7 @@ public class IotSteps {
     private final TestId testId;
 
     @Inject
-    public IotSteps(
+    IotSteps(
             final TestId testId,
             final AWSResources resources,
             @Named(JacksonModule.YAML) final ObjectMapper mapper) {
@@ -36,11 +36,13 @@ public class IotSteps {
         return createDefaultPolicy(null);
     }
 
-    @Given("I create an IoT policy from {word}")
-    public IotPolicySpec createPolicy(String config) throws IOException {
-        return createPolicy(config, null);
-    }
-
+    /**
+     * Create the default IoT policy with a name override.
+     *
+     * @param policyNameOverride name to use for IoT policy
+     * @return IotPolicySpec
+     * @throws RuntimeException failed to create an IoT policy for some reason
+     */
     public IotPolicySpec createDefaultPolicy(String policyNameOverride) {
         try {
             return createPolicy(DEFAULT_POLICY_CONFIG, policyNameOverride);
@@ -49,6 +51,26 @@ public class IotSteps {
         }
     }
 
+    /**
+     * Create a new IoT policy using a configuration name.
+     *
+     * @param config name of the configuration for the policy
+     * @return IotPolicySpec
+     * @throws IOException failed to create a policy from configuration
+     */
+    @Given("I create an IoT policy from {word}")
+    public IotPolicySpec createPolicy(String config) throws IOException {
+        return createPolicy(config, null);
+    }
+
+    /**
+     * Create an IoT policy with a configuration and name override.
+     *
+     * @param config name of the config
+     * @param policyNameOverride override of the policy name
+     * @return IotPolicySpec
+     * @throws IOException failed to create a configuration
+     */
     public IotPolicySpec createPolicy(String config, String policyNameOverride) throws IOException {
         try (InputStream in = getClass().getResourceAsStream(config)) {
             IotPolicySpec spec = mapper.readValue(in, IotPolicySpec.class);

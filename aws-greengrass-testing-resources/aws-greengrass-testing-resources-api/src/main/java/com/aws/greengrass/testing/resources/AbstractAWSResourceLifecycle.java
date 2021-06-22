@@ -5,8 +5,6 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Objects;
@@ -20,8 +18,15 @@ public abstract class AbstractAWSResourceLifecycle<C> implements AWSResourceLife
     protected List<ResourceSpec<C, ? extends AWSResource<C>>> specs;
     protected UUID uuid;
 
+    /**
+     * Create a {@link AWSResourceLifecycle} using a collection of tracking classes and underlying client.
+     *
+     * @param client A type of AWS client to handle the tracking {@link ResourceSpec}
+     * @param specClass a {@link ResourceSpec} implementation class
+     */
     @SafeVarargs
-    public AbstractAWSResourceLifecycle(C client, Class<? extends ResourceSpec<C, ? extends AWSResource<C>>> ... specClass) {
+    public AbstractAWSResourceLifecycle(C client,
+                                        Class<? extends ResourceSpec<C, ? extends AWSResource<C>>>...specClass) {
         this.client = client;
         this.specClasses = Arrays.asList(specClass);
         this.specs = new ArrayList<>();
@@ -76,8 +81,12 @@ public abstract class AbstractAWSResourceLifecycle<C> implements AWSResourceLife
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         AbstractAWSResourceLifecycle<?> that = (AbstractAWSResourceLifecycle<?>) o;
         return Objects.equals(client, that.client)
                 && Objects.equals(specClasses, that.specClasses)

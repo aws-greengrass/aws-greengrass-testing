@@ -13,6 +13,7 @@ import software.amazon.awssdk.services.iam.model.ListAttachedRolePoliciesRequest
 @Value.Immutable
 interface IamRoleModel extends AWSResource<IamClient> {
     String roleArn();
+
     String roleName();
 
     @Override

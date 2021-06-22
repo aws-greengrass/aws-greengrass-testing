@@ -16,8 +16,11 @@ import java.util.Objects;
 @Value.Immutable
 interface TestContextModel extends Closeable {
     TestId testId();
+
     Path testDirectory();
+
     Path testResultsPath();
+
     CleanupContext cleanupContext();
 
     @Value.Default

@@ -11,9 +11,9 @@ import software.amazon.awssdk.services.greengrassv2.model.DeleteCoreDeviceReques
 import software.amazon.awssdk.services.greengrassv2.model.GreengrassV2Exception;
 import software.amazon.awssdk.services.greengrassv2.model.ValidationException;
 
-import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Optional;
+import javax.annotation.Nullable;
 
 @TestingModel
 @Value.Immutable

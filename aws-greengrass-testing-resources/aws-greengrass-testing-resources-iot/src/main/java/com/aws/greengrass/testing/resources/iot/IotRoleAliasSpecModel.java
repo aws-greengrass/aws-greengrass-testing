@@ -1,7 +1,7 @@
 package com.aws.greengrass.testing.resources.iot;
 
-import com.aws.greengrass.testing.resources.AWSResources;
 import com.aws.greengrass.testing.api.model.TestingModel;
+import com.aws.greengrass.testing.resources.AWSResources;
 import com.aws.greengrass.testing.resources.ResourceSpec;
 import com.aws.greengrass.testing.resources.iam.IamRole;
 import org.immutables.value.Value;
@@ -15,6 +15,7 @@ import javax.annotation.Nullable;
 @Value.Immutable
 interface IotRoleAliasSpecModel extends ResourceSpec<IotClient, IotRoleAlias>, IotTaggingMixin {
     String name();
+
     IamRole iamRole();
 
     @Override

@@ -18,6 +18,7 @@ import java.util.function.Predicate;
 
 abstract class Paddle {
     private static final int TIMEOUT = 5;
+    
     enum Type {
         Ping, Pong;
     }
@@ -49,9 +50,9 @@ abstract class Paddle {
     }
 
     public void watch() throws InterruptedException, ExecutionException, TimeoutException {
-        SubscribeToTopicRequest subscribeToTopicRequest = new SubscribeToTopicRequest();
-        subscribeToTopicRequest.setTopic("say/" + type.name().toLowerCase());
-        ipc.subscribeToTopic(subscribeToTopicRequest, Optional.of(new StreamResponseHandler<SubscriptionResponseMessage>() {
+        SubscribeToTopicRequest subscribeRequest = new SubscribeToTopicRequest();
+        subscribeRequest.setTopic("say/" + type.name().toLowerCase());
+        ipc.subscribeToTopic(subscribeRequest, Optional.of(new StreamResponseHandler<SubscriptionResponseMessage>() {
             @Override
             public void onStreamEvent(SubscriptionResponseMessage subscriptionResponseMessage) {
                 String payload = new String(subscriptionResponseMessage.getBinaryMessage().getMessage(),
