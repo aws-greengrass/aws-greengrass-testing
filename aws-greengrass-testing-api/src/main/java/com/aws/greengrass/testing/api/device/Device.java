@@ -1,7 +1,6 @@
 package com.aws.greengrass.testing.api.device;
 
 
-
 import com.aws.greengrass.testing.api.device.exception.CommandExecutionException;
 import com.aws.greengrass.testing.api.device.exception.CopyException;
 import com.aws.greengrass.testing.api.device.local.LocalDevice;
@@ -35,14 +34,4 @@ public interface Device {
     }
 
     boolean exists(Path file);
-
-    static Device acquire(String type) {
-        return StreamSupport.stream(
-                Spliterators.spliteratorUnknownSize(
-                        ServiceLoader.load(Device.class).iterator(),
-                        Spliterator.DISTINCT), false)
-                .filter(device -> device.type().equals(type))
-                .findFirst()
-                .orElseGet(LocalDevice::new);
-    }
 }

@@ -12,14 +12,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.ServiceLoader;
 import java.util.Set;
-import java.util.Spliterator;
-import java.util.Spliterators;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 public class AWSResources implements Closeable {
     private static final Logger LOGGER = LogManager.getLogger(AWSResources.class);
@@ -27,6 +22,13 @@ public class AWSResources implements Closeable {
     private final CleanupContext cleanupContext;
     private final TestId testId;
 
+    /**
+     * Create a {@link AWSResources} instance with a custom {@link CleanupContext} and {@link TestId}.
+     *
+     * @param lifecycles Distinct collection of {@link AWSResourceLifecycle}
+     * @param cleanupContext Custom {@link CleanupContext}
+     * @param testId Custom {@link TestId}
+     */
     public AWSResources(
             Set<AWSResourceLifecycle> lifecycles,
             CleanupContext cleanupContext,
@@ -36,6 +38,11 @@ public class AWSResources implements Closeable {
         this.testId = testId;
     }
 
+    /**
+     * Create a {@link AWSResources} that cleans all resources and uses a generic {@link UUID} based tag.
+     *
+     * @param lifecycles Distinct collection of {@link AWSResourceLifecycle}'s
+     */
     public AWSResources(Set<AWSResourceLifecycle> lifecycles) {
         this(lifecycles,
                 CleanupContext.builder().build(),
@@ -44,14 +51,13 @@ public class AWSResources implements Closeable {
                         .build());
     }
 
-    public static AWSResources loadFromSystem() {
-        return new AWSResources(StreamSupport.stream(
-                Spliterators.spliteratorUnknownSize(
-                        ServiceLoader.load(AWSResourceLifecycle.class).iterator(), Spliterator.DISTINCT), false)
-                .map(awsResourceLifecycle -> (AWSResourceLifecycle<?>) awsResourceLifecycle)
-                .collect(Collectors.toSet()));
-    }
-
+    /**
+     * Attempt to find a concrete lifecycle implementation by type.
+     *
+     * @param lifecycleType A {@link Class} that represents the {@link AWSResourceLifecycle}
+     * @param <U> AWSResourceLifecycle implementation type
+     * @return
+     */
     public <U extends AWSResourceLifecycle> U lifecycle(Class<U> lifecycleType) {
         return lifecycles.stream()
                 .peek(lc -> LOGGER.debug("Available lifecycle {}", lc))
@@ -61,13 +67,29 @@ public class AWSResources implements Closeable {
                 .orElseThrow(() -> new IllegalArgumentException("Could not find " + lifecycleType));
     }
 
+    /**
+     * Get a {@link Map} that contains all of the default resource tags to be used in resource tagging.
+     *
+     * @return
+     */
     public Map<String, String> generateResourceTags() {
-        return Collections.unmodifiableMap(new HashMap<String, String>() {{
-            put("Testing", "GG");
-            put("TestId", testId.id());
-        }});
+        return Collections.unmodifiableMap(new HashMap<String, String>() {
+            {
+                put("Testing", "Greengrass");
+                put("TestId", testId.prefixedId());
+            }
+        });
     }
 
+    /**
+     * All {@link ResourceSpec} create calls are handled through create entry point.
+     *
+     * @param spec A {@link ResourceSpec} implementation that results in an AWS resource.
+     * @param <C> A generic to represent AWS client
+     * @param <U> {@link ResourceSpec} implementation type
+     * @param <R> {@link AWSResource} implementation type
+     * @return
+     */
     @SuppressWarnings("unchecked")
     public <C, U extends ResourceSpec<C, R>, R extends AWSResource<C>> U create(U spec) {
         return find((Class<U>) spec.getClass())
@@ -75,6 +97,15 @@ public class AWSResources implements Closeable {
                 .orElseThrow(() -> new IllegalArgumentException("Could not find lifecycle for " + spec.getClass()));
     }
 
+    /**
+     * Get all tracked {@link ResourceSpec} specs that the concrete specClass.
+     *
+     * @param specClass All {@link ResourceSpec} that match specClass
+     * @param <C> A generic to represent AWS client
+     * @param <U> {@link ResourceSpec} implementation type
+     * @param <R> {@link AWSResource} implementation type
+     * @return
+     */
     public <C, U extends ResourceSpec<C, R>, R extends AWSResource<C>> Stream<U> trackingSpecs(Class<U> specClass) {
         return find(specClass)
                 .map(lc -> lc.trackingSpecs(specClass))
@@ -83,8 +114,12 @@ public class AWSResources implements Closeable {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         AWSResources that = (AWSResources) o;
         return Objects.equals(lifecycles, that.lifecycles);
     }
@@ -95,7 +130,8 @@ public class AWSResources implements Closeable {
     }
 
     @SuppressWarnings("unchecked")
-    private <C, S extends ResourceSpec<C, R>, R extends AWSResource<C>> Optional<AWSResourceLifecycle<C>> find(Class<S> specClass) {
+    private <C, S extends ResourceSpec<C, R>, R extends AWSResource<C>> Optional<AWSResourceLifecycle<C>> find(
+            Class<S> specClass) {
         return lifecycles.stream()
                 .filter(lc -> lc.getSupportedSpecs().contains(specClass))
                 .findFirst()

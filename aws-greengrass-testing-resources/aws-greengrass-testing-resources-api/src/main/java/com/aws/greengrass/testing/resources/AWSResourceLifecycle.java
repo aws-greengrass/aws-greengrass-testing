@@ -5,12 +5,12 @@ import java.io.IOException;
 import java.util.List;
 import java.util.stream.Stream;
 
-public interface AWSResourceLifecycle<Client> extends Closeable {
-    List<Class<? extends ResourceSpec<Client, ? extends AWSResource<Client>>>> getSupportedSpecs();
+public interface AWSResourceLifecycle<C> extends Closeable {
+    List<Class<? extends ResourceSpec<C, ? extends AWSResource<C>>>> getSupportedSpecs();
 
-    <U extends ResourceSpec<Client, R>, R extends AWSResource<Client>> U create(U spec, AWSResources resources);
+    <U extends ResourceSpec<C, R>, R extends AWSResource<C>> U create(U spec, AWSResources resources);
 
-    <U extends ResourceSpec<Client, R>, R extends AWSResource<Client>> Stream<U> trackingSpecs(Class<U> specClass);
+    <U extends ResourceSpec<C, R>, R extends AWSResource<C>> Stream<U> trackingSpecs(Class<U> specClass);
 
     void persist();
 

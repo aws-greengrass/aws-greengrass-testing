@@ -20,7 +20,7 @@ public class ScenarioTestRuns implements TestRuns {
     }
 
     @Override
-    synchronized public void track(TestRun run) {
+    public synchronized void track(TestRun run) {
         scenarios.add(run);
     }
 }

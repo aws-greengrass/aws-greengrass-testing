@@ -12,8 +12,11 @@ import javax.annotation.Nullable;
 @Value.Immutable
 interface S3ObjectModel extends AWSResource<S3Client> {
     String etag();
+
     String key();
+
     String bucket();
+
     @Nullable
     String versionId();
 

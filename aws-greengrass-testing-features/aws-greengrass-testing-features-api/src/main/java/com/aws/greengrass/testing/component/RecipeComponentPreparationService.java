@@ -48,7 +48,7 @@ public class RecipeComponentPreparationService implements ComponentPreparationSe
         InputStream load(String version) throws IOException;
     }
 
-    public RecipeComponentPreparationService(
+    RecipeComponentPreparationService(
             ContentLoader loader,
             AWSResources resources,
             ObjectMapper mapper,

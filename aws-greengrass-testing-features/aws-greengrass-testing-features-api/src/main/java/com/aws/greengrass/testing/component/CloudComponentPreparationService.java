@@ -4,6 +4,7 @@ import com.aws.greengrass.testing.api.ComponentPreparationService;
 import com.aws.greengrass.testing.api.model.ComponentOverrideNameVersion;
 import com.aws.greengrass.testing.api.model.ComponentOverrideVersion;
 import com.aws.greengrass.testing.resources.greengrass.GreengrassV2Lifecycle;
+import com.vdurmont.semver4j.Semver;
 import software.amazon.awssdk.arns.Arn;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.greengrassv2.model.Component;
@@ -11,10 +12,8 @@ import software.amazon.awssdk.services.greengrassv2.model.ComponentLatestVersion
 import software.amazon.awssdk.services.greengrassv2.model.ComponentVersionListItem;
 import software.amazon.awssdk.services.greengrassv2.model.ComponentVisibilityScope;
 
-import com.vdurmont.semver4j.Semver;
-
-import javax.inject.Inject;
 import java.util.Optional;
+import javax.inject.Inject;
 
 public class CloudComponentPreparationService implements ComponentPreparationService {
     private static final String LATEST = "LATEST";

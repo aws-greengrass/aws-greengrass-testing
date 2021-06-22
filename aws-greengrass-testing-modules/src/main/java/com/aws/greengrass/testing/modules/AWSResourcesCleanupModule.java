@@ -14,7 +14,6 @@ import org.aopalliance.intercept.MethodInvocation;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import javax.inject.Singleton;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Arrays;
@@ -22,6 +21,7 @@ import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.inject.Singleton;
 
 @AutoService(Module.class)
 public class AWSResourcesCleanupModule extends AbstractModule {
@@ -85,9 +85,7 @@ public class AWSResourcesCleanupModule extends AbstractModule {
     @Provides
     @Singleton
     static CleanupContext providesCleanUpContext() {
-        /**
-         * TODO: switch to SPI so modules can specify their own persistence type and provider
-         */
+        // TODO: switch to SPI so modules can specify their own persistence type and provider
         final Set<PersistMode> modes = Optional.ofNullable(System.getProperty(PERSIST_TESTING_RESOURCES))
                 .map(resources -> resources.split("\\s*,\\s*"))
                 .map(Arrays::stream)

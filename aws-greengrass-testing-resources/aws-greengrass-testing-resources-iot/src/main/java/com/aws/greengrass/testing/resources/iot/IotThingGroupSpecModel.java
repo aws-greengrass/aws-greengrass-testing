@@ -14,6 +14,7 @@ import javax.annotation.Nullable;
 @Value.Immutable
 interface IotThingGroupSpecModel extends ResourceSpec<IotClient, IotThingGroup>, IotTaggingMixin {
     String groupName();
+
     @Nullable
     String parentGroupName();
 

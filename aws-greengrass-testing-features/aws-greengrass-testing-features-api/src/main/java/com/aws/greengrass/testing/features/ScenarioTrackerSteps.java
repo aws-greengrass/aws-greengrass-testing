@@ -7,8 +7,8 @@ import io.cucumber.java.After;
 import io.cucumber.java.Before;
 import io.cucumber.java.Scenario;
 
-import javax.inject.Inject;
 import java.time.Duration;
+import javax.inject.Inject;
 
 @ScenarioScoped
 public class ScenarioTrackerSteps {
@@ -16,7 +16,7 @@ public class ScenarioTrackerSteps {
     private long startTime;
 
     @Inject
-    public ScenarioTrackerSteps(final TestRuns scenarios) {
+    ScenarioTrackerSteps(final TestRuns scenarios) {
         this.scenarios = scenarios;
     }
 
@@ -25,6 +25,11 @@ public class ScenarioTrackerSteps {
         this.startTime = System.currentTimeMillis();
     }
 
+    /**
+     * Stop tracking a complete {@link Scenario}.
+     *
+     * @param scenario unique {@link Scenario}
+     */
     @After
     public void stop(Scenario scenario) {
         long duration = System.currentTimeMillis() - startTime;

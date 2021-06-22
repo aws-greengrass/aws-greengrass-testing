@@ -16,7 +16,9 @@ import javax.annotation.Nullable;
 @Value.Immutable
 interface S3ObjectSpecModel extends ResourceSpec<S3Client, S3Object>, S3TaggingMixin {
     String key();
+
     String bucket();
+
     RequestBody content();
 
     @Nullable

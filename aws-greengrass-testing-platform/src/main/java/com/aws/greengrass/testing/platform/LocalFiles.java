@@ -4,7 +4,6 @@ import com.aws.greengrass.testing.api.device.exception.CommandExecutionException
 import com.aws.greengrass.testing.api.device.model.CommandInput;
 import com.aws.greengrass.testing.api.util.FileUtils;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;

@@ -11,6 +11,13 @@ public final class FileUtils {
     private FileUtils() {
     }
 
+    /**
+     * Recursively delete a file directory by path.
+     * <strong>Note</strong>: This strictly pertains to deleting directories on the host agent.
+     *
+     * @param directory Directory to delete completely
+     * @throws IOException Propagated IOException from surrounding nio utility methods
+     */
     public static void recursivelyDelete(Path directory) throws IOException {
         if (Files.exists(directory)) {
             try (Stream<Path> files = Files.walk(directory)) {

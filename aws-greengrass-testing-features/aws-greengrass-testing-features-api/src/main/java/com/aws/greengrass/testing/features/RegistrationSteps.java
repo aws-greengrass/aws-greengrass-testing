@@ -21,7 +21,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import software.amazon.awssdk.utils.IoUtils;
 
-import javax.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -31,6 +30,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import javax.inject.Inject;
 
 @ScenarioScoped
 public class RegistrationSteps {
@@ -47,7 +47,7 @@ public class RegistrationSteps {
     private final Platform platform;
 
     @Inject
-    public RegistrationSteps(
+    RegistrationSteps(
             Device device,
             Platform platform,
             AWSResources resources,
@@ -137,14 +137,16 @@ public class RegistrationSteps {
             additionalUpdatableFields.putIfAbsent("{role_alias}", "null");
         }
 
-        config = config.replace("{proxy_url}", resourcesContext.proxyConfig().map(ProxyConfig::proxyUrl).orElse(""));
+        config = config.replace("{proxy_url}",
+                resourcesContext.proxyConfig().map(ProxyConfig::proxyUrl).orElse(""));
         config = config.replace("{aws_region}", resourcesContext.region().metadata().id());
         config = config.replace("{nucleus_version}", greengrassContext.version());
         config = config.replace("{env_stage}", resourcesContext.envStage());
         config = config.replace("{posix_user}", testContext.currentUser());
         config = config.replace("{data_plane_port}", Integer.toString(registrationContext.connectionPort()));
 
-        Files.write(testContext.testDirectory().resolve("rootCA.pem"), registrationContext.rootCA().getBytes(StandardCharsets.UTF_8));
+        Files.write(testContext.testDirectory().resolve("rootCA.pem"),
+                registrationContext.rootCA().getBytes(StandardCharsets.UTF_8));
         Files.write(configFilePath.resolve("config.yaml"), config.getBytes(StandardCharsets.UTF_8));
         // Copy to where the nucleus will read it
         platform.files().makeDirectories(testContext.installRoot().getParent());

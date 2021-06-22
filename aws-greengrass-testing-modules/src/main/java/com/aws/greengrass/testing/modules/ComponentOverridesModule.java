@@ -7,8 +7,8 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 import com.google.inject.Provides;
 
-import javax.inject.Singleton;
 import java.util.Optional;
+import javax.inject.Singleton;
 
 @AutoService(Module.class)
 public class ComponentOverridesModule extends AbstractModule {
@@ -22,12 +22,14 @@ public class ComponentOverridesModule extends AbstractModule {
         ComponentOverrides.Builder builder = ComponentOverrides.builder()
                 .bucketName(System.getProperty(COMPONENT_BUCKET));
         Optional.ofNullable(System.getProperty(COMPONENT_OVERRIDES)).ifPresent(overrideString -> {
-            // -Dgg.component.overrides=aws.greengrass.Nucleus:cloud:LATEST,aws.greengrass.LocalDebugConsole:file:/path/to/recipe.yml
+            // -Dgg.component.overrides=aws.greengrass.Nucleus:cloud:LATEST,
+            // aws.greengrass.LocalDebugConsole:file:/path/to/recipe.yml
             final String[] components = overrideString.split("\\s*,\\s*");
             for (String component : components) {
                 final String[] nameVersionParts = component.split(":", MAX_SPLIT_LIMIT);
                 final String[] versionParts = nameVersionParts[1].split(":", MAX_SPLIT_LIMIT);
-                String type, version;
+                String type;
+                String version;
                 if (versionParts.length == MAX_SPLIT_LIMIT) {
                     type = versionParts[0];
                     version = versionParts[1];

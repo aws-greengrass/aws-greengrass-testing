@@ -7,10 +7,10 @@ import com.aws.greengrass.testing.modules.JacksonModule;
 import com.aws.greengrass.testing.resources.AWSResources;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import javax.inject.Inject;
-import javax.inject.Named;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import javax.inject.Inject;
+import javax.inject.Named;
 
 public class FileComponentPreparationService extends RecipeComponentPreparationService {
     @Inject

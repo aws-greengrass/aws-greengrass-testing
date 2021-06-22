@@ -5,7 +5,6 @@ import com.aws.greengrass.testing.component.ClasspathComponentPreparationService
 import com.aws.greengrass.testing.component.CloudComponentPreparationService;
 import com.aws.greengrass.testing.component.CompositeComponentPreparationService;
 import com.aws.greengrass.testing.component.FileComponentPreparationService;
-import com.aws.greengrass.testing.resources.greengrass.GreengrassV2Lifecycle;
 import com.google.auto.service.AutoService;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;

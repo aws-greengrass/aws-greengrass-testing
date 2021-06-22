@@ -6,5 +6,6 @@ import org.immutables.value.Value;
 @Value.Immutable
 interface ComponentOverrideNameVersionModel {
     String name();
+
     ComponentOverrideVersion version();
 }

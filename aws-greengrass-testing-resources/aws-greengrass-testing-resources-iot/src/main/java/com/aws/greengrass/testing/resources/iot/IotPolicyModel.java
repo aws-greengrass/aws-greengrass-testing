@@ -10,6 +10,7 @@ import software.amazon.awssdk.services.iot.model.DeletePolicyRequest;
 @Value.Immutable
 interface IotPolicyModel extends AWSResource<IotClient> {
     String policyArn();
+
     String policyName();
 
     @Override

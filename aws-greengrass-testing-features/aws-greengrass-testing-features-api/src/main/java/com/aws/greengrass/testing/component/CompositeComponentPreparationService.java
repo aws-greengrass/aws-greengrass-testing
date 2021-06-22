@@ -3,9 +3,9 @@ package com.aws.greengrass.testing.component;
 import com.aws.greengrass.testing.api.ComponentPreparationService;
 import com.aws.greengrass.testing.api.model.ComponentOverrideNameVersion;
 
-import javax.inject.Inject;
 import java.util.Map;
 import java.util.Optional;
+import javax.inject.Inject;
 
 public class CompositeComponentPreparationService implements ComponentPreparationService {
     private final Map<String, ComponentPreparationService> services;

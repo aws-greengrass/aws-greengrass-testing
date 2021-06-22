@@ -12,7 +12,6 @@ import com.google.inject.multibindings.ProvidesIntoMap;
 import com.google.inject.multibindings.StringMapKey;
 import io.cucumber.guice.ScenarioScoped;
 
-import javax.inject.Named;
 import java.util.Map;
 
 @AutoService(Module.class)

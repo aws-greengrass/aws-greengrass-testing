@@ -11,19 +11,15 @@ import software.amazon.awssdk.services.greengrassv2.GreengrassV2Client;
 import software.amazon.awssdk.services.greengrassv2.model.ComponentDeploymentSpecification;
 import software.amazon.awssdk.services.greengrassv2.model.CreateDeploymentRequest;
 import software.amazon.awssdk.services.greengrassv2.model.CreateDeploymentResponse;
-import software.amazon.awssdk.services.greengrassv2.model.DeploymentComponentUpdatePolicy;
-import software.amazon.awssdk.services.greengrassv2.model.DeploymentComponentUpdatePolicyAction;
-import software.amazon.awssdk.services.greengrassv2.model.DeploymentConfigurationValidationPolicy;
-import software.amazon.awssdk.services.greengrassv2.model.DeploymentFailureHandlingPolicy;
 import software.amazon.awssdk.services.greengrassv2.model.DeploymentIoTJobConfiguration;
 import software.amazon.awssdk.services.greengrassv2.model.DeploymentPolicies;
 
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
+import javax.annotation.Nullable;
 
 @TestingModel
 @Value.Immutable

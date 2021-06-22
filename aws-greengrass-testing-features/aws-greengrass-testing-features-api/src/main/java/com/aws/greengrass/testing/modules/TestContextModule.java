@@ -13,17 +13,18 @@ import com.google.inject.Module;
 import com.google.inject.Provides;
 import io.cucumber.guice.ScenarioScoped;
 
-import javax.inject.Singleton;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.SecureRandom;
+import javax.inject.Singleton;
 
 @AutoService(Module.class)
 public class TestContextModule extends AbstractModule {
     private static final String TEST_RESULTS_PATH = "test.log.path";
+    private static final String TEST_ID_PREFIX = "test.id.prefix";
     private static final SecureRandom RANDOM = new SecureRandom();
 
     static String randomString(int size) {
@@ -48,7 +49,8 @@ public class TestContextModule extends AbstractModule {
     @ScenarioScoped
     static TestId providesTestId() {
         return TestId.builder()
-                .id(randomString(20))
+                .prefix(System.getProperty(TEST_ID_PREFIX, ""))
+                .id(randomString(20)) // This should probably be replaced too
                 .build();
     }
 

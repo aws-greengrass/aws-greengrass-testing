@@ -1,14 +1,12 @@
 package com.aws.greengrass.testing.model;
 
 import com.aws.greengrass.testing.api.model.TestId;
-import com.aws.greengrass.testing.resources.AWSResource;
 import com.aws.greengrass.testing.resources.AWSResources;
 import com.aws.greengrass.testing.resources.ResourceSpec;
 import io.cucumber.guice.ScenarioScoped;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import javax.inject.Inject;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -18,6 +16,7 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.inject.Inject;
 
 @ScenarioScoped
 public class ScenarioContext {
@@ -27,6 +26,12 @@ public class ScenarioContext {
     private final TestId testId;
     private final AWSResources resources;
 
+    /**
+     * Creates a {@link ScenarioContext} with {@link TestId} and {@link AWSResources} mapped to scenario.
+     *
+     * @param testId Scenario unique {@link TestId}
+     * @param resources Scenario unique {@link AWSResources}
+     */
     @Inject
     public ScenarioContext(
             final TestId testId,
@@ -45,40 +50,47 @@ public class ScenarioContext {
         return Character.toUpperCase(name.charAt(0)) + name.substring(1);
     }
 
+    /**
+     * Gets the string value for the tracking key.
+     *
+     * @param key Tracking key to context value
+     * @return
+     */
     @SuppressWarnings("unchecked")
     public String get(final String key) {
         String[] parts = key.split(":");
-        switch (parts[0]) {
-            case "aws.resources":
-                // TODO: this is super fragile. This needs to be an SPI id
-                if (parts.length >= 4) {
-                    String type = pascalCase(parts[1]);
-                    String resource = pascalCase(parts[2]);
-                    try {
-                        Class<?> targetClass = Class.forName("com.aws.greengrass.testing.resources."
-                                + parts[1] + "." + type + resource + "Spec");
-                        Method getter = targetClass.getMethod(parts[3]);
-                        Object spec = resources.trackingSpecs((Class<? extends ResourceSpec>) targetClass)
-                                .findFirst()
-                                .get();
-                        Object result = getter.invoke(spec);
-                        if (Objects.nonNull(result)) {
-                            return result.toString();
-                        }
-                    } catch (ClassNotFoundException
-                            | NoSuchMethodException
-                            | NoSuchElementException
-                            | IllegalAccessException
-                            | InvocationTargetException e) {
-                        LOGGER.warn("Could not find a resource for {}. Falling back.",
-                                Arrays.toString(parts));
-                    }
+        if (parts[0].equals("aws.resources") && parts.length >= 4) {
+            String type = pascalCase(parts[1]);
+            String resource = pascalCase(parts[2]);
+            try {
+                Class<?> targetClass = Class.forName("com.aws.greengrass.testing.resources."
+                        + parts[1] + "." + type + resource + "Spec");
+                Method getter = targetClass.getMethod(parts[3]);
+                Object spec = resources.trackingSpecs((Class<? extends ResourceSpec>) targetClass)
+                        .findFirst()
+                        .get();
+                Object result = getter.invoke(spec);
+                if (Objects.nonNull(result)) {
+                    return result.toString();
                 }
-            default:
-                return context.get(testId.idFor(key));
+            } catch (ClassNotFoundException
+                    | NoSuchMethodException
+                    | NoSuchElementException
+                    | IllegalAccessException
+                    | InvocationTargetException e) {
+                LOGGER.warn("Could not find a resource for {}. Falling back.",
+                        Arrays.toString(parts));
+            }
         }
+        return context.get(testId.idFor(key));
     }
 
+    /**
+     * Replaces the content with entities found within the {@link ScenarioContext}.
+     *
+     * @param content Full content to replace with values found in the context
+     * @return
+     */
     public String applyInline(String content) {
         final Matcher matcher = PATTERN.matcher(content);
         String replacement = content;

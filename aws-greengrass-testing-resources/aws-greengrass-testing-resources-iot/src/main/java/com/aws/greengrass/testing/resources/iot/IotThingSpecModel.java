@@ -9,11 +9,11 @@ import software.amazon.awssdk.services.iot.model.AttachPolicyRequest;
 import software.amazon.awssdk.services.iot.model.CreateThingRequest;
 import software.amazon.awssdk.services.iot.model.CreateThingResponse;
 
-import javax.annotation.Nullable;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
 
 @TestingModel
 @Value.Immutable
@@ -47,10 +47,10 @@ interface IotThingSpecModel extends ResourceSpec<IotClient, IotThing>, IotTaggin
             updatedRoleAlias = resources.create(roleAliasSpec());
             assumeRolePolicy = resources.create(IotPolicySpec.builder()
                     .policyName(policySpec().policyName() + "-credentials")
-                    .policyDocument("{\"Version\":\"2012-10-17\",\"Statement\":[{" +
-                            "\"Effect\":\"Allow\"," +
-                            "\"Action\":\"iot:AssumeRoleWithCertificate\"," +
-                            "\"Resource\":\"" + updatedRoleAlias.resource().roleAliasArn() + "\"}]}")
+                    .policyDocument("{\"Version\":\"2012-10-17\",\"Statement\":[{"
+                            + "\"Effect\":\"Allow\","
+                            + "\"Action\":\"iot:AssumeRoleWithCertificate\","
+                            + "\"Resource\":\"" + updatedRoleAlias.resource().roleAliasArn() + "\"}]}")
                     .build());
         }
 

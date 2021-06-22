@@ -7,6 +7,7 @@ import org.immutables.value.Value;
 @Value.Immutable
 interface PlatformOSModel {
     String name();
+
     String arch();
 
     default boolean isWindows() {

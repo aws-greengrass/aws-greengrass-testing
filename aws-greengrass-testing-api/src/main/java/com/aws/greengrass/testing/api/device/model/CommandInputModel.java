@@ -3,9 +3,9 @@ package com.aws.greengrass.testing.api.device.model;
 import com.aws.greengrass.testing.api.model.TestingModel;
 import org.immutables.value.Value;
 
-import javax.annotation.Nullable;
 import java.nio.file.Path;
 import java.util.List;
+import javax.annotation.Nullable;
 
 @TestingModel
 @Value.Immutable

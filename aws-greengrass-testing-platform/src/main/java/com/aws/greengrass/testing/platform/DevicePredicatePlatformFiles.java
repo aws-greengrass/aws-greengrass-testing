@@ -17,6 +17,14 @@ public class DevicePredicatePlatformFiles implements PlatformFiles {
     private final PlatformFiles right;
     private final Predicate<Device> isLeft;
 
+    /**
+     * An "or" based predicate to delegate {@link PlatformFiles} implementations upon.
+     *
+     * @param isLeft A {@link Predicate} to switch which {@link PlatformFiles} implementation
+     * @param device An underlying {@link Device} entity to test
+     * @param left A {@link PlatformFiles} implementation to use if isLeft is true
+     * @param right A {@link PlatformFiles} implementation to use isLeft is false
+     */
     public DevicePredicatePlatformFiles(
             final Predicate<Device> isLeft,
             final Device device,

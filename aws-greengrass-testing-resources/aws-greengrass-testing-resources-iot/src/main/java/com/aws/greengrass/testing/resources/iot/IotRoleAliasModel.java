@@ -10,6 +10,7 @@ import software.amazon.awssdk.services.iot.model.DeleteRoleAliasRequest;
 @Value.Immutable
 interface IotRoleAliasModel extends AWSResource<IotClient> {
     String roleAlias();
+
     String roleAliasArn();
 
     @Override

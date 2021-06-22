@@ -18,12 +18,12 @@ import software.amazon.awssdk.http.apache.ProxyConfiguration;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 
-import javax.inject.Singleton;
 import java.net.Authenticator;
 import java.net.PasswordAuthentication;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import javax.inject.Singleton;
 
 @AutoService(Module.class)
 public class AWSResourcesModule extends AbstractModule {

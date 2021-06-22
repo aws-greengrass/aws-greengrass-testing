@@ -22,6 +22,14 @@ public interface PlatformFiles {
 
     List<Path> listContents(Path filePath) throws CommandExecutionException;
 
+    /**
+     * Perform a recursive copy from remote source to local destination.
+     *
+     * @param source Remote {@link Path} to copy from the device
+     * @param destination Local {@link Path} to copy to the host
+     * @throws CopyException Any propagated local nio utility IOException
+     * @throws CommandExecutionException Any remote execution failing as a command exception
+     */
     default void copyFrom(Path source, Path destination) throws CopyException, CommandExecutionException {
         final Path destinationRoot = destination.resolve(source.getFileName());
         try {

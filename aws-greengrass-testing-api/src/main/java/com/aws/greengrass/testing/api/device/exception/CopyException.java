@@ -8,6 +8,13 @@ public class CopyException extends RuntimeException {
     private final Path source;
     private final Path destination;
 
+    /**
+     * Create a {@link CopyException} with a cause, the source, destination values.
+     *
+     * @param ex The underlying cause of the copy failure
+     * @param source The source {@link Path}. Does not need to be absolute.
+     * @param destination The destination {@link Path}. Usually absolute.
+     */
     public CopyException(Throwable ex, Path source, Path destination) {
         super(ex);
         this.destination = destination;

@@ -2,8 +2,8 @@ package com.aws.greengrass.testing.api.model;
 
 import org.immutables.value.Value;
 
-import javax.annotation.Nonnull;
 import java.util.Objects;
+import javax.annotation.Nonnull;
 
 @TestingModel
 @Value.Immutable
