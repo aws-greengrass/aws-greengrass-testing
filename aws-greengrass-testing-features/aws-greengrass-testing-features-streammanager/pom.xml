@@ -10,12 +10,54 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>aws-greengrass-testing-features-streammanager</artifactId>
+    <properties>
+      <components>aws-greengrass-testing-components</components>
+      <component>${components}-streammanager</component>
+    </properties>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.2.4</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <artifactSet>
+                                <includes>
+                                  <include>greengrass/features/streammanager.feature</include>
+                                  <include>greengrass/components/artifacts/streammanager-*</include>
+                                </includes>
+                            </artifactSet>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.IncludeResourceTransformer">
+                                    <resource>greengrass/components/artifacts/streammanager-component.jar</resource>
+                                    <file>${project.basedir}/../../${components}/${component}/target/${component}-${project.parent.version}.jar</file>
+                                </transformer>
+                            </transformers>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 
     <dependencies>
         <dependency>
             <groupId>com.aws.greengrass</groupId>
             <artifactId>aws-greengrass-testing-features-api</artifactId>
             <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.aws.greengrass</groupId>
+            <artifactId>${component}</artifactId>
+            <version>${project.parent.version}</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 
