@@ -10,6 +10,7 @@ import com.aws.greengrass.testing.api.TestRuns;
 import com.aws.greengrass.testing.api.model.CleanupContext;
 import com.aws.greengrass.testing.api.model.TestId;
 import com.aws.greengrass.testing.api.model.TimeoutMultiplier;
+import com.aws.greengrass.testing.model.GreengrassContext;
 import com.aws.greengrass.testing.model.TestContext;
 import com.aws.greengrass.testing.modules.exception.ModuleProvisionException;
 import com.google.auto.service.AutoService;
@@ -63,8 +64,9 @@ public class TestContextModule extends AbstractModule {
     @ScenarioScoped
     static TestContext providesTestContext(
             final TestId testId,
-            final CleanupContext cleanupContext) {
-        Path testDirectory = Paths.get(testId.id());
+            final CleanupContext cleanupContext,
+            final GreengrassContext greengrassContext) {
+        Path testDirectory = greengrassContext.tempDirectory().resolve(testId.prefixedId());
         Path testResultsPath = Paths.get(System.getProperty(TEST_RESULTS_PATH, "testResults"));
         try {
             Files.createDirectory(testDirectory);

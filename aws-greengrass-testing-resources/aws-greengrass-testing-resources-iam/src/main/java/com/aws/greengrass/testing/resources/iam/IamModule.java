@@ -6,6 +6,7 @@
 package com.aws.greengrass.testing.resources.iam;
 
 import com.aws.greengrass.testing.modules.AbstractAWSResourceModule;
+import com.aws.greengrass.testing.modules.model.AWSResourcesContext;
 import com.google.auto.service.AutoService;
 import com.google.inject.Module;
 import com.google.inject.Provides;
@@ -23,13 +24,14 @@ public class IamModule extends AbstractAWSResourceModule<IamClient, IamLifecycle
     @Override
     protected IamClient providesClient(
             final AwsCredentialsProvider provider,
-            final Region region,
+            final AWSResourcesContext context,
             final ApacheHttpClient.Builder httpClientBuilder) {
         final Region globalRegion = Region.regions().stream()
                 .filter(Region::isGlobalRegion)
-                .filter(global -> global.id().startsWith(region.metadata().partition().id() + "-"))
+                .filter(global -> global.id().startsWith(context.region().metadata().partition().id() + "-"))
                 .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Global region not found: " + region.metadata().id()));
+                .orElseThrow(() -> new IllegalArgumentException("Global region not found: "
+                        + context.region().metadata().id()));
         return IamClient.builder()
                 .credentialsProvider(provider)
                 .httpClientBuilder(httpClientBuilder)

@@ -9,6 +9,7 @@ import com.aws.greengrass.testing.api.Greengrass;
 import com.aws.greengrass.testing.api.device.exception.CommandExecutionException;
 import com.aws.greengrass.testing.api.device.model.CommandInput;
 import com.aws.greengrass.testing.model.TestContext;
+import com.aws.greengrass.testing.modules.model.AWSResourcesContext;
 import com.aws.greengrass.testing.platform.Platform;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -18,8 +19,7 @@ import java.nio.file.Path;
 public class DefaultGreengrass implements Greengrass {
     private static final Logger LOGGER = LogManager.getLogger(DefaultGreengrass.class);
     private static final long TIMEOUT_IN_SECONDS = 30L;
-    private final String envStage;
-    private final String region;
+    private final AWSResourcesContext resourcesContext;
     private final Platform platform;
     private int greengrassProcess;
     private final TestContext testContext;
@@ -28,18 +28,15 @@ public class DefaultGreengrass implements Greengrass {
      * Creates a {@link Greengrass} software instance.
      *
      * @param platform Abstract {@link Platform}
-     * @param envStage String environment
-     * @param region AWS region name
+     * @param resourcesContext the global {@link AWSResourcesContext} for the test run
      * @param testContext The underlying {@link TestContext}
      */
     public DefaultGreengrass(
             final Platform platform,
-            String envStage,
-            String region,
+            AWSResourcesContext resourcesContext,
             TestContext testContext) {
         this.platform = platform;
-        this.envStage = envStage;
-        this.region = region;
+        this.resourcesContext = resourcesContext;
         this.testContext = testContext;
     }
 
@@ -55,8 +52,8 @@ public class DefaultGreengrass implements Greengrass {
                         "-Dlog.store=FILE",
                         "-Dlog.level=" + testContext.logLevel(),
                         "-jar", testContext.installRoot().resolve("greengrass/lib/Greengrass.jar").toString(),
-                        "--aws-region", region,
-                        "--env-stage", envStage,
+                        "--aws-region", resourcesContext.region().metadata().id(),
+                        "--env-stage", resourcesContext.envStage(),
                         "--start", "false")
                 .timeout(TIMEOUT_IN_SECONDS)
                 .build());

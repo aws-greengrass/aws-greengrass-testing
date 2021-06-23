@@ -33,6 +33,7 @@ import javax.inject.Named;
 @AutoService(Module.class)
 public class GreengrassContextModule extends AbstractModule {
     private static final Logger LOGGER = LogManager.getLogger(GreengrassContextModule.class);
+    private static final String TEST_TEMP_PATH = "test.temp.path";
     private static final String NUCLEUS_VERSION = "ggc.version";
     private static final String NUCLEUS_ARCHIVE_PATH = "ggc.archive";
     private static String DEFAULT_NUCLEUS_VERSION;
@@ -73,7 +74,14 @@ public class GreengrassContextModule extends AbstractModule {
         try {
             final Path archivePath = Paths.get(Objects.requireNonNull(System.getProperty(NUCLEUS_ARCHIVE_PATH),
                     "Parameter " + NUCLEUS_ARCHIVE_PATH + " is required!"));
-            final Path tempDirectory = Files.createTempDirectory("gg-testing-");
+            Path tempDirectory;
+            String tempDirectoryName = System.getProperty(TEST_TEMP_PATH);
+            if (Objects.isNull(tempDirectoryName)) {
+                tempDirectory = Files.createTempDirectory("gg-testing-");
+            } else {
+                tempDirectory = Paths.get(tempDirectoryName);
+                Files.createDirectories(tempDirectory);
+            }
             extractZip(mapper, archivePath, tempDirectory.resolve("greengrass"));
             return GreengrassContext.builder()
                     .version(System.getProperty(NUCLEUS_VERSION, DEFAULT_NUCLEUS_VERSION))

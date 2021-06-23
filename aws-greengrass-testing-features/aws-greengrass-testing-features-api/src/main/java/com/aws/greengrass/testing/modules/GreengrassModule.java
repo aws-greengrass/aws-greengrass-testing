@@ -25,8 +25,7 @@ public class GreengrassModule extends AbstractModule {
             final TestContext testContext,
             final AWSResourcesContext resourcesContext) {
         return new DefaultGreengrass(platform,
-                resourcesContext.envStage(),
-                resourcesContext.region().id(),
+                resourcesContext,
                 testContext);
     }
 }
