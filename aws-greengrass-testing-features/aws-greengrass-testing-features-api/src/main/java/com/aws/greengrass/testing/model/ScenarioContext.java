@@ -44,6 +44,7 @@ public class ScenarioContext {
         this.testId = testId;
         this.resources = resources;
         this.context = new ConcurrentHashMap<>();
+        put("test.id", testId.id());
     }
 
     public ScenarioContext put(final String key, final String value) {

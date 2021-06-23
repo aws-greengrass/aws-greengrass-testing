@@ -5,10 +5,8 @@ Feature: Greengrass V2 Machine Learning
     And my device is running Greengrass
 
   @ML @DLR
-  Scenario: I can receive inference results on an MQTT topic after installing aws.greengrass.DLRImageClassification
-    Given I subscribe to the following IoT MQTT topics
-      | image/classification |
-    And I create a Greengrass deployment with components
+  Scenario: I can receive inference results after installing aws.greengrass.DLRImageClassification
+    Given I create a Greengrass deployment with components
       | aws.greengrass.DLRImageClassification | LATEST |
     When I update my Greengrass deployment configuration, setting the component aws.greengrass.DLRImageClassification configuration to:
       """
@@ -19,25 +17,22 @@ Feature: Greengrass V2 Machine Learning
                 "aws.greengrass.DLRImageClassification:mqttproxy:1": {
                   "policyDescription": "Allows access to publish via topic image/classification.",
                     "operations": ["aws.greengrass#PublishToIoTCore"],
-                    "resources": ["${image/classification}"]
+                    "resources": ["dlr/${test.id}/image/classification"]
                 }
               }
             },
-            "PublishResultsOnTopic": "${image/classification}",
+            "PublishResultsOnTopic": "dlr/${test.id}/image/classification",
             "InferenceInterval": "10"
           }
         }
       """
     And I deploy the Greengrass deployment configuration
     Then the Greengrass deployment is COMPLETED on the device after 5 minutes
-    And I receive messages on the following IoT MQTT topics after 30 seconds
-      | image/classification | image-classification
+    And the aws.greengrass.DLRImageClassification log on the device contains the line "image-classification" within 30 seconds
 
   @ML @TensorFlow
-  Scenario: I can receive inference results on an MQTT topic after installing aws.greengrass.TensorFlowLiteImageClassification
-    Given I subscribe to the following IoT MQTT topics
-      | image/classification |
-    And I create a Greengrass deployment with components
+  Scenario: I can receive image inference results after installing aws.greengrass.TensorFlowLiteImageClassification
+    Given I create a Greengrass deployment with components
       | aws.greengrass.TensorFlowLiteImageClassification | LATEST |
     When I update my Greengrass deployment configuration, setting the component aws.greengrass.TensorFlowLiteImageClassification configuration to:
       """
@@ -48,19 +43,18 @@ Feature: Greengrass V2 Machine Learning
                 "aws.greengrass.TensorFlowLiteImageClassification:mqttproxy:1": {
                   "policyDescription": "Allows access to publish via topic image/classification.",
                     "operations": ["aws.greengrass#PublishToIoTCore"],
-                    "resources": ["${image/classification}"]
+                    "resources": ["tensorflow/${test.id}/image/classification"]
                 }
               }
             },
-            "PublishResultsOnTopic": "${image/classification}",
+            "PublishResultsOnTopic": "tensorflow/${test.id}/image/classification",
             "InferenceInterval": "10"
           }
         }
       """
     And I deploy the Greengrass deployment configuration
     Then the Greengrass deployment is COMPLETED on the device after 5 minutes
-    And I receive messages on the following IoT MQTT topics after 30 seconds
-      | image/classification | image-classification
+    And the aws.greengrass.TensorFlowLiteImageClassification log on the device contains the line "image-classification" within 30 seconds
 
   @ML @SageMakerEdgeManager
   Scenario: I can install SageMaker Edge Manager agent using aws.greengrass.SageMakerEdgeManager component
