@@ -5,9 +5,22 @@ Feature: Greengrass V2 Stream Manager
     And my device is running Greengrass
 
   @StreamManager
-  Scenario: I can install and run aws.greengrass.StreamManager on my device.
-    Given I create a Greengrass deployment with components
+  Scenario: I can install and run aws.greengrass.StreamManager on my device
+    When I create an S3 bucket for testing
+    And I create a Greengrass deployment with components
+      | com.aws.StreamManagerExport  | classpath:/greengrass/components/recipes/streammanager-component.yaml |
       | aws.greengrass.StreamManager | LATEST |
-    When I deploy the Greengrass deployment configuration
+    And I update my Greengrass deployment configuration, setting the component com.aws.StreamManagerExport configuration to:
+      """
+        {
+          "MERGE": {
+            "bucketName": "${aws.resources:s3:bucket:bucketName}",
+            "key": "export/greengrass.log",
+            "inputFile": "file:${test.context:installRoot}/logs/greengrass.log"
+          }
+        }
+      """
+    And I deploy the Greengrass deployment configuration
     Then the Greengrass deployment is COMPLETED on the device after 2 minutes
     And the aws.greengrass.StreamManager log on the device contains the line "Stream Manager reporting the state: RUNNING" within 30 seconds
+    And the S3 bucket contains the key export/greengrass.log within 30 seconds
