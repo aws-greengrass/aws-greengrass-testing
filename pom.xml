@@ -48,6 +48,39 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>com.mycila</groupId>
+                <artifactId>license-maven-plugin</artifactId>
+                <version>4.0.rc2</version>
+                <configuration>
+                    <licenseSets>
+                        <licenseSet>
+                            <header>.license/header.txt</header>
+                            <headerDefinitions>
+                                <headerDefinition>.license/style.xml</headerDefinition>
+                            </headerDefinitions>
+                            <useDefaultExcludes>true</useDefaultExcludes>
+                            <excludes>
+                                <exclude>*</exclude>
+                                <exclude>codestyle/**</exclude>
+                                <exclude>src/*/resources/**</exclude>
+                            </excludes>
+                        </licenseSet>
+                    </licenseSets>
+                    <mapping>
+                        <java>JAVA_STYLE</java>
+                        <cmd>BATCH</cmd>
+                    </mapping>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
                 <version>3.1.2</version>

@@ -1,3 +1,8 @@
+/*
+ * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 package com.aws.greengrass.testing.modules;
 
 import com.aws.greengrass.testing.api.model.ComponentOverrideVersion;
