@@ -23,7 +23,7 @@ public class StreamManagerExport {
         StreamManagerExportComponent component = DaggerStreamManagerExportComponent.create();
 
         final String bucketName = System.getProperty("s3.bucketName");
-        final String key = System.getProperty("key");
+        final String key = System.getProperty("s3.key");
         final String file = System.getProperty("file.input");
         final CompletableFuture<StatusMessage> result = component.s3().export(new S3ExportTaskDefinition()
                 .withBucket(bucketName)

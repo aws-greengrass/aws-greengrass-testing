@@ -8,13 +8,18 @@ package com.aws.greengrass.testing.features;
 import com.aws.greengrass.testing.api.model.TestId;
 import com.aws.greengrass.testing.resources.AWSResources;
 import com.aws.greengrass.testing.resources.s3.S3BucketSpec;
+import com.aws.greengrass.testing.resources.s3.S3Lifecycle;
 import io.cucumber.guice.ScenarioScoped;
+import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 
 import javax.inject.Inject;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 @ScenarioScoped
 public class S3Steps {
+    private static final String DEFAULT_BUCKET = "gg-component-store";
     private final AWSResources resources;
     private final TestId testId;
 
@@ -28,7 +33,7 @@ public class S3Steps {
 
     @When("I create an S3 bucket for testing")
     public void createTestingBucket() {
-        createS3Bucket("gg-component-store");
+        createS3Bucket(DEFAULT_BUCKET);
     }
 
     /**
@@ -41,5 +46,23 @@ public class S3Steps {
         resources.create(S3BucketSpec.builder()
                 .bucketName(testId.idFor(bucketName))
                 .build());
+    }
+
+    @Then("the S3 bucket contains the key {word}")
+    public void bucketContainsKey(String key) {
+        bucketContainsKey(DEFAULT_BUCKET, key);
+    }
+
+    /**
+     * Step that checks if a object exists in a bucket.
+     *
+     * @param bucketName name of the bucket
+     * @param key name of the object key that should exist
+     */
+    @Then("the S3 bucket named {word} contains the key {word}")
+    public void bucketContainsKey(String bucketName, String key) {
+        S3Lifecycle s3 = resources.lifecycle(S3Lifecycle.class);
+        assertTrue(s3.objectExists(testId.idFor(bucketName), key),
+                "The object " + key + " does not exist in " + bucketName);
     }
 }

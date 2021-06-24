@@ -12,6 +12,7 @@
     <artifactId>aws-greengrass-testing-components-streammanager</artifactId>
     <properties>
         <streammanager.version>1.1.0</streammanager.version>
+        <skipTests>true</skipTests>
     </properties>
 
     <build>
@@ -59,6 +60,36 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>3.0.0</version>
+                <executions>
+                    <execution>
+                        <id>feature-test</id>
+                        <phase>integration-test</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <skip>${skipTests}</skip>
+                            <target>
+                                <echo message="Feature Test Suite"/>
+                                <java classname="com.aws.greengrass.testing.launcher.TestLauncher"
+                                      fork="true"
+                                      failonerror="true"
+                                      newenvironment="true"
+                                      classpathref="maven.test.classpath">
+                                    <!-- <sysproperty key="aws.region" value="us-east-1"/> -->
+                                    <sysproperty key="ggc.archive" value="greengrass-nucleus-latest.zip"/>
+                                    <sysproperty key="gg.component.overrides"
+                                                 value="com.aws.StreamManagerExport:file:${project.basedir}/recipe.yaml"/>
+                                </java>
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
@@ -90,9 +121,33 @@
             <version>1.7.30</version>
         </dependency>
         <dependency>
+            <groupId>javax.validation</groupId>
+            <artifactId>validation-api</artifactId>
+            <version>1.0.0.GA</version>
+        </dependency>
+        <dependency>
             <groupId>com.aws.greengrass</groupId>
             <artifactId>aws-greengrass-stream-manager-sdk-java</artifactId>
             <version>${streammanager.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.aws.greengrass</groupId>
+            <artifactId>aws-greengrass-testing-features-api</artifactId>
+            <version>${project.parent.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.aws.greengrass</groupId>
+            <artifactId>aws-greengrass-testing-launcher</artifactId>
+            <version>${project.parent.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j-impl</artifactId>
+            <version>${log4j.version}</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
