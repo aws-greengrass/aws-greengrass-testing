@@ -40,7 +40,4 @@ public interface Device {
 
     boolean exists(Path file);
 
-    static PlatformOS hostPlatform() {
-        return PlatformOS.builder().name(System.getProperty("os.name")).arch(System.getProperty("os.arch")).build();
-    }
 }

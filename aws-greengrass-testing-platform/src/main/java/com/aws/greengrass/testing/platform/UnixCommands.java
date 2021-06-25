@@ -29,7 +29,7 @@ public abstract class UnixCommands implements Commands {
 
     public UnixCommands(final Device device) {
         this.device = device;
-        this.host = Device.hostPlatform();
+        this.host = PlatformOS.currentPlatform();
     }
 
     private String formatToUnixPath(String incoming) {
