@@ -32,7 +32,7 @@ public class PlatformResolver {
     }
 
     /**
-     * Resolve to a concrete {@link Platform} from the underlysing {@link Device} object.
+     * Resolve to a concrete {@link Platform} from the underlying {@link Device} object.
      *
      * @return
      */

@@ -8,6 +8,7 @@ package com.aws.greengrass.testing.platform;
 import com.aws.greengrass.testing.api.device.Device;
 import com.aws.greengrass.testing.api.device.exception.CommandExecutionException;
 import com.aws.greengrass.testing.api.device.model.CommandInput;
+import com.aws.greengrass.testing.api.device.model.PlatformOS;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -24,9 +25,20 @@ import java.util.stream.Collectors;
 public abstract class UnixCommands implements Commands {
     private static final Pattern PID_REGEX = Pattern.compile("^(\\d*)\\s*");
     protected final Device device;
+    private final PlatformOS host;
 
     public UnixCommands(final Device device) {
         this.device = device;
+        this.host = Device.hostPlatform();
+    }
+
+    private String formatToUnixPath(String incoming) {
+        if (host.isWindows()) {
+            return incoming
+                    .replaceAll("^[A-Za-z]:", "")
+                    .replace("\\", "/");
+        }
+        return incoming;
     }
 
     @Override
@@ -36,7 +48,7 @@ public abstract class UnixCommands implements Commands {
         return device.execute(CommandInput.builder()
                 .workingDirectory(input.workingDirectory())
                 .line("sh")
-                .addArgs("-c", joiner.toString())
+                .addArgs("-c", formatToUnixPath(joiner.toString()))
                 .input(input.input())
                 .timeout(input.timeout())
                 .build());
@@ -57,9 +69,7 @@ public abstract class UnixCommands implements Commands {
 
     @Override
     public void makeExecutable(Path file) throws CommandExecutionException {
-        execute(CommandInput.builder()
-                .line("chmod +x " + file.toString())
-                .build());
+        execute(CommandInput.of("chmod +x " + file.toString()));
     }
 
     @Override
