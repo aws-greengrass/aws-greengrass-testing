@@ -113,7 +113,7 @@ public class LocalDevice implements Device {
 
     @Override
     public PlatformOS platform() {
-        return Device.hostPlatform();
+        return PlatformOS.currentPlatform();
     }
 
     @Override
