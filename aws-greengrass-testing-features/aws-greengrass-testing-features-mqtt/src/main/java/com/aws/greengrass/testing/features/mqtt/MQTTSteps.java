@@ -46,6 +46,7 @@ import javax.inject.Inject;
 @ScenarioScoped
 public class MQTTSteps {
     private static final Logger LOGGER = LogManager.getLogger(MQTTSteps.class);
+    private static final short PORT = 443;
     private final TestContext testContext;
     private final ScenarioContext scenarioContext;
     private final AWSResources resources;
@@ -102,6 +103,7 @@ public class MQTTSteps {
                         .withCertificateAuthority(registrationContext.rootCA())
                         .withCleanSession(false)
                         .withEndpoint(lifecycle.dataEndpoint())
+                        .withPort(PORT)
                         .build();
 
                 connection.connect().get();
