@@ -63,8 +63,11 @@ public class AWSResourcesModule extends AbstractModule {
     static AWSResourcesContext providesAWSResourcesContext(
             final Optional<ProxyConfig> proxyConfig,
             final Region region) {
+        // -Denv.stage or ENV_STAGE environment or prod
+        final String stage = Optional.ofNullable(System.getProperty(ENV_STAGE, System.getenv("ENV_STAGE")))
+                .orElse("prod");
         return AWSResourcesContext.builder()
-                .envStage(System.getProperty(ENV_STAGE, "prod"))
+                .envStage(stage)
                 .proxyConfig(proxyConfig)
                 .region(region)
                 .build();

@@ -12,13 +12,19 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class AWSResources implements Closeable {
@@ -26,6 +32,7 @@ public class AWSResources implements Closeable {
     private final Set<AWSResourceLifecycle> lifecycles;
     private final CleanupContext cleanupContext;
     private final TestId testId;
+    private final Set<AWSResourceLifecycle> usedcycles;
 
     /**
      * Create a {@link AWSResources} instance with a custom {@link CleanupContext} and {@link TestId}.
@@ -41,6 +48,7 @@ public class AWSResources implements Closeable {
         this.lifecycles = lifecycles;
         this.cleanupContext = cleanupContext;
         this.testId = testId;
+        this.usedcycles = new LinkedHashSet<>();
     }
 
     /**
@@ -139,21 +147,29 @@ public class AWSResources implements Closeable {
             Class<S> specClass) {
         return lifecycles.stream()
                 .filter(lc -> lc.getSupportedSpecs().contains(specClass))
+                .peek(usedcycles::add)
                 .findFirst()
                 .map(lc -> (AWSResourceLifecycle<C>) lc);
     }
 
     @Override
     public void close() {
-        for (AWSResourceLifecycle<?> lifecycle : lifecycles) {
-            try {
-                if (cleanupContext.persistAWSResources()) {
-                    lifecycle.persist();
-                }
-                lifecycle.close();
-            } catch (IOException ie) {
-                LOGGER.error("Failed to clean resources from {}", lifecycle, ie);
+        Set<AWSResourceLifecycle> remaining = new HashSet<>(lifecycles);
+        List<AWSResourceLifecycle> insertionOrder = new ArrayList<>(usedcycles);
+        Collections.reverse(insertionOrder);
+        Consumer<AWSResourceLifecycle> closeLifecycle = this::closeSingle;
+        insertionOrder.forEach(closeLifecycle.andThen(remaining::remove));
+        remaining.forEach(closeLifecycle);
+    }
+
+    private void closeSingle(AWSResourceLifecycle lifecycle) {
+        try {
+            if (cleanupContext.persistAWSResources()) {
+                lifecycle.persist();
             }
+            lifecycle.close();
+        } catch (IOException ie) {
+            LOGGER.error("Failed to clean resources from {}", lifecycle, ie);
         }
     }
 }

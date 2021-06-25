@@ -27,7 +27,7 @@ trustDocument: >
     "Statement": [{
       "Effect": "Allow",
       "Principal": {
-        "Service": "credentials.iot.amazonaws.com"
+        "Service": "credentials.iot{stage}.amazonaws.com"
       },
       "Action": "sts:AssumeRole"
     }, {

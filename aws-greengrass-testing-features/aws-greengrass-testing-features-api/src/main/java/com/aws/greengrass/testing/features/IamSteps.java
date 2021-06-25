@@ -7,6 +7,7 @@ package com.aws.greengrass.testing.features;
 
 import com.aws.greengrass.testing.api.model.TestId;
 import com.aws.greengrass.testing.modules.JacksonModule;
+import com.aws.greengrass.testing.modules.model.AWSResourcesContext;
 import com.aws.greengrass.testing.resources.AWSResources;
 import com.aws.greengrass.testing.resources.iam.IamRoleSpec;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -24,15 +25,18 @@ public class IamSteps {
     private final AWSResources resources;
     private final ObjectMapper mapper;
     private final TestId testId;
+    private final AWSResourcesContext context;
 
     @Inject
     IamSteps(
             TestId testId,
             @Named(JacksonModule.YAML) ObjectMapper mapper,
+            AWSResourcesContext context,
             AWSResources resources) {
         this.resources = resources;
         this.mapper = mapper;
         this.testId = testId;
+        this.context = context;
     }
 
     /**
@@ -63,6 +67,8 @@ public class IamSteps {
             IamRoleSpec spec = mapper.readValue(in, IamRoleSpec.class);
             return resources.create(IamRoleSpec.builder().from(spec)
                     .roleName(testId.idFor(spec.roleName()))
+                    .trustDocument(spec.trustDocument().replace("{stage}",
+                            context.isProd() ? "" : ".test"))
                     .build());
         }
     }

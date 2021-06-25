@@ -101,7 +101,8 @@ public class ScenarioContext {
         final Matcher matcher = PATTERN.matcher(content);
         String replacement = content;
         while (matcher.find()) {
-            String value = get(matcher.group(1));
+            String value = Objects.requireNonNull(get(matcher.group(1)),
+                    "Could not find a scenario context key for " + matcher.group(1));
             replacement = replacement.replace(matcher.group(0), value);
         }
         return replacement;

@@ -45,7 +45,6 @@ public class LocalDevice implements Device {
         this(TimeoutMultiplier.builder().build());
     }
 
-
     @Override
     public String id() {
         return UUID.randomUUID().toString();
@@ -114,7 +113,7 @@ public class LocalDevice implements Device {
 
     @Override
     public PlatformOS platform() {
-        return PlatformOS.builder().name(System.getProperty("os.name")).arch(System.getProperty("os.arch")).build();
+        return Device.hostPlatform();
     }
 
     @Override

@@ -20,4 +20,8 @@ interface AWSResourcesContextModel {
     Optional<ProxyConfig> proxyConfig();
 
     Region region();
+
+    default boolean isProd() {
+        return envStage().equals("prod");
+    }
 }
