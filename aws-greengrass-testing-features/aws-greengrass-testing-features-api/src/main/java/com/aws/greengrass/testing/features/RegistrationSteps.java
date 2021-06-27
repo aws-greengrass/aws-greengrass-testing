@@ -48,12 +48,10 @@ public class RegistrationSteps {
     private final AWSResources resources;
     private final IamSteps iamSteps;
     private final IotSteps iotSteps;
-    private final Device device;
     private final Platform platform;
 
     @Inject
     RegistrationSteps(
-            Device device,
             Platform platform,
             AWSResources resources,
             IamSteps iamSteps,
@@ -62,7 +60,6 @@ public class RegistrationSteps {
             RegistrationContext registrationContext,
             GreengrassContext greengrassContext,
             AWSResourcesContext resourcesContext) {
-        this.device = device;
         this.platform = platform;
         this.resources = resources;
         this.iamSteps = iamSteps;
@@ -155,6 +152,6 @@ public class RegistrationSteps {
         Files.write(configFilePath.resolve("config.yaml"), config.getBytes(StandardCharsets.UTF_8));
         // Copy to where the nucleus will read it
         platform.files().makeDirectories(testContext.installRoot().getParent());
-        device.copyTo(testContext.testDirectory(), testContext.installRoot());
+        platform.files().copyTo(testContext.testDirectory(), testContext.installRoot());
     }
 }

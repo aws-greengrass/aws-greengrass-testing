@@ -28,18 +28,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class FileSteps {
     private static final Logger LOGGER = LogManager.getLogger(FileSteps.class);
     private static final int DEFAULT_TIMEOUT = 30;
-    private final Device device;
     private final Platform platform;
     private final TestContext testContext;
     private final WaitSteps waits;
 
     @Inject
     FileSteps(
-            Device device,
             Platform platform,
             TestContext testContext,
             WaitSteps waits) {
-        this.device = device;
         this.platform = platform;
         this.testContext = testContext;
         this.waits = waits;
@@ -47,7 +44,7 @@ public class FileSteps {
 
     @Then("the file {word} on device exists")
     public void checkFileExists(String file) {
-        assertTrue(device.exists(testContext.installRoot().resolve(file)),
+        assertTrue(platform.files().exists(testContext.installRoot().resolve(file)),
                 "file " + file + " does not exist in " + testContext.installRoot());
     }
 
@@ -93,7 +90,7 @@ public class FileSteps {
     @After(order = 99899)
     public void copyLogs(final Scenario scenario) {
         Path logFolder = testContext.installRoot().resolve("logs");
-        if (device.exists(logFolder)) {
+        if (platform.files().exists(logFolder)) {
             platform.files().listContents(logFolder).forEach(logFile -> {
                 byte[] bytes = platform.files().readBytes(logFile);
                 scenario.attach(bytes, "text/plain", logFile.getFileName().toString());

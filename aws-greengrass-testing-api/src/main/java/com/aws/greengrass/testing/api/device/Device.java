@@ -32,12 +32,7 @@ public interface Device {
         return new String(execute(input), StandardCharsets.UTF_8);
     }
 
-    void copyTo(Path source, Path destination) throws CopyException;
+    boolean exists(String path);
 
-    default void sync(Path source) throws CopyException {
-        copyTo(source, source);
-    }
-
-    boolean exists(Path file);
-
+    void copyTo(String source, String destination) throws CopyException;
 }

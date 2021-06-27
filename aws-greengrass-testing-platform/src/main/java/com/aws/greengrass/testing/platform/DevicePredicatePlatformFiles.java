@@ -7,6 +7,7 @@ package com.aws.greengrass.testing.platform;
 
 import com.aws.greengrass.testing.api.device.Device;
 import com.aws.greengrass.testing.api.device.exception.CommandExecutionException;
+import com.aws.greengrass.testing.api.device.exception.CopyException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -42,7 +43,7 @@ public class DevicePredicatePlatformFiles implements PlatformFiles {
     }
 
     public static PlatformFiles localOrRemote(final Device device, final PlatformFiles remote) {
-        return new DevicePredicatePlatformFiles(d -> d.type().equals("LOCAL"), device, new LocalFiles(), remote);
+        return new DevicePredicatePlatformFiles(d -> d.type().equals("LOCAL"), device, new LocalFiles(device), remote);
     }
 
     private <T> T delegate(Function<PlatformFiles, T> thunk) {
@@ -52,6 +53,19 @@ public class DevicePredicatePlatformFiles implements PlatformFiles {
         }
         LOGGER.debug("Using file provider {}", files);
         return thunk.apply(files);
+    }
+
+    @Override
+    public boolean exists(Path filePath) throws CommandExecutionException {
+        return delegate(files -> files.exists(filePath));
+    }
+
+    @Override
+    public void copyTo(Path source, Path destination) throws CopyException {
+        delegate(files -> {
+            files.copyTo(source, destination);
+            return null;
+        });
     }
 
     @Override

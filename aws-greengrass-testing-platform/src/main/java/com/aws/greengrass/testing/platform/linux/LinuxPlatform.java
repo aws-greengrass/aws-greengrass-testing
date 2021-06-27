@@ -26,6 +26,6 @@ public class LinuxPlatform implements Platform {
 
     @Override
     public PlatformFiles files() {
-        return DevicePredicatePlatformFiles.localOrRemote(device, new LinuxFiles(commands()));
+        return DevicePredicatePlatformFiles.localOrRemote(device, new LinuxFiles(commands(), device));
     }
 }

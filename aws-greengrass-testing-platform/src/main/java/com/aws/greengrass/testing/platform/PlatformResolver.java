@@ -59,17 +59,17 @@ public class PlatformResolver {
         if (device.platform().isWindows()) {
             ranks.put("windows", 5);
         } else {
-            if (device.exists(Paths.get("/bin/bash")) || device.exists(Paths.get("/usr/bin/bash"))) {
+            if (device.exists("/bin/bash") || device.exists("/usr/bin/bash")) {
                 ranks.put("unix", 3);
                 ranks.put("posix", 3);
             }
-            if (device.exists(Paths.get("/proc"))) {
+            if (device.exists("/proc")) {
                 ranks.put("linux", 10);
             }
-            if (device.exists(Paths.get("/usr/bin/apt-get"))) {
+            if (device.exists("/usr/bin/apt-get")) {
                 ranks.put("debian", 11);
             }
-            if (device.exists(Paths.get("/usr/bin/yum"))) {
+            if (device.exists("/usr/bin/yum")) {
                 ranks.put("fedora", 11);
             }
             String sysver = device.executeToString(CommandInput.builder()

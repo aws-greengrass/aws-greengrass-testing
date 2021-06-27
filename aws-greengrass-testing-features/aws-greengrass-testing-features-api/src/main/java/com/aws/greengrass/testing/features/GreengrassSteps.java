@@ -9,6 +9,7 @@ import com.aws.greengrass.testing.api.Greengrass;
 import com.aws.greengrass.testing.api.device.Device;
 import com.aws.greengrass.testing.model.GreengrassContext;
 import com.aws.greengrass.testing.model.TestContext;
+import com.aws.greengrass.testing.platform.Platform;
 import io.cucumber.guice.ScenarioScoped;
 import io.cucumber.java.After;
 import io.cucumber.java.en.Given;
@@ -24,17 +25,17 @@ public class GreengrassSteps implements Closeable {
     private final Greengrass greengrass;
     private final GreengrassContext greengrassContext;
     private final TestContext testContext;
-    private final Device device;
+    private final Platform platform;
     private final FileSteps files;
 
     @Inject
     GreengrassSteps(
-            final Device device,
+            final Platform platform,
             final Greengrass greengrass,
             final GreengrassContext greengrassContext,
             final TestContext testContext,
             final FileSteps files) {
-        this.device = device;
+        this.platform = platform;
         this.greengrass = greengrass;
         this.greengrassContext = greengrassContext;
         this.testContext = testContext;
@@ -46,7 +47,7 @@ public class GreengrassSteps implements Closeable {
      */
     @When("I install Greengrass")
     public void install() {
-        device.copyTo(greengrassContext.greengrassPath(), testContext.installRoot().resolve("greengrass"));
+        platform.files().copyTo(greengrassContext.greengrassPath(), testContext.installRoot().resolve("greengrass"));
         greengrass.install();
         files.checkFileExists("logs/greengrass.log");
     }
