@@ -5,12 +5,15 @@
 
 package com.aws.greengrass.testing.platform;
 
+import com.aws.greengrass.testing.api.device.Device;
 import com.aws.greengrass.testing.api.device.exception.CommandExecutionException;
+import com.aws.greengrass.testing.api.device.exception.CopyException;
 import com.aws.greengrass.testing.api.device.model.CommandInput;
 import com.aws.greengrass.testing.api.util.FileUtils;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -19,6 +22,12 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class LocalFiles implements PlatformFiles {
+    private final Device localDevice;
+
+    public LocalFiles(final Device localDevice) {
+        this.localDevice = localDevice;
+    }
+
     @Override
     public byte[] readBytes(Path filePath) throws CommandExecutionException {
         try {
@@ -44,6 +53,16 @@ public class LocalFiles implements PlatformFiles {
         } catch (IOException e) {
             throw new CommandExecutionException(e, CommandInput.of("makeDirectories: " + filePath));
         }
+    }
+
+    @Override
+    public boolean exists(Path filePath) throws CommandExecutionException {
+        return localDevice.exists(filePath.toString());
+    }
+
+    @Override
+    public void copyTo(Path source, Path destination) throws CopyException {
+        localDevice.copyTo(source.toString(), destination.toString());
     }
 
     @Override

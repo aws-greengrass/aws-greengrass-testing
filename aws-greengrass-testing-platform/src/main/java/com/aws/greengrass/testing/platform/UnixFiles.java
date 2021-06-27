@@ -6,8 +6,11 @@
 package com.aws.greengrass.testing.platform;
 
 
+import com.aws.greengrass.testing.api.device.Device;
 import com.aws.greengrass.testing.api.device.exception.CommandExecutionException;
+import com.aws.greengrass.testing.api.device.exception.CopyException;
 import com.aws.greengrass.testing.api.device.model.CommandInput;
+import com.aws.greengrass.testing.api.device.model.PlatformOS;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -15,11 +18,26 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public abstract class UnixFiles implements PlatformFiles {
+public abstract class UnixFiles implements PlatformFiles, UnixPathsMixin {
     protected final Commands commands;
+    private final Device device;
+    private final PlatformOS host;
 
-    public UnixFiles(Commands commands) {
+    /**
+     * A unix based platform. All commands and paths are formatted appropriately.
+     *
+     * @param commands the {@link Commands} interface this platform will interact with
+     * @param device the underlying {@link Device} this platform interacts with
+     */
+    public UnixFiles(Commands commands, Device device) {
+        this.host = PlatformOS.currentPlatform();
+        this.device = device;
         this.commands = commands;
+    }
+
+    @Override
+    public PlatformOS host() {
+        return host;
     }
 
     @Override
@@ -35,6 +53,16 @@ public abstract class UnixFiles implements PlatformFiles {
     @Override
     public void makeDirectories(Path filePath) throws CommandExecutionException {
         commands.execute(CommandInput.of("mkdir -p " + filePath.toString()));
+    }
+
+    @Override
+    public boolean exists(Path filePath) throws CommandExecutionException {
+        return device.exists(formatToUnixPath(filePath.toString()));
+    }
+
+    @Override
+    public void copyTo(Path source, Path destination) throws CopyException {
+        device.copyTo(source.toAbsolutePath().toString(), formatToUnixPath(destination.toString()));
     }
 
     @Override

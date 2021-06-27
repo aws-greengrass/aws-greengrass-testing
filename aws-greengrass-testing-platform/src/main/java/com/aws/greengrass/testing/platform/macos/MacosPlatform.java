@@ -26,6 +26,6 @@ public class MacosPlatform implements Platform {
 
     @Override
     public PlatformFiles files() {
-        return DevicePredicatePlatformFiles.localOrRemote(device, new MacosFiles(commands()));
+        return DevicePredicatePlatformFiles.localOrRemote(device, new MacosFiles(commands(), device));
     }
 }

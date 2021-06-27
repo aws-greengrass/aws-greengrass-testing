@@ -24,6 +24,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -107,35 +108,37 @@ public class LocalDevice implements Device {
     }
 
     @Override
-    public boolean exists(Path file) {
-        return Files.exists(file);
-    }
-
-    @Override
     public PlatformOS platform() {
         return PlatformOS.currentPlatform();
     }
 
     @Override
-    public void copyTo(Path source, Path destination) {
+    public boolean exists(String path) {
+        return Files.exists(Paths.get(path));
+    }
+
+    @Override
+    public void copyTo(String source, String destination) throws CopyException {
+        final Path sourcePath = Paths.get(source);
+        final Path destinationPath = Paths.get(destination);
         try {
-            Files.copy(source, destination);
-            if (Files.isDirectory(source)) {
-                try (Stream<Path> files = Files.walk(source)) {
+            Files.copy(sourcePath, destinationPath);
+            if (Files.isDirectory(sourcePath)) {
+                try (Stream<Path> files = Files.walk(sourcePath)) {
                     files.forEach(file -> {
-                        Path relativePath = source.relativize(file);
+                        Path relativePath = sourcePath.relativize(file);
                         if (!relativePath.getFileName().toString().isEmpty()) {
                             try {
-                                Files.copy(file, destination.resolve(relativePath));
+                                Files.copy(file, destinationPath.resolve(relativePath));
                             } catch (IOException e) {
-                                throw new CopyException(e, file, destination.resolve(relativePath));
+                                throw new CopyException(e, file, destinationPath.resolve(relativePath));
                             }
                         }
                     });
                 }
             }
         } catch (IOException e) {
-            throw new CopyException(e, source, destination);
+            throw new CopyException(e, sourcePath, destinationPath);
         }
     }
 }

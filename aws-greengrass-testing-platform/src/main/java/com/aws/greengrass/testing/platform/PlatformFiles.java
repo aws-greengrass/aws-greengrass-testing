@@ -27,6 +27,10 @@ public interface PlatformFiles {
 
     List<Path> listContents(Path filePath) throws CommandExecutionException;
 
+    void copyTo(Path source, Path destination) throws CopyException;
+
+    boolean exists(Path filePath) throws CommandExecutionException;
+
     /**
      * Perform a recursive copy from remote source to local destination.
      *

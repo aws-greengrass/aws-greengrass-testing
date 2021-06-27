@@ -22,7 +22,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-public abstract class UnixCommands implements Commands {
+public abstract class UnixCommands implements Commands, UnixPathsMixin {
     private static final Pattern PID_REGEX = Pattern.compile("^(\\d*)\\s*");
     protected final Device device;
     private final PlatformOS host;
@@ -32,13 +32,9 @@ public abstract class UnixCommands implements Commands {
         this.host = PlatformOS.currentPlatform();
     }
 
-    private String formatToUnixPath(String incoming) {
-        if (host.isWindows()) {
-            return incoming
-                    .replaceAll("^[A-Za-z]:", "")
-                    .replace("\\", "/");
-        }
-        return incoming;
+    @Override
+    public PlatformOS host() {
+        return host;
     }
 
     @Override
