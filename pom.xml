@@ -122,4 +122,12 @@
         </dependencies>
     </dependencyManagement>
 
+    <distributionManagement>
+        <snapshotRepository>
+            <id>greengrass-dev-snapshot</id>
+            <name>Greengrass Dev Snapshot</name>
+            <url>${dev-snapshot-repository-url}</url>
+        </snapshotRepository>
+    </distributionManagement>
+
 </project>
