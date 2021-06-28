@@ -123,7 +123,7 @@ public class MQTTSteps {
      * @throws InterruptedException thread interrupted while waiting
      */
     @Given("I subscribe to the following IoT MQTT topics")
-    public void subcribeToTopics(final List<String> topics) throws ExecutionException, InterruptedException {
+    public void subscribeToTopics(final List<String> topics) throws ExecutionException, InterruptedException {
         if (!isConnected()) {
             connect();
         }

@@ -23,6 +23,7 @@ import org.junit.platform.console.tasks.ConsoleTestExecutor;
 import org.junit.platform.launcher.listeners.TestExecutionSummary;
 
 import java.io.PrintWriter;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -50,8 +51,9 @@ public final class TestLauncher {
         if (args.length > 0) {
             output = Paths.get(args[0]);
         } else {
-            output = Paths.get("");
+            output = Paths.get(System.getProperty("test.log.path", ""));
         }
+        Files.createDirectories(output);
         addFileAppender(output);
         CommandLineOptions options = new CommandLineOptions();
         options.setTheme(Theme.UNICODE);
