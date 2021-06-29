@@ -108,6 +108,13 @@
                 </executions>
             </plugin>
         </plugins>
+        <extensions>
+            <extension>
+                <groupId>fi.yle.tools</groupId>
+                <artifactId>aws-maven</artifactId>
+                <version>1.4.2</version>
+            </extension>
+        </extensions>
     </build>
 
     <dependencyManagement>
