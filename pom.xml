@@ -122,6 +122,25 @@
         </dependencies>
     </dependencyManagement>
 
+    <pluginRepositories>
+        <pluginRepository>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+            <id>central</id>
+            <url>https://repo1.maven.org/maven2</url>
+        </pluginRepository>
+        <pluginRepository>
+            <id>yle-public</id>
+            <name>Yle public repository</name>
+            <url>https://d2x444wtt5plvm.cloudfront.net/release</url>
+            <layout>default</layout>
+        </pluginRepository>
+    </pluginRepositories>
+
     <distributionManagement>
         <snapshotRepository>
             <id>greengrass-dev-snapshot</id>
