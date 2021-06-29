@@ -8,8 +8,12 @@ package com.aws.greengrass.testing.features;
 import com.aws.greengrass.testing.api.device.model.CommandInput;
 import com.aws.greengrass.testing.platform.Platform;
 import io.cucumber.guice.ScenarioScoped;
+import io.cucumber.java.After;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
+import io.cucumber.java.en.When;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -22,11 +26,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ScenarioScoped
 public class DockerSteps {
+    private static final Logger LOGGER = LogManager.getLogger(DockerSteps.class);
     private final Platform platform;
+    private final Set<String> createdImages;
 
     @Inject
     DockerSteps(final Platform platform) {
         this.platform = platform;
+        this.createdImages = new HashSet<>();
     }
 
     /**
@@ -44,6 +51,20 @@ public class DockerSteps {
     @Then("I can check that the docker image {word} exists on the device")
     public void checkDockerImage(String image) {
         checkDockerImagePresence(image, Set::isEmpty, "Could not find image " + image + " on the device.");
+        createdImages.add(image);
+    }
+
+    /**
+     * Removes the docker image from the device.
+     *
+     * @param image fully qualified image name in <code>name:tag</code> representation
+     */
+    @When("I remove the docker image {word} on the device")
+    public void removeDockerImage(String image) {
+        String result = platform.commands().executeToString(CommandInput.builder()
+                .line("docker").addArgs("rmi").addArgs(image)
+                .build());
+        LOGGER.debug("Removed docker image {}: {}", image, result);
     }
 
     private void checkDockerImagePresence(String image, Predicate<Set<String>> validity, String message) {
@@ -58,5 +79,10 @@ public class DockerSteps {
                 .flatMap(line -> Arrays.stream(line.split("\\s+")))
                 .forEach(parts::remove);
         assertTrue(validity.test(parts), message);
+    }
+
+    @After
+    public void removeCreatedImages() {
+        createdImages.forEach(this::removeDockerImage);
     }
 }
