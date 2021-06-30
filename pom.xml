@@ -24,6 +24,7 @@
         <module>aws-greengrass-testing-launcher</module>
         <module>aws-greengrass-testing-examples</module>
         <module>aws-greengrass-testing-resources</module>
+        <module>aws-greengrass-testing-components</module>
     </modules>
 
     <properties>
@@ -63,6 +64,7 @@
                                 <exclude>*</exclude>
                                 <exclude>codestyle/**</exclude>
                                 <exclude>src/*/resources/**</exclude>
+                                <exclude>lib/streammanager/**</exclude>
                             </excludes>
                         </licenseSet>
                     </licenseSets>

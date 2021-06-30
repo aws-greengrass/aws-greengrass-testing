@@ -10,7 +10,9 @@ import com.aws.greengrass.testing.resources.AbstractAWSResourceLifecycle;
 import com.google.auto.service.AutoService;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.HeadBucketRequest;
+import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
+import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 
 import javax.inject.Inject;
 
@@ -38,6 +40,25 @@ public class S3Lifecycle extends AbstractAWSResourceLifecycle<S3Client> {
                     .build());
             return true;
         } catch (NoSuchBucketException e) {
+            return false;
+        }
+    }
+
+    /**
+     * Checks if the object exists in the bucket.
+     *
+     * @param bucketName name of the bucket to check
+     * @param key name of the key to check
+     * @return
+     */
+    public boolean objectExists(String bucketName, String key) {
+        try {
+            client.headObject(HeadObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(key)
+                    .build());
+            return true;
+        } catch (NoSuchKeyException e) {
             return false;
         }
     }

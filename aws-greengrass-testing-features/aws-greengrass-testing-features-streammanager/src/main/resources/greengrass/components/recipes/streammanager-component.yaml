@@ -1,0 +1,21 @@
+---
+RecipeFormatVersion: 2020-01-25
+ComponentName: com.aws.StreamManagerExport
+ComponentVersion: '1.0.0'
+ComponentDescription: Simple Stream Manager export component.
+ComponentPublisher: Amazon
+ComponentConfiguration:
+  DefaultConfiguration:
+    bucketName: greengrass-bucket-name
+    key: test.text
+    inputFile: test.text
+ComponentDependencies:
+  aws.greengrass.StreamManager:
+    VersionRequirement: ^2.0.0
+    DependencyType: HARD
+Manifests:
+  - Artifacts:
+      - URI: "classpath:/greengrass/components/artifacts/streammanager-component.jar"
+    Lifecycle:
+      Run: |
+        java -jar -Ds3.bucketName={configuration:/bucketName} -Ds3.key={configuration:/key} -Dfile.input={configuration:/inputFile} {artifacts:path}/streammanager-component.jar

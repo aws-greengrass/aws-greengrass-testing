@@ -1,15 +1,14 @@
-Feature: Greengrass V2 Stream Manager
+Feature: Greengrass V2 Stream Manager Component Integration
 
   Background:
     Given my device is registered as a Thing
     And my device is running Greengrass
 
-  @StreamManager
-  Scenario: I can install and run aws.greengrass.StreamManager on my device
+  Scenario: I can install the testing Stream Manager integration component
     When I create an S3 bucket for testing
     And I create a Greengrass deployment with components
-      | com.aws.StreamManagerExport  | classpath:/greengrass/components/recipes/streammanager-component.yaml |
-      | aws.greengrass.StreamManager | LATEST |
+      | com.aws.StreamManagerExport  | LATEST |
+      | aws.greengrass.StreamManager | ^2.0.0 |
     And I update my Greengrass deployment configuration, setting the component com.aws.StreamManagerExport configuration to:
       """
         {
@@ -21,6 +20,5 @@ Feature: Greengrass V2 Stream Manager
         }
       """
     And I deploy the Greengrass deployment configuration
-    Then the Greengrass deployment is COMPLETED on the device after 2 minutes
-    And the aws.greengrass.StreamManager log on the device contains the line "Stream Manager reporting the state: RUNNING" within 30 seconds
+    Then the Greengrass deployment is COMPLETED on the device after 5 minutes
     And the S3 bucket contains the key export/greengrass.log within 30 seconds

@@ -9,6 +9,7 @@ import com.aws.greengrass.testing.api.ComponentPreparationService;
 import com.aws.greengrass.testing.api.model.ComponentOverrideNameVersion;
 import com.aws.greengrass.testing.api.model.ComponentOverrideVersion;
 import com.aws.greengrass.testing.resources.greengrass.GreengrassV2Lifecycle;
+import com.vdurmont.semver4j.Requirement;
 import com.vdurmont.semver4j.Semver;
 import software.amazon.awssdk.arns.Arn;
 import software.amazon.awssdk.regions.Region;
@@ -71,17 +72,17 @@ public class CloudComponentPreparationService implements ComponentPreparationSer
     }
 
     private String pinpointViableVersion(ComponentOverrideNameVersion nameVersion, Component component) {
-        String requirement = nameVersion.version().value();
+        Requirement requirement = Requirement.buildNPM(nameVersion.version().value());
         Semver targetVersion = null;
         for (ComponentVersionListItem item : ggv2.listComponentVersions(component.arn()).componentVersions()) {
-            Semver currentVersion = new Semver(item.componentVersion());
+            Semver currentVersion = new Semver(item.componentVersion(), Semver.SemverType.NPM);
             if (currentVersion.satisfies(requirement)
                     && (targetVersion == null || currentVersion.isGreaterThanOrEqualTo(targetVersion))) {
                 targetVersion = currentVersion;
             }
         }
         if (targetVersion == null) {
-            targetVersion = new Semver(component.latestVersion().componentVersion());
+            targetVersion = new Semver(component.latestVersion().componentVersion(), Semver.SemverType.NPM);
         }
         return targetVersion.toString();
     }

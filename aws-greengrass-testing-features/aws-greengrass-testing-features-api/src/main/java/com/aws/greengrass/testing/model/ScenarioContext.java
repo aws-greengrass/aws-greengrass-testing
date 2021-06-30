@@ -28,27 +28,27 @@ public class ScenarioContext {
     private static final Logger LOGGER = LogManager.getLogger(ScenarioContext.class);
     private static final Pattern PATTERN = Pattern.compile("\\$\\{([^\\}]+)\\}");
     private final Map<String, String> context;
-    private final TestId testId;
     private final AWSResources resources;
+    private final TestContext testContext;
 
     /**
-     * Creates a {@link ScenarioContext} with {@link TestId} and {@link AWSResources} mapped to scenario.
+     * Creates a {@link ScenarioContext} with {@link TestContext} and {@link AWSResources} mapped to scenario.
      *
-     * @param testId Scenario unique {@link TestId}
+     * @param testContext Scenario unique {@link TestContext}
      * @param resources Scenario unique {@link AWSResources}
      */
     @Inject
     public ScenarioContext(
-            final TestId testId,
+            final TestContext testContext,
             final AWSResources resources) {
-        this.testId = testId;
+        this.testContext = testContext;
         this.resources = resources;
         this.context = new ConcurrentHashMap<>();
-        put("test.id", testId.id());
+        put("test.id", testContext.testId().id());
     }
 
     public ScenarioContext put(final String key, final String value) {
-        context.put(testId.idFor(key), value);
+        context.put(testContext.testId().idFor(key), value);
         return this;
     }
 
@@ -87,8 +87,12 @@ public class ScenarioContext {
                 LOGGER.warn("Could not find a resource for {}. Falling back.",
                         Arrays.toString(parts));
             }
+        } else if (parts[0].equals("test.context") && parts.length >= 2) {
+            if (parts[1].equals("installRoot")) {
+                return testContext.installRoot().toString();
+            }
         }
-        return context.get(testId.idFor(key));
+        return context.get(testContext.testId().idFor(key));
     }
 
     /**
