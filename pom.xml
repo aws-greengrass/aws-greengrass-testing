@@ -64,6 +64,7 @@
                                 <exclude>*</exclude>
                                 <exclude>codestyle/**</exclude>
                                 <exclude>src/*/resources/**</exclude>
+                                <exclude>lib/streammanager/**</exclude>
                             </excludes>
                         </licenseSet>
                     </licenseSets>
