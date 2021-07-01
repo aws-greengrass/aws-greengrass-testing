@@ -22,6 +22,9 @@ import org.junit.platform.console.options.Theme;
 import org.junit.platform.console.tasks.ConsoleTestExecutor;
 import org.junit.platform.launcher.listeners.TestExecutionSummary;
 
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -39,6 +42,10 @@ public final class TestLauncher {
     private static final String DEFAULT_GLUE_PATH = "com.aws.greengrass";
     private static final String DEFAULT_FEATURES = "greengrass/features";
     private static final String LOG_LEVEL = "log.level";
+    private static final String FEATURE_PATH = "feature.path";
+    private static final String TEST_RESULTS_XML = "test.results.xml";
+    private static final String TEST_RESULTS_LOG = "test.results.log";
+    private static final String TEST_LOG_FILE = "greengrass-test-run.log";
 
     /**
      * Start the {@link TestLauncher} wrapping a JUnit platform engine.
@@ -56,8 +63,9 @@ public final class TestLauncher {
         Files.createDirectories(output);
         addFileAppender(output);
         CommandLineOptions options = new CommandLineOptions();
-        options.setTheme(Theme.UNICODE);
+        options.setTheme(Theme.ASCII);
         options.setDetails(Details.TREE);
+        options.setAnsiColorOutputDisabled(true);
         options.setIncludedEngines(Arrays.asList(ENGINE));
         String tags = System.getProperty("tags");
         if (Objects.nonNull(tags)) {
@@ -67,25 +75,36 @@ public final class TestLauncher {
             add(DEFAULT_FEATURES);
         }};
         // Allow external feature files. This enables framework features to work with static features.
-        Optional.ofNullable(System.getProperty("feature.path")).ifPresent(resources::add);
+        Optional.ofNullable(System.getProperty(FEATURE_PATH)).ifPresent(resources::add);
         options.setSelectedClasspathResources(resources);
-        final Path resultsXml = output.toAbsolutePath().resolve("TEST-greengrass-results.xml");
+        final StringJoiner plugins = new StringJoiner(",")
+                .add(StepTrackingReporting.class.getName());
+        if (Boolean.parseBoolean(System.getProperty(TEST_RESULTS_XML, "true"))) {
+            final Path resultsXml = output.toAbsolutePath().resolve("TEST-greengrass-results.xml");
+            plugins.add("junit:" + resultsXml.toString());
+        }
         options.setConfigurationParameters(new HashMap<String, String>() {
             {
                 put("cucumber.glue", System.getProperty("glue.package", DEFAULT_GLUE_PATH));
-                put("cucumber.plugin", new StringJoiner(",")
-                        .add(StepTrackingReporting.class.getName())
-                        .add("junit:" + resultsXml.toString())
-                        .toString());
+                put("cucumber.plugin", plugins.toString());
             }
         });
         final ConsoleTestExecutor executor = new ConsoleTestExecutor(options);
-        final TestExecutionSummary summary = executor.execute(new PrintWriter(System.out));
-        if (summary.getTestsFailedCount() > 0) {
-            System.err.println("Test Failure: " + summary.getTestsFailedCount());
-            System.err.println("See the full error report: " + resultsXml);
-            System.exit(1);
+        try (OutputStream stream = outputStream(output)) {
+            final TestExecutionSummary summary = executor.execute(new PrintWriter(stream));
+            if (summary.getTestsFailedCount() > 0) {
+                System.err.println("Test Failure: " + summary.getTestsFailedCount());
+                System.exit(1);
+            }
         }
+    }
+
+    private static OutputStream outputStream(Path output) throws FileNotFoundException {
+        OutputStream stream = System.out;
+        if (Boolean.parseBoolean(System.getProperty(TEST_RESULTS_LOG, "false"))) {
+            stream = new FileOutputStream(output.resolve(TEST_LOG_FILE).toFile(), true);
+        }
+        return stream;
     }
 
     /**
@@ -93,23 +112,22 @@ public final class TestLauncher {
      *
      * @param output the output path to place the log file
      */
-    public static void addFileAppender(final Path output) {
+    private static void addFileAppender(final Path output) {
+        final Level level = Level.valueOf(System.getProperty(LOG_LEVEL, "info"));
         final LoggerContext context = (LoggerContext) LogManager.getContext(false);
         final LoggerConfig config = context.getConfiguration().getRootLogger();
-        final Layout layout = PatternLayout.newBuilder()
-                .withPattern("%d{yyyy-MMM-dd HH:mm:ss,SSS} [%X{feature}] [%X{testId}] [%level] %logger{36} - %msg%n")
-                .build();
-        FileAppender.Builder appenderBuilder = FileAppender.newBuilder()
-                .withFileName(output.resolve("greengrass-test-run.log").toString())
-                .withImmediateFlush(true)
-                .withBufferedIo(false)
-                .withBufferSize(8192);
-        appenderBuilder.setLayout(layout)
-                .setName("File");
-        Appender appender = appenderBuilder.build();
-        appender.start();
-        final Level level = Level.valueOf(System.getProperty(LOG_LEVEL, "info"));
-        config.addAppender(appender, level, null);
+        if (Boolean.parseBoolean(System.getProperty(TEST_RESULTS_LOG, "false"))) {
+            final Layout layout = PatternLayout.newBuilder().withPattern(
+                    "%d{yyyy-MMM-dd HH:mm:ss,SSS} [%X{feature}] [%X{testId}] [%level] %logger{36} - %msg%n").build();
+            FileAppender.Builder appenderBuilder = FileAppender.newBuilder()
+                    .withFileName(output.resolve(TEST_LOG_FILE).toString())
+                    .withImmediateFlush(true)
+                    .withBufferedIo(false);
+            appenderBuilder.setLayout(layout).setName("File");
+            Appender appender = appenderBuilder.build();
+            appender.start();
+            config.addAppender(appender, level, null);
+        }
         config.setLevel(level);
         context.updateLoggers();
     }
