@@ -8,6 +8,7 @@ package com.aws.greengrass.testing.launcher;
 import com.aws.greengrass.testing.launcher.reporting.StepTrackingReporting;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.Appender;
 import org.apache.logging.log4j.core.Layout;
 import org.apache.logging.log4j.core.LoggerContext;
@@ -24,9 +25,12 @@ import org.junit.platform.launcher.listeners.TestExecutionSummary;
 
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
+import java.nio.file.NotDirectoryException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -38,6 +42,7 @@ import java.util.Optional;
 import java.util.StringJoiner;
 
 public final class TestLauncher {
+    private static final Logger LOGGER = LogManager.getLogger(TestLauncher.class);
     private static final String ENGINE = "cucumber";
     private static final String DEFAULT_GLUE_PATH = "com.aws.greengrass";
     private static final String DEFAULT_FEATURES = "greengrass/features";
@@ -71,12 +76,20 @@ public final class TestLauncher {
         if (Objects.nonNull(tags)) {
             options.setIncludedTagExpressions(Arrays.asList(tags));
         }
-        final List<String> resources = new ArrayList<String>() {{
-            add(DEFAULT_FEATURES);
-        }};
         // Allow external feature files. This enables framework features to work with static features.
-        Optional.ofNullable(System.getProperty(FEATURE_PATH)).ifPresent(resources::add);
-        options.setSelectedClasspathResources(resources);
+        Optional.ofNullable(System.getProperty(FEATURE_PATH)).ifPresent(featurePath -> {
+            final List<String> selectedFiles = new ArrayList<>();
+            try (DirectoryStream<Path> paths = Files.newDirectoryStream(Paths.get(featurePath), "*.feature")) {
+                paths.forEach(path -> selectedFiles.add(path.toString()));
+            } catch (NotDirectoryException nde) {
+                selectedFiles.add(featurePath);
+            } catch (IOException ie) {
+                LOGGER.warn("Failed to select features in {}:", featurePath, ie);
+            }
+            options.setSelectedFiles(selectedFiles);
+        });
+        options.setSelectedClasspathResources(Arrays.asList(DEFAULT_FEATURES));
+        options.setFailIfNoTests(true);
         final StringJoiner plugins = new StringJoiner(",")
                 .add(StepTrackingReporting.class.getName());
         if (Boolean.parseBoolean(System.getProperty(TEST_RESULTS_XML, "true"))) {
