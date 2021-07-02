@@ -25,6 +25,7 @@
         <module>aws-greengrass-testing-examples</module>
         <module>aws-greengrass-testing-resources</module>
         <module>aws-greengrass-testing-components</module>
+        <module>aws-greengrass-testing-standalone</module>
     </modules>
 
     <properties>
