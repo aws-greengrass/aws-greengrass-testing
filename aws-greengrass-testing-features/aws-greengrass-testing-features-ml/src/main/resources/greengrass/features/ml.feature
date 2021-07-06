@@ -34,7 +34,7 @@ Feature: Greengrass V2 Machine Learning
       | image/classification | image-classification
 
   @ML @DLR @Log
-  Scenario: I can send inference results on an MQTT topic after installing aws.greengrass.DLRImageClassification
+  Scenario: I can install and run aws.greengrass.DLRImageClassification on my device
     When I create a Greengrass deployment with components
       | aws.greengrass.DLRImageClassification | LATEST |
     And I update my Greengrass deployment configuration, setting the component aws.greengrass.DLRImageClassification configuration to:
@@ -89,7 +89,7 @@ Feature: Greengrass V2 Machine Learning
       | image/classification | image-classification
 
   @ML @TensorFlow @Log
-  Scenario: I can send inference results on an MQTT topic after installing aws.greengrass.TensorFlowLiteImageClassification
+  Scenario: I can install and run aws.greengrass.TensorFlowLiteImageClassification on my device
     When I create a Greengrass deployment with components
       | aws.greengrass.TensorFlowLiteImageClassification | LATEST |
     And I update my Greengrass deployment configuration, setting the component aws.greengrass.TensorFlowLiteImageClassification configuration to:

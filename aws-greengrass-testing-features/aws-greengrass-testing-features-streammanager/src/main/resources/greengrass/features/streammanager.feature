@@ -15,12 +15,12 @@ Feature: Greengrass V2 Stream Manager
         {
           "MERGE": {
             "bucketName": "${aws.resources:s3:bucket:bucketName}",
-            "key": "export/greengrass.log",
-            "inputFile": "file:${test.context:installRoot}/logs/greengrass.log"
+            "key": "export/output.log",
+            "inputFile": "file:${test.context:installRoot}/output.log"
           }
         }
       """
     And I deploy the Greengrass deployment configuration
     Then the Greengrass deployment is COMPLETED on the device after 2 minutes
     And the aws.greengrass.StreamManager log on the device contains the line "Stream Manager reporting the state: RUNNING" within 30 seconds
-    And the S3 bucket contains the key export/greengrass.log within 30 seconds
+    And the S3 bucket contains the key export/output.log within 30 seconds
