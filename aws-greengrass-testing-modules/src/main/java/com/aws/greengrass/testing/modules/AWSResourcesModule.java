@@ -5,7 +5,9 @@
 
 package com.aws.greengrass.testing.modules;
 
+import com.aws.greengrass.testing.api.ParameterValues;
 import com.aws.greengrass.testing.api.model.CleanupContext;
+import com.aws.greengrass.testing.api.model.ParameterValue;
 import com.aws.greengrass.testing.api.model.ProxyConfig;
 import com.aws.greengrass.testing.api.model.TestId;
 import com.aws.greengrass.testing.modules.model.AWSResourcesContext;
@@ -32,8 +34,6 @@ import javax.inject.Singleton;
 
 @AutoService(Module.class)
 public class AWSResourcesModule extends AbstractModule {
-    private static final String PROXY_URL = "proxy.url";
-    private static final String ENV_STAGE = "env.stage";
 
     @Provides
     @ScenarioScoped
@@ -53,18 +53,18 @@ public class AWSResourcesModule extends AbstractModule {
 
     @Provides
     @Singleton
-    static Optional<ProxyConfig> providesProxyConfiguration() {
-        String proxyUrl = System.getProperty(PROXY_URL);
-        return Optional.ofNullable(proxyUrl).map(ProxyConfig::fromURL);
+    static Optional<ProxyConfig> providesProxyConfiguration(final ParameterValues parameterValues) {
+        return parameterValues.getString(ModuleParameters.PROXY_URL).map(ProxyConfig::fromURL);
     }
 
     @Provides
     @Singleton
     static AWSResourcesContext providesAWSResourcesContext(
+            final ParameterValues parameterValues,
             final Optional<ProxyConfig> proxyConfig,
             final Region region) {
         // -Denv.stage or ENV_STAGE environment or prod
-        final String stage = Optional.ofNullable(System.getProperty(ENV_STAGE, System.getenv("ENV_STAGE")))
+        final String stage = parameterValues.getString(ModuleParameters.ENV_STAGE)
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
                 .orElse("prod");

@@ -28,25 +28,11 @@ interface TestContextModel extends Closeable {
 
     CleanupContext cleanupContext();
 
-    @Value.Default
-    default String logLevel() {
-        return System.getProperty("ggc.log.level", "INFO");
-    }
+    String logLevel();
 
-    @Value.Default
-    default Path installRoot() {
-        String installRoot = System.getProperty("ggc.install.root");
-        if (Objects.isNull(installRoot)) {
-            return testDirectory().toAbsolutePath();
-        } else {
-            return Paths.get(installRoot, testDirectory().getFileName().toString());
-        }
-    }
+    Path installRoot();
 
-    @Value.Default
-    default String currentUser() {
-        return System.getProperty("ggc.user.name", System.getProperty("user.name"));
-    }
+    String currentUser();
 
     @Override
     default void close() throws IOException {

@@ -5,6 +5,7 @@
 
 package com.aws.greengrass.testing.modules;
 
+import com.aws.greengrass.testing.api.ParameterValues;
 import com.aws.greengrass.testing.api.model.CleanupContext;
 import com.aws.greengrass.testing.model.GreengrassContext;
 import com.aws.greengrass.testing.modules.exception.ModuleProvisionException;
@@ -26,6 +27,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import javax.inject.Named;
@@ -33,9 +35,6 @@ import javax.inject.Named;
 @AutoService(Module.class)
 public class GreengrassContextModule extends AbstractModule {
     private static final Logger LOGGER = LogManager.getLogger(GreengrassContextModule.class);
-    private static final String TEST_TEMP_PATH = "test.temp.path";
-    private static final String NUCLEUS_VERSION = "ggc.version";
-    private static final String NUCLEUS_ARCHIVE_PATH = "ggc.archive";
     private static String DEFAULT_NUCLEUS_VERSION;
 
     static void extractZip(ObjectMapper mapper, Path archivePath, Path stagingPath) throws IOException {
@@ -69,22 +68,26 @@ public class GreengrassContextModule extends AbstractModule {
     @Provides
     @Singleton
     static GreengrassContext providesNucleusContext(
+            final ParameterValues parameterValues,
             @Named(JacksonModule.YAML) ObjectMapper mapper,
             final CleanupContext cleanupContext) {
         try {
-            final Path archivePath = Paths.get(Objects.requireNonNull(System.getProperty(NUCLEUS_ARCHIVE_PATH),
-                    "Parameter " + NUCLEUS_ARCHIVE_PATH + " is required!"));
+            final Path archivePath = parameterValues.getString(FeatureParameters.NUCLEUS_ARCHIVE_PATH)
+                    .map(Paths::get)
+                    .orElseThrow(() -> new IllegalArgumentException("Parameter "
+                            + FeatureParameters.NUCLEUS_ARCHIVE_PATH + " is required"));
             Path tempDirectory;
-            String tempDirectoryName = System.getProperty(TEST_TEMP_PATH);
-            if (Objects.isNull(tempDirectoryName)) {
-                tempDirectory = Files.createTempDirectory("gg-testing-");
-            } else {
-                tempDirectory = Paths.get(tempDirectoryName);
+            Optional<String> tempDirectoryName = parameterValues.getString(FeatureParameters.TEST_TEMP_PATH);
+            if (tempDirectoryName.isPresent()) {
+                tempDirectory = Paths.get(tempDirectoryName.get());
                 Files.createDirectories(tempDirectory);
+            } else {
+                tempDirectory = Files.createTempDirectory("gg-testing-");
             }
             extractZip(mapper, archivePath, tempDirectory.resolve("greengrass"));
             return GreengrassContext.builder()
-                    .version(System.getProperty(NUCLEUS_VERSION, DEFAULT_NUCLEUS_VERSION))
+                    .version(parameterValues.getString(FeatureParameters.NUCLEUS_VERSION)
+                            .orElse(DEFAULT_NUCLEUS_VERSION))
                     .archivePath(archivePath)
                     .tempDirectory(tempDirectory)
                     .cleanupContext(cleanupContext)

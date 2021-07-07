@@ -5,6 +5,7 @@
 
 package com.aws.greengrass.testing.modules;
 
+import com.aws.greengrass.testing.api.ParameterValues;
 import com.aws.greengrass.testing.api.model.CleanupContext;
 import com.aws.greengrass.testing.api.model.TestId;
 import com.aws.greengrass.testing.api.model.TimeoutMultiplier;
@@ -23,12 +24,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.SecureRandom;
+import java.util.Optional;
 import javax.inject.Singleton;
 
 @AutoService(Module.class)
 public class TestContextModule extends AbstractModule {
-    private static final String TEST_RESULTS_PATH = "test.log.path";
-    private static final String TEST_ID_PREFIX = "test.id.prefix";
     private static final SecureRandom RANDOM = new SecureRandom();
 
     static String randomString(int size) {
@@ -39,15 +39,20 @@ public class TestContextModule extends AbstractModule {
 
     @Provides
     @Singleton
-    static TimeoutMultiplier providesTimeoutMultiplier() {
-        return TimeoutMultiplier.builder().build();
+    static TimeoutMultiplier providesTimeoutMultiplier(final ParameterValues parameterValues) {
+        double multiplier = parameterValues.getString(FeatureParameters.TIMEOUT_MULTIPLIER)
+                .map(Double::parseDouble)
+                .orElse(1.0);
+        return TimeoutMultiplier.builder()
+                .multiplier(multiplier)
+                .build();
     }
 
     @Provides
     @ScenarioScoped
-    static TestId providesTestId() {
+    static TestId providesTestId(ParameterValues parameterValues) {
         return TestId.builder()
-                .prefix(System.getProperty(TEST_ID_PREFIX, ""))
+                .prefix(parameterValues.getString(FeatureParameters.TEST_ID_PREFIX).orElse("gg"))
                 .id(randomString(20)) // This should probably be replaced too
                 .build();
     }
@@ -55,20 +60,34 @@ public class TestContextModule extends AbstractModule {
     @Provides
     @ScenarioScoped
     static TestContext providesTestContext(
+            final ParameterValues parameterValues,
             final TestId testId,
             final CleanupContext cleanupContext,
             final GreengrassContext greengrassContext) {
         Path testDirectory = greengrassContext.tempDirectory().resolve(testId.prefixedId());
-        Path testResultsPath = Paths.get(System.getProperty(TEST_RESULTS_PATH, "testResults"));
+        Path testResultsPath = parameterValues.getString(FeatureParameters.TEST_RESULTS_PATH)
+                .map(Paths::get)
+                .orElseGet(() -> Paths.get("testResults"));
         try {
             Files.createDirectory(testDirectory);
             Files.createDirectories(testResultsPath);
         } catch (IOException ie) {
             throw new ModuleProvisionException(ie);
         }
+        Path installPath;
+        Optional<String> installRoot = parameterValues.getString(FeatureParameters.NUCLEUS_INSTALL_ROOT);
+        if (installRoot.isPresent()) {
+            installPath = Paths.get(installRoot.get(), testDirectory.getFileName().toString());
+        } else {
+            installPath = testDirectory.toAbsolutePath();
+        }
         return TestContext.builder()
+                .logLevel(parameterValues.getString(FeatureParameters.NUCLEUS_LOG_LEVEL).orElse("INFO"))
+                .currentUser(parameterValues.getString(FeatureParameters.NUCLEUS_USER)
+                        .orElseGet(() -> System.getProperty("user.name")))
                 .testId(testId)
                 .testResultsPath(testResultsPath)
+                .installRoot(installPath)
                 .testDirectory(testDirectory)
                 .cleanupContext(cleanupContext)
                 .build();

@@ -5,6 +5,7 @@
 
 package com.aws.greengrass.testing.modules;
 
+import com.aws.greengrass.testing.api.ParameterValues;
 import com.aws.greengrass.testing.api.model.ComponentOverrideVersion;
 import com.aws.greengrass.testing.api.model.ComponentOverrides;
 import com.google.auto.service.AutoService;
@@ -18,17 +19,13 @@ import javax.inject.Singleton;
 @AutoService(Module.class)
 public class ComponentOverridesModule extends AbstractModule {
     private static final int MAX_SPLIT_LIMIT = 2;
-    private static final String COMPONENT_BUCKET = "gg.component.bucket";
-    private static final String COMPONENT_OVERRIDES = "gg.component.overrides";
 
     @Provides
     @Singleton
-    static ComponentOverrides providesComponentOverrides() {
-        ComponentOverrides.Builder builder = ComponentOverrides.builder()
-                .bucketName(System.getProperty(COMPONENT_BUCKET));
-        Optional.ofNullable(System.getProperty(COMPONENT_OVERRIDES)).ifPresent(overrideString -> {
-            // -Dgg.component.overrides=aws.greengrass.Nucleus:cloud:LATEST,
-            // aws.greengrass.LocalDebugConsole:file:/path/to/recipe.yml
+    static ComponentOverrides providesComponentOverrides(ParameterValues parameterValues) {
+        ComponentOverrides.Builder builder = ComponentOverrides.builder();
+        parameterValues.getString(ModuleParameters.COMPONENT_BUCKET).ifPresent(builder::bucketName);
+        parameterValues.getString(ModuleParameters.COMPONENT_OVERRIDES).ifPresent(overrideString -> {
             final String[] components = overrideString.split("\\s*,\\s*");
             for (String component : components) {
                 final String[] nameVersionParts = component.split(":", MAX_SPLIT_LIMIT);
