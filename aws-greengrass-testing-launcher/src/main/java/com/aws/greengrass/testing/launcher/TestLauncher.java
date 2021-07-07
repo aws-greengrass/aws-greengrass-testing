@@ -5,6 +5,7 @@
 
 package com.aws.greengrass.testing.launcher;
 
+import com.aws.greengrass.testing.api.ParameterValues;
 import com.aws.greengrass.testing.api.Parameters;
 import com.aws.greengrass.testing.api.model.ParameterValue;
 import com.aws.greengrass.testing.launcher.reporting.StepTrackingReporting;
@@ -44,41 +45,43 @@ public final class TestLauncher {
     private static final String TEST_RESULTS_LOG = "test.results.log";
     private static final String TEST_LOG_FILE = "greengrass-test-run.log";
 
-    @CommandLine.Command(
-            name = "greengrass-testing",
-            header = "Run end to end feature tests on a Greengrass platform.",
-            version = "v1.0.0", mixinStandardHelpOptions = true)
-    public static final class Run {
-        @CommandLine.Option(
-                names = "--feature-path",
-                description = "File or directory containing additional feature files. Default is no additional "
-                        + "feature files are used.")
-        private String featurePath;
+    private static CommandLine.Model.CommandSpec createCommandSpec() {
+        CommandLine.Model.CommandSpec commandSpec = CommandLine.Model.CommandSpec.create();
+        commandSpec.name("gg-test").version("v1.0.0").mixinStandardHelpOptions(true);
+        ParameterValues defaultValues = ParameterValues.createDefault();
+        Parameters.loadAll().sorted().forEach(parameter -> {
+            commandSpec.addOption(CommandLine.Model.OptionSpec
+                    .builder("--" + parameter.name().replace(".", "-"))
+                    .negatable(parameter.flag())
+                    .type(parameter.flag() ? Boolean.class : String.class)
+                    .description(parameter.description())
+                    .required(parameter.required())
+                    .paramLabel(parameter.name())
+                    .preprocessor((stack, commandSpec12, argSpec, map) -> {
+                        defaultValues.getString(argSpec.paramLabel()).ifPresent(stack::push);
+                        return false;
+                    })
+                    .parameterConsumer((stack, argSpec, commandSpec1) -> {
+                        if (!stack.empty()) {
+                            String value = stack.pop();
+                            TestLauncherParameterValues.put(parameter.name(), ParameterValue.of(value));
+                        }
+                    })
+                    .build());
+        });
+        return commandSpec;
+    }
 
-        @CommandLine.Option(
-                names = "--tags",
-                description = "Only run feature tags.")
-        private String tags;
-
-        @CommandLine.Option(
-                names = "--test-results-xml",
-                description = "Flag to determine if a resulting JUnit XML report is generated written to disk. "
-                        + "Defaults to true.",
-                negatable = true)
-        private boolean testResultsXml = true;
-
-        @CommandLine.Option(
-                names = "--test-results-log",
-                description = "Flag to determine if the JUnit console output is generated written to disk. "
-                        + "Defaults to false.",
-                negatable = true)
-        private boolean testResultsLog = false;
-
-        @CommandLine.Option(
-                names = "--log-level",
-                description = "Log level of the test run. Defaults to \"INFO\"",
-                defaultValue = "INFO")
-        private String logLevel;
+    private static <T> Optional<T> findValue(CommandLine.Model.CommandSpec spec, String name, Class<T> type) {
+        return Optional.ofNullable(spec.findOption(name))
+                .flatMap(option -> {
+                    try {
+                        return Optional.ofNullable(option.getValue());
+                    } catch (CommandLine.PicocliException e) {
+                        return Optional.empty();
+                    }
+                })
+                .map(type::cast);
     }
 
     /**
@@ -88,39 +91,13 @@ public final class TestLauncher {
      * @throws Exception any runtime failure before Cucumber runner begins
      */
     public static void main(String[] args) throws Exception {
-        Run run = new Run();
-        CommandLine cli = new CommandLine(run);
-        CommandLine.Model.CommandSpec commandSpec = cli.getCommandSpec();
-        Parameters.loadAll().forEach(parameter -> {
-            commandSpec.addOption(CommandLine.Model.OptionSpec
-                    .builder("--" + parameter.name().replace(".", "-"))
-                    .type(String.class)
-                    .description(parameter.description())
-                    .required(parameter.required())
-                    .paramLabel(parameter.name())
-                    .parameterConsumer(new CommandLine.IParameterConsumer() {
-                        @Override
-                        public void consumeParameters(Stack<String> stack, CommandLine.Model.ArgSpec argSpec,
-                                                      CommandLine.Model.CommandSpec commandSpec) {
-                            if (!stack.empty()) {
-                                String value = stack.pop();
-                                TestLauncherParameterValues.put(parameter.name(), ParameterValue.of(value));
-                            }
-                        }
-                    })
-                    .build());
-        });
+        CommandLine cli = new CommandLine(createCommandSpec());
         CommandLine.ParseResult parseResult = cli.parseArgs(args);
         if (CommandLine.printHelpIfRequested(parseResult)) {
-            cli.usage(System.out);
             System.exit(0);
         }
-        final Path output;
-        if (args.length > 0) {
-            output = Paths.get(args[0]);
-        } else {
-            output = Paths.get(System.getProperty("test.log.path", ""));
-        }
+        final CommandLine.Model.CommandSpec commandSpec = cli.getCommandSpec();
+        final Path output = Paths.get(findValue(commandSpec, "test.log.path", String.class).orElse(""));
         Files.createDirectories(output);
         addFileAppender(output);
 
@@ -146,7 +123,7 @@ public final class TestLauncher {
         }
 
         // Allow external feature files. This enables framework features to work with static features.
-        Optional.ofNullable(System.getProperty(FEATURE_PATH)).ifPresent(featurePath -> {
+        findValue(commandSpec, "feature.path", String.class).ifPresent(featurePath -> {
             final List<String> selectedFiles = new ArrayList<>();
             try (DirectoryStream<Path> paths = Files.newDirectoryStream(Paths.get(featurePath), "*.feature")) {
                 paths.forEach(path -> optionsBuilder.addFeature(FeatureWithLines.parse("file:" + path)));
@@ -172,14 +149,14 @@ public final class TestLauncher {
     /**
      * Update the logger with a file appender so it can be reviewed outside of console output.
      *
-     * @param run the parsed {@link Run} object
+     * @param spec the parsed {@link picocli.CommandLine.Model.CommandSpec} object
      * @param output the output path to place the log file
      */
-    private static void addFileAppender(final Run run, final Path output) {
-        final Level level = Level.valueOf(run.logLevel);
+    private static void addFileAppender(final CommandLine.Model.CommandSpec spec, final Path output) {
+        final Level level = Level.valueOf(findValue(spec, "log.level", String.class).orElse("info"));
         final LoggerContext context = (LoggerContext) LogManager.getContext(false);
         final LoggerConfig config = context.getConfiguration().getRootLogger();
-        if (run.testResultsLog) {
+        if (findValue(spec, "test.results.log", Boolean.class).orElse(false)) {
             final Layout layout = PatternLayout.newBuilder().withPattern(
                     "%d{yyyy-MMM-dd HH:mm:ss,SSS} [%X{feature}] [%X{testId}] [%level] %logger{36} - %msg%n").build();
             FileAppender.Builder appenderBuilder = FileAppender.newBuilder()

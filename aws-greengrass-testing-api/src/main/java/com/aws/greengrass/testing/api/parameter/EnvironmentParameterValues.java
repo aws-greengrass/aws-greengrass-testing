@@ -7,9 +7,11 @@ package com.aws.greengrass.testing.api.parameter;
 
 import com.aws.greengrass.testing.api.ParameterValues;
 import com.aws.greengrass.testing.api.model.ParameterValue;
+import com.google.auto.service.AutoService;
 
 import java.util.Optional;
 
+@AutoService(ParameterValues.class)
 public class EnvironmentParameterValues implements ParameterValues {
     @Override
     public Optional<ParameterValue> get(String name) {
