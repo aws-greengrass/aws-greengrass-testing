@@ -34,8 +34,13 @@
         </dependency>
         <dependency>
             <groupId>com.aws.greengrass</groupId>
-            <artifactId>aws-greengrass-testing-api</artifactId>
+            <artifactId>aws-greengrass-testing-modules</artifactId>
             <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>info.picocli</groupId>
+            <artifactId>picocli</artifactId>
+            <version>${picocli.version}</version>
         </dependency>
 
         <dependency>
