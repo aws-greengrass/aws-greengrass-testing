@@ -85,6 +85,11 @@ public class DevicePredicatePlatformFiles implements PlatformFiles {
     }
 
     @Override
+    public String format(Path filePath) {
+        return delegate(files -> files.format(filePath));
+    }
+
+    @Override
     public byte[] readBytes(Path filePath) throws CommandExecutionException {
         return delegate(files -> files.readBytes(filePath));
     }

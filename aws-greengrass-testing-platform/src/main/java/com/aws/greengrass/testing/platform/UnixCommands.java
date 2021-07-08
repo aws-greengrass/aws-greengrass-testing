@@ -23,7 +23,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public abstract class UnixCommands implements Commands, UnixPathsMixin {
-    private static final Pattern PID_REGEX = Pattern.compile("^(\\d*)\\s*");
+    private static final Pattern PID_REGEX = Pattern.compile("\\((\\d+)\\)");
     protected final Device device;
     private final PlatformOS host;
 
@@ -65,13 +65,13 @@ public abstract class UnixCommands implements Commands, UnixPathsMixin {
 
     @Override
     public void makeExecutable(Path file) throws CommandExecutionException {
-        execute(CommandInput.of("chmod +x " + file.toString()));
+        execute(CommandInput.of("chmod +x " + file));
     }
 
     @Override
     public List<Integer> findDescendants(int pid) throws CommandExecutionException {
         final String result = executeToString(CommandInput.builder()
-                .line("pstree -p " + pid + " | grep -o '([0-9]\\+)' | grep -o '[0-9]\\+'")
+                .line("pstree -p " + pid)
                 .build());
         return Arrays.stream(result.split("\\r?\\n")).map(String::trim).flatMap(line -> {
             final Matcher matcher = PID_REGEX.matcher(line);

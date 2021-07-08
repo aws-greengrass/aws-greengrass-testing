@@ -31,6 +31,8 @@ public interface PlatformFiles {
 
     boolean exists(Path filePath) throws CommandExecutionException;
 
+    String format(Path filePath);
+
     /**
      * Perform a recursive copy from remote source to local destination.
      *
