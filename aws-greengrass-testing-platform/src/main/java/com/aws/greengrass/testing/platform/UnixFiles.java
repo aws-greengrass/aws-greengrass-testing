@@ -66,6 +66,11 @@ public abstract class UnixFiles implements PlatformFiles, UnixPathsMixin {
     }
 
     @Override
+    public String format(Path filePath) {
+        return formatToUnixPath(filePath.toString());
+    }
+
+    @Override
     public List<Path> listContents(final Path filePath) throws CommandExecutionException {
         final String[] files = commands.executeToString(CommandInput.builder()
                 .line("find").addArgs(filePath.toString(), "-type", "f")

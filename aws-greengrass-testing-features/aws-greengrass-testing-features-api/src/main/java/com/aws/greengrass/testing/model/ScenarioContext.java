@@ -6,6 +6,7 @@
 package com.aws.greengrass.testing.model;
 
 import com.aws.greengrass.testing.api.model.TestId;
+import com.aws.greengrass.testing.platform.Platform;
 import com.aws.greengrass.testing.resources.AWSResources;
 import com.aws.greengrass.testing.resources.ResourceSpec;
 import io.cucumber.guice.ScenarioScoped;
@@ -28,19 +29,23 @@ public class ScenarioContext {
     private static final Logger LOGGER = LogManager.getLogger(ScenarioContext.class);
     private static final Pattern PATTERN = Pattern.compile("\\$\\{([^\\}]+)\\}");
     private final Map<String, String> context;
+    private final Platform platform;
     private final AWSResources resources;
     private final TestContext testContext;
 
     /**
      * Creates a {@link ScenarioContext} with {@link TestContext} and {@link AWSResources} mapped to scenario.
      *
+     * @param platform Scenario unique {@link Platform}
      * @param testContext Scenario unique {@link TestContext}
      * @param resources Scenario unique {@link AWSResources}
      */
     @Inject
     public ScenarioContext(
+            final Platform platform,
             final TestContext testContext,
             final AWSResources resources) {
+        this.platform = platform;
         this.testContext = testContext;
         this.resources = resources;
         this.context = new ConcurrentHashMap<>();
@@ -89,7 +94,7 @@ public class ScenarioContext {
             }
         } else if (parts[0].equals("test.context") && parts.length >= 2) {
             if (parts[1].equals("installRoot")) {
-                return testContext.installRoot().toString();
+                return platform.files().format(testContext.installRoot());
             }
         }
         return context.get(testContext.testId().idFor(key));

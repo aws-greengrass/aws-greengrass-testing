@@ -66,6 +66,11 @@ public class LocalFiles implements PlatformFiles {
     }
 
     @Override
+    public String format(Path filePath) {
+        return filePath.toString();
+    }
+
+    @Override
     public List<Path> listContents(Path filePath) throws CommandExecutionException {
         if (Files.isRegularFile(filePath)) {
             return Arrays.asList(filePath);
