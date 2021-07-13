@@ -28,6 +28,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public final class TestLauncher {
     private static final Logger LOGGER = LogManager.getLogger(TestLauncher.class);
@@ -40,10 +42,10 @@ public final class TestLauncher {
     private static final String TEST_LOG_FILE = "greengrass-test-run.log";
 
     /**
-     * Start the {@link TestLauncher} wrapping a JUnit platform engine.
+     * Start the {@link TestLauncher} wrapping a Cucumber platform engine.
      *
      * @param args optional additional arguments for the runner
-     * @throws Exception any runtime failure before JUnit platform engine begins
+     * @throws Exception any runtime failure before Cucumber runner begins
      */
     public static void main(String[] args) throws Exception {
         final Path output;
@@ -61,6 +63,13 @@ public final class TestLauncher {
                 .addPluginName(StepTrackingReporting.class.getName(), true);
         String tags = System.getProperty("tags");
         if (Objects.nonNull(tags)) {
+            if (!tags.contains("@")) {
+                // Assuming JUnit style tags being supplied here
+                final Matcher matcher = Pattern.compile("([A-Za-z0-9_\\.]+)").matcher(tags);
+                tags = matcher.replaceAll("@$1")
+                        .replace("&", " and ")
+                        .replace("|", " or ");
+            }
             optionsBuilder.addTagFilter(tags);
         }
 
@@ -86,7 +95,7 @@ public final class TestLauncher {
         runtime.run();
         int exitStatus = runtime.exitStatus();
         if (exitStatus != 0) {
-            System.out.println("Scenario tests failed.");
+            LOGGER.error("Scenario tests failed.");
         }
         System.exit(runtime.exitStatus());
     }
