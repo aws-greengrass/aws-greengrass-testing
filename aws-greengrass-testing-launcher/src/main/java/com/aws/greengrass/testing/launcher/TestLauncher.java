@@ -6,6 +6,10 @@
 package com.aws.greengrass.testing.launcher;
 
 import com.aws.greengrass.testing.launcher.reporting.StepTrackingReporting;
+import io.cucumber.core.feature.FeatureWithLines;
+import io.cucumber.core.feature.GluePath;
+import io.cucumber.core.options.RuntimeOptionsBuilder;
+import io.cucumber.core.runtime.Runtime;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -15,35 +19,20 @@ import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.appender.FileAppender;
 import org.apache.logging.log4j.core.config.LoggerConfig;
 import org.apache.logging.log4j.core.layout.PatternLayout;
-import org.junit.platform.console.options.CommandLineOptions;
-import org.junit.platform.console.options.Details;
-import org.junit.platform.console.options.Theme;
-import org.junit.platform.console.tasks.ConsoleTestExecutor;
-import org.junit.platform.launcher.listeners.TestExecutionSummary;
 
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintWriter;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.NotDirectoryException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.StringJoiner;
 
 public final class TestLauncher {
     private static final Logger LOGGER = LogManager.getLogger(TestLauncher.class);
-    private static final String ENGINE = "cucumber";
     private static final String DEFAULT_GLUE_PATH = "com.aws.greengrass";
-    private static final String DEFAULT_FEATURES = "greengrass/features";
+    private static final String DEFAULT_FEATURES = "classpath:greengrass/features";
     private static final String LOG_LEVEL = "log.level";
     private static final String FEATURE_PATH = "feature.path";
     private static final String TEST_RESULTS_XML = "test.results.xml";
@@ -65,58 +54,43 @@ public final class TestLauncher {
         }
         Files.createDirectories(output);
         addFileAppender(output);
-        CommandLineOptions options = new CommandLineOptions();
-        options.setTheme(Theme.ASCII);
-        options.setDetails(Details.TREE);
-        options.setAnsiColorOutputDisabled(true);
-        options.setIncludedEngines(Arrays.asList(ENGINE));
+
+        RuntimeOptionsBuilder optionsBuilder = new RuntimeOptionsBuilder()
+                .addFeature(FeatureWithLines.parse(DEFAULT_FEATURES))
+                .addGlue(GluePath.parse(DEFAULT_GLUE_PATH))
+                .addPluginName(StepTrackingReporting.class.getName(), true);
         String tags = System.getProperty("tags");
         if (Objects.nonNull(tags)) {
-            options.setIncludedTagExpressions(Arrays.asList(tags));
+            optionsBuilder.addTagFilter(tags);
         }
+
+        if (Boolean.parseBoolean(System.getProperty(TEST_RESULTS_XML, "true"))) {
+            final Path resultsXml = output.toAbsolutePath().resolve("TEST-greengrass-results.xml");
+            optionsBuilder.addPluginName("junit:" + resultsXml, true);
+        }
+
         // Allow external feature files. This enables framework features to work with static features.
         Optional.ofNullable(System.getProperty(FEATURE_PATH)).ifPresent(featurePath -> {
-            final List<String> selectedFiles = new ArrayList<>();
             try (DirectoryStream<Path> paths = Files.newDirectoryStream(Paths.get(featurePath), "*.feature")) {
-                paths.forEach(path -> selectedFiles.add(path.toString()));
+                paths.forEach(path -> optionsBuilder.addFeature(FeatureWithLines.parse("file:" + path)));
             } catch (NotDirectoryException nde) {
-                selectedFiles.add(featurePath);
+                optionsBuilder.addFeature(FeatureWithLines.parse("file:" + featurePath));
             } catch (IOException ie) {
                 LOGGER.warn("Failed to select features in {}:", featurePath, ie);
             }
-            options.setSelectedFiles(selectedFiles);
         });
-        options.setSelectedClasspathResources(Arrays.asList(DEFAULT_FEATURES));
-        options.setFailIfNoTests(true);
-        final StringJoiner plugins = new StringJoiner(",")
-                .add(StepTrackingReporting.class.getName());
-        if (Boolean.parseBoolean(System.getProperty(TEST_RESULTS_XML, "true"))) {
-            final Path resultsXml = output.toAbsolutePath().resolve("TEST-greengrass-results.xml");
-            plugins.add("junit:" + resultsXml.toString());
+
+        Runtime runtime = Runtime.builder()
+                .withRuntimeOptions(optionsBuilder.build())
+                .build();
+        runtime.run();
+        int exitStatus = runtime.exitStatus();
+        if (exitStatus != 0) {
+            System.out.println("Scenario tests failed.");
         }
-        options.setConfigurationParameters(new HashMap<String, String>() {
-            {
-                put("cucumber.glue", System.getProperty("glue.package", DEFAULT_GLUE_PATH));
-                put("cucumber.plugin", plugins.toString());
-            }
-        });
-        final ConsoleTestExecutor executor = new ConsoleTestExecutor(options);
-        try (OutputStream stream = outputStream(output)) {
-            final TestExecutionSummary summary = executor.execute(new PrintWriter(stream));
-            if (summary.getTestsFailedCount() > 0) {
-                System.err.println("Test Failure: " + summary.getTestsFailedCount());
-                System.exit(1);
-            }
-        }
+        System.exit(runtime.exitStatus());
     }
 
-    private static OutputStream outputStream(Path output) throws FileNotFoundException {
-        OutputStream stream = System.out;
-        if (Boolean.parseBoolean(System.getProperty(TEST_RESULTS_LOG, "false"))) {
-            stream = new FileOutputStream(output.resolve(TEST_LOG_FILE).toFile(), true);
-        }
-        return stream;
-    }
 
     /**
      * Update the logger with a file appender so it can be reviewed outside of console output.

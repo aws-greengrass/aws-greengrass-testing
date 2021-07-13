@@ -16,7 +16,6 @@ import io.cucumber.java.en.When;
 import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ScenarioScoped
 public class S3Steps {
@@ -65,12 +64,14 @@ public class S3Steps {
      * @param value value for wait duration
      * @param unit duration for waiting
      * @throws InterruptedException thread interrupted while waiting
+     * @throws IllegalStateException thrown when the bucket does not contain the object
      */
     @Then("the S3 bucket named {word} contains the key {word} within {int} {word}")
     public void bucketContainsKey(String bucketName, String key, int value, String unit) throws InterruptedException {
         S3Lifecycle s3 = resources.lifecycle(S3Lifecycle.class);
-        assertTrue(waits.untilTrue(() -> s3.objectExists(testId.idFor(bucketName), key),
-                value, TimeUnit.valueOf(unit.toUpperCase())),
-                "The object " + key + " does not exist in " + bucketName);
+        if (!waits.untilTrue(() -> s3.objectExists(testId.idFor(bucketName), key),
+                value, TimeUnit.valueOf(unit.toUpperCase()))) {
+            throw new IllegalStateException("The object " + key + " does not exist in " + bucketName);
+        }
     }
 }

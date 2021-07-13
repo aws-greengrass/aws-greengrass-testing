@@ -12,7 +12,6 @@
     <artifactId>aws-greengrass-testing-examples</artifactId>
     <packaging>pom</packaging>
     <modules>
-        <module>aws-greengrass-testing-examples-standalone</module>
         <module>aws-greengrass-testing-examples-component</module>
     </modules>
 

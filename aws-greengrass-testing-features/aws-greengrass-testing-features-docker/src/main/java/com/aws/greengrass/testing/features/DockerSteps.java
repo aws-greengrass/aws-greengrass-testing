@@ -22,8 +22,6 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 @ScenarioScoped
 public class DockerSteps {
     private static final Logger LOGGER = LogManager.getLogger(DockerSteps.class);
@@ -78,7 +76,9 @@ public class DockerSteps {
                 .map(String::trim)
                 .flatMap(line -> Arrays.stream(line.split("\\s+")))
                 .forEach(parts::remove);
-        assertTrue(validity.test(parts), message);
+        if (!validity.test(parts)) {
+            throw new IllegalStateException(message);
+        }
     }
 
     @After

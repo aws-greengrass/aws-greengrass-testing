@@ -36,7 +36,7 @@ public class StepTrackingReporting implements EventListener {
             String path = stepStarted.getTestCase().getUri().toString().replace("classpath:", "");
             Logger logger = scenarioToLogger.computeIfAbsent(stepStarted.getTestCase().getId(),
                     key -> LogManager.getLogger(path));
-            logger.info("Step on line {}: '{}'", step.getStep().getLine(), step.getStep().getText());
+            logger.info("line {}: '{}'", step.getStep().getLine(), step.getStep().getText());
         }
     }
 

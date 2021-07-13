@@ -39,8 +39,6 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 @ScenarioScoped
 public class DeploymentSteps {
     private static final Logger LOGGER = LogManager.getLogger(DeploymentSteps.class);
@@ -157,6 +155,8 @@ public class DeploymentSteps {
      * @param value integer value duration
      * @param unit {@link TimeUnit} for the duration
      * @throws InterruptedException thread interrupted while waiting
+     * @throws IllegalStateException when the deployment does not succeed on the DUT
+     * @throws IllegalArgumentException if status is not a terminal status
      */
     @Then("the Greengrass deployment is {word} on the device after {int} {word}")
     public void deploymentSucceeds(String status, int value, String unit) throws InterruptedException {
@@ -168,15 +168,18 @@ public class DeploymentSteps {
         terminalStatuses.add(EffectiveDeploymentExecutionStatus.TIMED_OUT);
 
         final EffectiveDeploymentExecutionStatus effectiveStatus = EffectiveDeploymentExecutionStatus.valueOf(status);
-        assertTrue(terminalStatuses.contains(effectiveStatus),
-                "Please target a terminal status: " + terminalStatuses);
+        if (!terminalStatuses.contains(effectiveStatus)) {
+            throw new IllegalArgumentException("Please target a terminal status: " + terminalStatuses);
+        }
 
         TimeUnit timeUnit = TimeUnit.valueOf(unit.toUpperCase());
-        assertTrue(waits.untilTerminal(
+        if (!waits.untilTerminal(
                 () -> this.effectivelyDeploymentStatus().orElse(null),
                 effectiveStatus::equals,
-                terminalStatuses::contains, value, timeUnit),
-                "Deployment " + testContext.testId().idFor("gg-deployment") + " did not reach " + status);
+                terminalStatuses::contains, value, timeUnit)) {
+            throw new IllegalStateException("Deployment " + testContext.testId().idFor("gg-deployment")
+                    + " did not reach " + status);
+        }
     }
 
     private Optional<EffectiveDeploymentExecutionStatus> effectivelyDeploymentStatus() {
