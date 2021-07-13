@@ -12,7 +12,6 @@ import io.cucumber.guice.ScenarioScoped;
 import io.cucumber.java.After;
 import io.cucumber.java.Scenario;
 import io.cucumber.java.en.Then;
-import io.cucumber.java.en.When;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -21,9 +20,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
-
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ScenarioScoped
 public class FileSteps {
@@ -43,10 +39,17 @@ public class FileSteps {
         this.waits = waits;
     }
 
+    /**
+     * Checks that a file exists on the DUT.
+     *
+     * @param file path relative to the install root in the TestContext
+     * @throws IllegalStateException if the file does not exist on the DUT
+     */
     @Then("the file {word} on device exists")
     public void checkFileExists(String file) {
-        assertTrue(platform.files().exists(testContext.installRoot().resolve(file)),
-                "file " + file + " does not exist in " + testContext.installRoot());
+        if (!platform.files().exists(testContext.installRoot().resolve(file))) {
+            throw new IllegalStateException("file " + file + " does not exist in " + testContext.installRoot());
+        }
     }
 
     @Then("the file {word} on device contains {string}")
@@ -69,18 +72,38 @@ public class FileSteps {
         TimeUnit timeUnit = TimeUnit.valueOf(unit.toUpperCase());
         boolean found = waits.untilTrue(() -> platform.files()
                 .readString(testContext.installRoot().resolve(file)).contains(contents), value, timeUnit);
-        assertTrue(found, "file " + file + " did not contain " + contents);
+        if (!found) {
+            throw new IllegalStateException("file " + file + " did not contain " + contents);
+        }
     }
 
+    /**
+     * Verifies that a component log file contains the contents within an interval.
+     *
+     * @param component name of the component log
+     * @param line contents to validate
+     * @param value number of units
+     * @param unit specific {@link TimeUnit}
+     * @throws InterruptedException throws when thread is interrupted
+     */
     @Then("the {word} log on the device contains the line {string} within {int} {word}")
     public void logContains(String component, String line, int value, String unit) throws InterruptedException {
         containsTimeout("logs/" + component + ".log", line, value, unit);
     }
 
+    /**
+     * Verifies that a compoennt log does not contain a line.
+     *
+     * @param component name of the component log
+     * @param line value the log file should not contain
+     * @throws IllegalStateException throws if the log contains the line
+     */
     @Then("the {word} log on the device not contains the line {string}")
     public void logNotContains(String component, String line) {
-        assertFalse(platform.files().readString(testContext.installRoot().resolve("logs").resolve(component + ".log"))
-                .contains(line), component + " log contains '" + line + "'");
+        if (platform.files().readString(testContext.installRoot().resolve("logs").resolve(component + ".log"))
+                .contains(line)) {
+            throw new IllegalStateException(component + " log contains '" + line + "'");
+        }
     }
 
     /**
