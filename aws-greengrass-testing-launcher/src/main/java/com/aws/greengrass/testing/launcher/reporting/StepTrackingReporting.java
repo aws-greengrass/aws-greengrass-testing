@@ -5,11 +5,15 @@
 
 package com.aws.greengrass.testing.launcher.reporting;
 
+import com.aws.greengrass.testing.api.ScenarioTestRuns;
+import com.aws.greengrass.testing.api.TestRuns;
+import com.aws.greengrass.testing.api.model.TestRun;
 import io.cucumber.plugin.EventListener;
 import io.cucumber.plugin.event.EventPublisher;
 import io.cucumber.plugin.event.PickleStepTestStep;
 import io.cucumber.plugin.event.Status;
 import io.cucumber.plugin.event.TestCaseFinished;
+import io.cucumber.plugin.event.TestCaseStarted;
 import io.cucumber.plugin.event.TestStepFinished;
 import io.cucumber.plugin.event.TestStepStarted;
 import org.apache.logging.log4j.LogManager;
@@ -22,12 +26,20 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class StepTrackingReporting implements EventListener {
     private final Map<UUID, Logger> scenarioToLogger = new ConcurrentHashMap<>();
+    private final Map<UUID, TestRun.Builder> inflightRuns = new ConcurrentHashMap<>();
+    private final TestRuns testRuns = ScenarioTestRuns.instance();
 
     @Override
     public void setEventPublisher(EventPublisher eventPublisher) {
+        eventPublisher.registerHandlerFor(TestCaseStarted.class, this::handleScenarioStarted);
         eventPublisher.registerHandlerFor(TestStepStarted.class, this::handleStepStarted);
         eventPublisher.registerHandlerFor(TestStepFinished.class, this::handleStepFinished);
         eventPublisher.registerHandlerFor(TestCaseFinished.class, this::handleScenarioFinished);
+    }
+
+    private void handleScenarioStarted(final TestCaseStarted scenarioStarted) {
+        inflightRuns.computeIfAbsent(scenarioStarted.getTestCase().getId(),
+                key -> TestRun.builder().name(scenarioStarted.getTestCase().getName()));
     }
 
     private void handleStepStarted(final TestStepStarted stepStarted) {
@@ -48,6 +60,8 @@ public class StepTrackingReporting implements EventListener {
                 logger.error("Failed step: '{}'",
                         step.getStep().getText(),
                         stepFinished.getResult().getError());
+                inflightRuns.computeIfPresent(stepFinished.getTestCase().getId(),
+                        (key, run) -> run.passed(false).message("Failed '" + step.getStep().getText() + "'"));
             } else {
                 logger.debug("Finished step: '{}' with status {}",
                         step.getStep().getText(),
@@ -58,6 +72,10 @@ public class StepTrackingReporting implements EventListener {
 
     private void handleScenarioFinished(final TestCaseFinished scenarioFinished) {
         Logger logger = scenarioToLogger.remove(scenarioFinished.getTestCase().getId());
+        inflightRuns.computeIfPresent(scenarioFinished.getTestCase().getId(),
+                (key, run) -> run.duration(scenarioFinished.getResult().getDuration())
+                        .skipped(scenarioFinished.getResult().getStatus().equals(Status.SKIPPED))
+                        .passed(scenarioFinished.getResult().getStatus().equals(Status.PASSED)));
         if (Objects.nonNull(logger)) {
             logger.debug("Finished '{}'", scenarioFinished.getTestCase().getName());
         }
