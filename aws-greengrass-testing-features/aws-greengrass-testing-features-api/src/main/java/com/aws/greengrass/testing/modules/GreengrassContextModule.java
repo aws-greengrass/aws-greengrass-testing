@@ -90,6 +90,7 @@ public class GreengrassContextModule extends AbstractModule {
                     .cleanupContext(cleanupContext)
                     .build();
         } catch (NullPointerException | IOException ie) {
+            LOGGER.error("Failed to provision Greengrass testing context", ie);
             throw new ModuleProvisionException(ie);
         }
     }
