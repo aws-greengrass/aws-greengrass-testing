@@ -72,18 +72,6 @@ public final class TestLauncher {
         return commandSpec;
     }
 
-    private static <T> Optional<T> findValue(CommandLine.Model.CommandSpec spec, String name, Class<T> type) {
-        return Optional.ofNullable(spec.findOption(name))
-                .flatMap(option -> {
-                    try {
-                        return Optional.ofNullable(option.getValue());
-                    } catch (CommandLine.PicocliException e) {
-                        return Optional.empty();
-                    }
-                })
-                .map(type::cast);
-    }
-
     /**
      * Start the {@link TestLauncher} wrapping a Cucumber platform engine.
      *
@@ -96,8 +84,8 @@ public final class TestLauncher {
         if (CommandLine.printHelpIfRequested(parseResult)) {
             System.exit(0);
         }
-        final CommandLine.Model.CommandSpec commandSpec = cli.getCommandSpec();
-        final Path output = Paths.get(findValue(commandSpec, "test.log.path", String.class).orElse(""));
+        final ParameterValues values = new TestLauncherParameterValues();
+        final Path output = Paths.get(values.getString("test.log.path").orElse(""));
         Files.createDirectories(output);
         addFileAppender(output);
 
@@ -105,8 +93,7 @@ public final class TestLauncher {
                 .addFeature(FeatureWithLines.parse(DEFAULT_FEATURES))
                 .addGlue(GluePath.parse(DEFAULT_GLUE_PATH))
                 .addPluginName(StepTrackingReporting.class.getName(), true);
-        String tags = System.getProperty("tags");
-        if (Objects.nonNull(tags)) {
+        values.getString("tags").ifPresent(tags -> {
             if (!tags.contains("@")) {
                 // Assuming JUnit style tags being supplied here
                 final Matcher matcher = Pattern.compile("([A-Za-z0-9_\\.]+)").matcher(tags);
@@ -115,7 +102,7 @@ public final class TestLauncher {
                         .replace("|", " or ");
             }
             optionsBuilder.addTagFilter(tags);
-        }
+        });
 
         if (Boolean.parseBoolean(System.getProperty(TEST_RESULTS_XML, "true"))) {
             final Path resultsXml = output.toAbsolutePath().resolve("TEST-greengrass-results.xml");
@@ -123,7 +110,7 @@ public final class TestLauncher {
         }
 
         // Allow external feature files. This enables framework features to work with static features.
-        findValue(commandSpec, "feature.path", String.class).ifPresent(featurePath -> {
+        values.getString("feature.path").ifPresent(featurePath -> {
             final List<String> selectedFiles = new ArrayList<>();
             try (DirectoryStream<Path> paths = Files.newDirectoryStream(Paths.get(featurePath), "*.feature")) {
                 paths.forEach(path -> optionsBuilder.addFeature(FeatureWithLines.parse("file:" + path)));
@@ -149,14 +136,14 @@ public final class TestLauncher {
     /**
      * Update the logger with a file appender so it can be reviewed outside of console output.
      *
-     * @param spec the parsed {@link picocli.CommandLine.Model.CommandSpec} object
+     * @param values the parsed {@link ParameterValues}
      * @param output the output path to place the log file
      */
-    private static void addFileAppender(final CommandLine.Model.CommandSpec spec, final Path output) {
-        final Level level = Level.valueOf(findValue(spec, "log.level", String.class).orElse("info"));
+    private static void addFileAppender(final ParameterValues values, final Path output) {
+        final Level level = Level.valueOf(values.getString("log.level").orElse("info"));
         final LoggerContext context = (LoggerContext) LogManager.getContext(false);
         final LoggerConfig config = context.getConfiguration().getRootLogger();
-        if (findValue(spec, "test.results.log", Boolean.class).orElse(false)) {
+        if (values.getBoolean("test.results.log").orElse(false)) {
             final Layout layout = PatternLayout.newBuilder().withPattern(
                     "%d{yyyy-MMM-dd HH:mm:ss,SSS} [%X{feature}] [%X{testId}] [%level] %logger{36} - %msg%n").build();
             FileAppender.Builder appenderBuilder = FileAppender.newBuilder()

@@ -20,6 +20,10 @@ public interface ParameterValues {
         return get(name).map(ParameterValue::value);
     }
 
+    default Optional<Boolean> getBoolean(String name) {
+        return getString(name).map(Boolean::parseBoolean);
+    }
+
     /**
      * Creates a {@link CompositeParameterValues} with any {@link ParameterValues} found on the classpath.
      *

@@ -21,13 +21,11 @@ public class TestLauncherParameters implements Parameters {
                 Parameter.of("feature.path", "File or directory containing additional feature files. "
                         + "Default is no additional feature files are used."),
                 Parameter.builder()
-                        .flag(true)
                         .name("test.results.log")
-                        .description("Flag to determine if the JUnit console output is generated written to disk. "
+                        .description("Flag to determine if the console output is generated written to disk. "
                                 + "Defaults to false.")
                         .build(),
                 Parameter.builder()
-                        .flag(true)
                         .name("test.results.xml")
                         .description("Flag to determine if a resulting JUnit XML report is generated written to disk. "
                                 + "Defaults to true.")
