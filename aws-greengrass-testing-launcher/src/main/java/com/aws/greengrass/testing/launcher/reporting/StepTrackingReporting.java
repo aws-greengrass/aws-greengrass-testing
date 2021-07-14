@@ -61,7 +61,7 @@ public class StepTrackingReporting implements EventListener {
                         step.getStep().getText(),
                         stepFinished.getResult().getError());
                 inflightRuns.computeIfPresent(stepFinished.getTestCase().getId(),
-                        (key, run) -> run.passed(false).message("Failed '" + step.getStep().getText() + "'"));
+                        (key, run) -> run.failed(true).message("Failed '" + step.getStep().getText() + "'"));
             } else {
                 logger.debug("Finished step: '{}' with status {}",
                         step.getStep().getText(),
