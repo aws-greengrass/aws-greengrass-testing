@@ -116,7 +116,7 @@ public final class TestLauncher {
             FileAppender.Builder appenderBuilder = FileAppender.newBuilder()
                     .withFileName(output.resolve(TEST_LOG_FILE).toString())
                     .withImmediateFlush(true)
-                    .withBufferedIo(false);
+                    .withBufferedIo(true);
             appenderBuilder.setLayout(layout).setName("File");
             Appender appender = appenderBuilder.build();
             appender.start();

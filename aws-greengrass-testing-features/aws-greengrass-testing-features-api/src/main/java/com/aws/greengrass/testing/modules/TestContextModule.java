@@ -5,8 +5,6 @@
 
 package com.aws.greengrass.testing.modules;
 
-import com.aws.greengrass.testing.ScenarioTestRuns;
-import com.aws.greengrass.testing.api.TestRuns;
 import com.aws.greengrass.testing.api.model.CleanupContext;
 import com.aws.greengrass.testing.api.model.TestId;
 import com.aws.greengrass.testing.api.model.TimeoutMultiplier;
@@ -37,12 +35,6 @@ public class TestContextModule extends AbstractModule {
         final byte[] bytes = new byte[size];
         RANDOM.nextBytes(bytes);
         return new BigInteger(1, bytes).toString(16).substring(size);
-    }
-
-    @Provides
-    @Singleton
-    static TestRuns providesTestRunTracker() {
-        return new ScenarioTestRuns();
     }
 
     @Provides

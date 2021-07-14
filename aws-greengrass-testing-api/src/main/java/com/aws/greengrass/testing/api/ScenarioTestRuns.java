@@ -3,9 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package com.aws.greengrass.testing;
+package com.aws.greengrass.testing.api;
 
-import com.aws.greengrass.testing.api.TestRuns;
 import com.aws.greengrass.testing.api.model.TestRun;
 
 import java.util.ArrayList;
@@ -13,9 +12,14 @@ import java.util.Collections;
 import java.util.List;
 
 public class ScenarioTestRuns implements TestRuns {
+    private static final TestRuns INSTANCE = new ScenarioTestRuns();
     private final List<TestRun> scenarios;
 
-    public ScenarioTestRuns() {
+    public static TestRuns instance() {
+        return INSTANCE;
+    }
+
+    private ScenarioTestRuns() {
         scenarios = new ArrayList<>();
     }
 
