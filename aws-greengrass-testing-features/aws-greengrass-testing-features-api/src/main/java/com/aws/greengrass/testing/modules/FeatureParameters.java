@@ -34,7 +34,6 @@ public class FeatureParameters implements Parameters {
                 Parameter.builder()
                         .name(NUCLEUS_ARCHIVE_PATH)
                         .description("The path to the archived Greengrass Nucleus component.")
-                        .required(true)
                         .build(),
                 Parameter.of(NUCLEUS_LOG_LEVEL, "Set the Greengrass Nucleus log level for the test run. "
                         + "Default is \"INFO\""),

@@ -30,8 +30,6 @@ import java.nio.file.Files;
 import java.nio.file.NotDirectoryException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -87,7 +85,7 @@ public final class TestLauncher {
         final ParameterValues values = new TestLauncherParameterValues();
         final Path output = Paths.get(values.getString("test.log.path").orElse(""));
         Files.createDirectories(output);
-        addFileAppender(output);
+        addFileAppender(values, output);
 
         RuntimeOptionsBuilder optionsBuilder = new RuntimeOptionsBuilder()
                 .addFeature(FeatureWithLines.parse(DEFAULT_FEATURES))
@@ -104,14 +102,13 @@ public final class TestLauncher {
             optionsBuilder.addTagFilter(tags);
         });
 
-        if (Boolean.parseBoolean(System.getProperty(TEST_RESULTS_XML, "true"))) {
+        if (values.getBoolean(TEST_RESULTS_XML).orElse(true)) {
             final Path resultsXml = output.toAbsolutePath().resolve("TEST-greengrass-results.xml");
             optionsBuilder.addPluginName("junit:" + resultsXml, true);
         }
 
         // Allow external feature files. This enables framework features to work with static features.
-        values.getString("feature.path").ifPresent(featurePath -> {
-            final List<String> selectedFiles = new ArrayList<>();
+        values.getString(FEATURE_PATH).ifPresent(featurePath -> {
             try (DirectoryStream<Path> paths = Files.newDirectoryStream(Paths.get(featurePath), "*.feature")) {
                 paths.forEach(path -> optionsBuilder.addFeature(FeatureWithLines.parse("file:" + path)));
             } catch (NotDirectoryException nde) {
@@ -125,6 +122,7 @@ public final class TestLauncher {
                 .withRuntimeOptions(optionsBuilder.build())
                 .build();
         runtime.run();
+
         int exitStatus = runtime.exitStatus();
         if (exitStatus != 0) {
             LOGGER.error("Scenario tests failed.");
@@ -140,10 +138,10 @@ public final class TestLauncher {
      * @param output the output path to place the log file
      */
     private static void addFileAppender(final ParameterValues values, final Path output) {
-        final Level level = Level.valueOf(values.getString("log.level").orElse("info"));
+        final Level level = Level.valueOf(values.getString(LOG_LEVEL).orElse("info"));
         final LoggerContext context = (LoggerContext) LogManager.getContext(false);
         final LoggerConfig config = context.getConfiguration().getRootLogger();
-        if (values.getBoolean("test.results.log").orElse(false)) {
+        if (values.getBoolean(TEST_RESULTS_LOG).orElse(false)) {
             final Layout layout = PatternLayout.newBuilder().withPattern(
                     "%d{yyyy-MMM-dd HH:mm:ss,SSS} [%X{feature}] [%X{testId}] [%level] %logger{36} - %msg%n").build();
             FileAppender.Builder appenderBuilder = FileAppender.newBuilder()
