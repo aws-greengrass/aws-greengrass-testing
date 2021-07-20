@@ -5,7 +5,9 @@
 
 package com.aws.greengrass.testing.modules;
 
+import com.aws.greengrass.testing.api.ParameterValues;
 import com.aws.greengrass.testing.api.model.CleanupContext;
+import com.aws.greengrass.testing.api.model.ParameterValue;
 import com.aws.greengrass.testing.api.model.PersistMode;
 import com.google.auto.service.AutoService;
 import com.google.common.collect.Sets;
@@ -30,7 +32,6 @@ import javax.inject.Singleton;
 
 @AutoService(Module.class)
 public class AWSResourcesCleanupModule extends AbstractModule {
-    private static final String PERSIST_TESTING_RESOURCES = "gg.persist";
     private static final Logger LOGGER = LogManager.getLogger(AWSResourcesCleanupModule.class);
 
     private static class CleanupRunnable implements Runnable {
@@ -89,9 +90,9 @@ public class AWSResourcesCleanupModule extends AbstractModule {
 
     @Provides
     @Singleton
-    static CleanupContext providesCleanUpContext() {
+    static CleanupContext providesCleanUpContext(final ParameterValues parameterValues) {
         // TODO: switch to SPI so modules can specify their own persistence type and provider
-        final Set<PersistMode> modes = Optional.ofNullable(System.getProperty(PERSIST_TESTING_RESOURCES))
+        final Set<PersistMode> modes = parameterValues.getString(ModuleParameters.PERSIST_TESTING_RESOURCES)
                 .map(resources -> resources.split("\\s*,\\s*"))
                 .map(Arrays::stream)
                 .map(stream -> stream.map(PersistMode::fromConfig).collect(Collectors.toSet()))

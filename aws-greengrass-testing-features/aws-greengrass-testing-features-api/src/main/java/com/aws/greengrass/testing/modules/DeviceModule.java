@@ -5,6 +5,7 @@
 
 package com.aws.greengrass.testing.modules;
 
+import com.aws.greengrass.testing.api.ParameterValues;
 import com.aws.greengrass.testing.api.device.Device;
 import com.aws.greengrass.testing.api.device.local.LocalDevice;
 import com.aws.greengrass.testing.api.model.TimeoutMultiplier;
@@ -21,12 +22,11 @@ import java.util.Map;
 
 @AutoService(Module.class)
 public class DeviceModule extends AbstractModule {
-    private static final String DEVICE_MODE = "device.mode";
 
     @Provides
     @ScenarioScoped
-    static Device providesDevice(Map<String, Device> devicePool) {
-        return devicePool.get(System.getProperty(DEVICE_MODE, "LOCAL"));
+    static Device providesDevice(Map<String, Device> devicePool, ParameterValues parameterValues) {
+        return devicePool.get(parameterValues.getString(FeatureParameters.DEVICE_MODE).orElse("LOCAL"));
     }
 
     @Singleton

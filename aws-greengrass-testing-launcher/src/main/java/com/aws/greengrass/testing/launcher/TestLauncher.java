@@ -5,6 +5,9 @@
 
 package com.aws.greengrass.testing.launcher;
 
+import com.aws.greengrass.testing.api.ParameterValues;
+import com.aws.greengrass.testing.api.Parameters;
+import com.aws.greengrass.testing.api.model.ParameterValue;
 import com.aws.greengrass.testing.launcher.reporting.StepTrackingReporting;
 import io.cucumber.core.feature.FeatureWithLines;
 import io.cucumber.core.feature.GluePath;
@@ -19,6 +22,7 @@ import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.appender.FileAppender;
 import org.apache.logging.log4j.core.config.LoggerConfig;
 import org.apache.logging.log4j.core.layout.PatternLayout;
+import picocli.CommandLine;
 
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
@@ -26,8 +30,6 @@ import java.nio.file.Files;
 import java.nio.file.NotDirectoryException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -41,6 +43,33 @@ public final class TestLauncher {
     private static final String TEST_RESULTS_LOG = "test.results.log";
     private static final String TEST_LOG_FILE = "greengrass-test-run.log";
 
+    private static CommandLine.Model.CommandSpec createCommandSpec() {
+        CommandLine.Model.CommandSpec commandSpec = CommandLine.Model.CommandSpec.create();
+        commandSpec.name("gg-test").version("v1.0.0").mixinStandardHelpOptions(true);
+        ParameterValues defaultValues = ParameterValues.createDefault();
+        Parameters.loadAll().sorted().forEach(parameter -> {
+            commandSpec.addOption(CommandLine.Model.OptionSpec
+                    .builder("--" + parameter.name().replace(".", "-"))
+                    .negatable(parameter.flag())
+                    .type(parameter.flag() ? Boolean.class : String.class)
+                    .description(parameter.description())
+                    .required(parameter.required())
+                    .paramLabel(parameter.name())
+                    .preprocessor((stack, commandSpec12, argSpec, map) -> {
+                        defaultValues.getString(argSpec.paramLabel()).ifPresent(stack::push);
+                        return false;
+                    })
+                    .parameterConsumer((stack, argSpec, commandSpec1) -> {
+                        if (!stack.empty()) {
+                            String value = stack.pop();
+                            TestLauncherParameterValues.put(parameter.name(), ParameterValue.of(value));
+                        }
+                    })
+                    .build());
+        });
+        return commandSpec;
+    }
+
     /**
      * Start the {@link TestLauncher} wrapping a Cucumber platform engine.
      *
@@ -48,21 +77,21 @@ public final class TestLauncher {
      * @throws Exception any runtime failure before Cucumber runner begins
      */
     public static void main(String[] args) throws Exception {
-        final Path output;
-        if (args.length > 0) {
-            output = Paths.get(args[0]);
-        } else {
-            output = Paths.get(System.getProperty("test.log.path", ""));
+        CommandLine cli = new CommandLine(createCommandSpec());
+        CommandLine.ParseResult parseResult = cli.parseArgs(args);
+        if (CommandLine.printHelpIfRequested(parseResult)) {
+            System.exit(0);
         }
+        final ParameterValues values = new TestLauncherParameterValues();
+        final Path output = Paths.get(values.getString("test.log.path").orElse(""));
         Files.createDirectories(output);
-        addFileAppender(output);
+        addFileAppender(values, output);
 
         RuntimeOptionsBuilder optionsBuilder = new RuntimeOptionsBuilder()
                 .addFeature(FeatureWithLines.parse(DEFAULT_FEATURES))
                 .addGlue(GluePath.parse(DEFAULT_GLUE_PATH))
                 .addPluginName(StepTrackingReporting.class.getName(), true);
-        String tags = System.getProperty("tags");
-        if (Objects.nonNull(tags)) {
+        values.getString("tags").ifPresent(tags -> {
             if (!tags.contains("@")) {
                 // Assuming JUnit style tags being supplied here
                 final Matcher matcher = Pattern.compile("([A-Za-z0-9_\\.]+)").matcher(tags);
@@ -71,15 +100,15 @@ public final class TestLauncher {
                         .replace("|", " or ");
             }
             optionsBuilder.addTagFilter(tags);
-        }
+        });
 
-        if (Boolean.parseBoolean(System.getProperty(TEST_RESULTS_XML, "true"))) {
+        if (values.getBoolean(TEST_RESULTS_XML).orElse(true)) {
             final Path resultsXml = output.toAbsolutePath().resolve("TEST-greengrass-results.xml");
             optionsBuilder.addPluginName("junit:" + resultsXml, true);
         }
 
         // Allow external feature files. This enables framework features to work with static features.
-        Optional.ofNullable(System.getProperty(FEATURE_PATH)).ifPresent(featurePath -> {
+        values.getString(FEATURE_PATH).ifPresent(featurePath -> {
             try (DirectoryStream<Path> paths = Files.newDirectoryStream(Paths.get(featurePath), "*.feature")) {
                 paths.forEach(path -> optionsBuilder.addFeature(FeatureWithLines.parse("file:" + path)));
             } catch (NotDirectoryException nde) {
@@ -93,6 +122,7 @@ public final class TestLauncher {
                 .withRuntimeOptions(optionsBuilder.build())
                 .build();
         runtime.run();
+
         int exitStatus = runtime.exitStatus();
         if (exitStatus != 0) {
             LOGGER.error("Scenario tests failed.");
@@ -104,13 +134,14 @@ public final class TestLauncher {
     /**
      * Update the logger with a file appender so it can be reviewed outside of console output.
      *
+     * @param values the parsed {@link ParameterValues}
      * @param output the output path to place the log file
      */
-    private static void addFileAppender(final Path output) {
-        final Level level = Level.valueOf(System.getProperty(LOG_LEVEL, "info"));
+    private static void addFileAppender(final ParameterValues values, final Path output) {
+        final Level level = Level.valueOf(values.getString(LOG_LEVEL).orElse("info"));
         final LoggerContext context = (LoggerContext) LogManager.getContext(false);
         final LoggerConfig config = context.getConfiguration().getRootLogger();
-        if (Boolean.parseBoolean(System.getProperty(TEST_RESULTS_LOG, "false"))) {
+        if (values.getBoolean(TEST_RESULTS_LOG).orElse(false)) {
             final Layout layout = PatternLayout.newBuilder().withPattern(
                     "%d{yyyy-MMM-dd HH:mm:ss,SSS} [%X{feature}] [%X{testId}] [%level] %logger{36} - %msg%n").build();
             FileAppender.Builder appenderBuilder = FileAppender.newBuilder()
