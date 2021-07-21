@@ -44,7 +44,7 @@ public class ModuleParameters implements Parameters {
                         + "after a test run. Default behavior is to persist nothing. Accepted values are: "
                         + Arrays.toString(PersistMode.values())),
                 Parameter.of(CREDENTIALS_PATH, "Optional AWS profile credentials path. Defaults to "
-                        + "cerdentials discovery on host environment.")
+                        + "credentials discovery on host environment.")
         );
     }
 }
