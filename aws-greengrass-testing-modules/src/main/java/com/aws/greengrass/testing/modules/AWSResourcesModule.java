@@ -98,7 +98,9 @@ public class AWSResourcesModule extends AbstractModule {
 
     @Provides
     @Singleton
-    static AwsCredentialsProvider providesAwsCredentialsProvider() {
-        return DefaultCredentialsProvider.create();
+    static AwsCredentialsProvider providesAwsCredentialsProvider(ParameterValues values) {
+        return values.getString(ModuleParameters.CREDENTIALS_PATH)
+                .map(file -> (AwsCredentialsProvider) new RotatingProfileAwsCredentialsProvider(file))
+                .orElseGet(DefaultCredentialsProvider::create);
     }
 }
