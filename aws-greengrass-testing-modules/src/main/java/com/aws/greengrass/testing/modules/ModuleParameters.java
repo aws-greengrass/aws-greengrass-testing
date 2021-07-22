@@ -22,6 +22,7 @@ public class ModuleParameters implements Parameters {
     static final String ENV_STAGE = "env.stage";
     static final String AWS_REGION = "aws.region";
     static final String CREDENTIALS_PATH = "credentials.path";
+    static final String CREDENTIALS_PATH_ROTATION = "credentials.path.rotation";
 
     @Override
     public List<Parameter> available() {
@@ -44,7 +45,9 @@ public class ModuleParameters implements Parameters {
                         + "after a test run. Default behavior is to persist nothing. Accepted values are: "
                         + Arrays.toString(PersistMode.values())),
                 Parameter.of(CREDENTIALS_PATH, "Optional AWS profile credentials path. Defaults to "
-                        + "credentials discovery on host environment.")
+                        + "credentials discovery on host environment."),
+                Parameter.of(CREDENTIALS_PATH_ROTATION, "Optional rotation duration for AWS credentials. "
+                        + "Defaults to 15 minutes or 'PT15H'.")
         );
     }
 }

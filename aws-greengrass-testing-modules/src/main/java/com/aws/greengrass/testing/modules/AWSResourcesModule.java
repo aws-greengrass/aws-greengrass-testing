@@ -27,6 +27,7 @@ import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 
 import java.net.Authenticator;
 import java.net.PasswordAuthentication;
+import java.time.Duration;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -100,7 +101,10 @@ public class AWSResourcesModule extends AbstractModule {
     @Singleton
     static AwsCredentialsProvider providesAwsCredentialsProvider(ParameterValues values) {
         return values.getString(ModuleParameters.CREDENTIALS_PATH)
-                .map(file -> (AwsCredentialsProvider) new RotatingProfileAwsCredentialsProvider(file))
+                .map(file -> (AwsCredentialsProvider) new RotatingProfileAwsCredentialsProvider(file,
+                        values.getString(ModuleParameters.CREDENTIALS_PATH_ROTATION)
+                                .map(Duration::parse)
+                                .orElseGet(() -> Duration.ofMinutes(15))))
                 .orElseGet(DefaultCredentialsProvider::create);
     }
 }

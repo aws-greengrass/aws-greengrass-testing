@@ -11,16 +11,17 @@ import software.amazon.awssdk.auth.credentials.ProfileCredentialsProvider;
 import software.amazon.awssdk.profiles.ProfileFile;
 
 import java.nio.file.Paths;
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 
 class RotatingProfileAwsCredentialsProvider implements AwsCredentialsProvider {
-    private static final long ROTATION_TIMEOUT = TimeUnit.MINUTES.toMillis(15);
     private final String profileFile;
+    private final Duration duration;
     private long lastRotation;
     private AwsCredentialsProvider profileProvider;
 
-    public RotatingProfileAwsCredentialsProvider(final String profileFile) {
+    public RotatingProfileAwsCredentialsProvider(final String profileFile, final Duration duration) {
         this.profileFile = profileFile;
+        this.duration = duration;
         rotateProvider();
     }
 
@@ -36,7 +37,7 @@ class RotatingProfileAwsCredentialsProvider implements AwsCredentialsProvider {
 
     @Override
     public synchronized AwsCredentials resolveCredentials() {
-        if (System.currentTimeMillis() - lastRotation > ROTATION_TIMEOUT) {
+        if (System.currentTimeMillis() - lastRotation > duration.toMillis()) {
             rotateProvider();
         }
         return profileProvider.resolveCredentials();
