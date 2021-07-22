@@ -8,11 +8,14 @@ package com.aws.greengrass.testing.api.model;
 import org.immutables.value.Value;
 
 import java.time.Duration;
+import java.util.UUID;
 import javax.annotation.Nullable;
 
 @TestingModel
 @Value.Immutable
 interface TestRunModel {
+    UUID uuid();
+
     String name();
 
     @Nullable

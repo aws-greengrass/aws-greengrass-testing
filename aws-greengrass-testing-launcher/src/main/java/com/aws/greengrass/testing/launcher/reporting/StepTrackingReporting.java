@@ -14,10 +14,12 @@ import io.cucumber.plugin.event.PickleStepTestStep;
 import io.cucumber.plugin.event.Status;
 import io.cucumber.plugin.event.TestCaseFinished;
 import io.cucumber.plugin.event.TestCaseStarted;
+import io.cucumber.plugin.event.TestRunFinished;
 import io.cucumber.plugin.event.TestStepFinished;
 import io.cucumber.plugin.event.TestStepStarted;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.ThreadContext;
 
 import java.util.Map;
 import java.util.Objects;
@@ -35,11 +37,14 @@ public class StepTrackingReporting implements EventListener {
         eventPublisher.registerHandlerFor(TestStepStarted.class, this::handleStepStarted);
         eventPublisher.registerHandlerFor(TestStepFinished.class, this::handleStepFinished);
         eventPublisher.registerHandlerFor(TestCaseFinished.class, this::handleScenarioFinished);
+        eventPublisher.registerHandlerFor(TestRunFinished.class, this::handleTestSuiteFinished);
     }
 
     private void handleScenarioStarted(final TestCaseStarted scenarioStarted) {
         inflightRuns.computeIfAbsent(scenarioStarted.getTestCase().getId(),
-                key -> TestRun.builder().name(scenarioStarted.getTestCase().getName()));
+                key -> TestRun.builder()
+                        .uuid(scenarioStarted.getTestCase().getId())
+                        .name(scenarioStarted.getTestCase().getName()));
     }
 
     private void handleStepStarted(final TestStepStarted stepStarted) {
@@ -71,13 +76,27 @@ public class StepTrackingReporting implements EventListener {
     }
 
     private void handleScenarioFinished(final TestCaseFinished scenarioFinished) {
-        Logger logger = scenarioToLogger.remove(scenarioFinished.getTestCase().getId());
-        inflightRuns.computeIfPresent(scenarioFinished.getTestCase().getId(),
-                (key, run) -> run.duration(scenarioFinished.getResult().getDuration())
+        Logger logger = scenarioToLogger.get(scenarioFinished.getTestCase().getId());
+        TestRun.Builder builder = inflightRuns.remove(scenarioFinished.getTestCase().getId());
+        if (Objects.nonNull(builder)) {
+            testRuns.track(builder.duration(scenarioFinished.getResult().getDuration())
                         .skipped(scenarioFinished.getResult().getStatus().equals(Status.SKIPPED))
-                        .passed(scenarioFinished.getResult().getStatus().equals(Status.PASSED)));
+                        .passed(scenarioFinished.getResult().getStatus().equals(Status.PASSED))
+                        .build());
+        }
         if (Objects.nonNull(logger)) {
             logger.debug("Finished '{}'", scenarioFinished.getTestCase().getName());
+        }
+    }
+
+    private void handleTestSuiteFinished(final TestRunFinished suiteFinished) {
+        for (TestRun run : testRuns.tracking()) {
+            Logger logger = scenarioToLogger.remove(run.uuid());
+            if (run.failed()) {
+                logger.error("{} - Failed: {}", run.name(), run.message());
+            } else {
+                logger.info("{} - Passed", run.name());
+            }
         }
     }
 }
