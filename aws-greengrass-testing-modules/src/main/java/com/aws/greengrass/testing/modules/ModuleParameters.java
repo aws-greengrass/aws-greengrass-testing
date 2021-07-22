@@ -47,7 +47,7 @@ public class ModuleParameters implements Parameters {
                 Parameter.of(CREDENTIALS_PATH, "Optional AWS profile credentials path. Defaults to "
                         + "credentials discovery on host environment."),
                 Parameter.of(CREDENTIALS_PATH_ROTATION, "Optional rotation duration for AWS credentials. "
-                        + "Defaults to 15 minutes or 'PT15H'.")
+                        + "Defaults to 15 minutes or 'PT15M'.")
         );
     }
 }
