@@ -14,9 +14,14 @@ import javax.annotation.Nullable;
 @TestingModel
 @Value.Immutable
 interface TestRunModel {
-    UUID uuid();
+    String testId();
 
     String name();
+
+    @Value.Default
+    default String feature() {
+        return "unknown";
+    }
 
     @Nullable
     Duration duration();

@@ -52,6 +52,7 @@ public final class TestLauncher {
                     .description(parameter.description())
                     .required(parameter.required())
                     .paramLabel(parameter.name())
+                    .defaultValue("") // Needed to trigger the pre-processor
                     .preprocessor((stack, commandSpec12, argSpec, map) -> {
                         defaultValues.getString(argSpec.paramLabel()).ifPresent(stack::push);
                         return false;
@@ -59,7 +60,9 @@ public final class TestLauncher {
                     .parameterConsumer((stack, argSpec, commandSpec1) -> {
                         if (!stack.empty()) {
                             String value = stack.pop();
-                            TestLauncherParameterValues.put(parameter.name(), ParameterValue.of(value));
+                            if (!value.isEmpty()) {
+                                TestLauncherParameterValues.put(parameter.name(), ParameterValue.of(value));
+                            }
                         }
                     })
                     .build());

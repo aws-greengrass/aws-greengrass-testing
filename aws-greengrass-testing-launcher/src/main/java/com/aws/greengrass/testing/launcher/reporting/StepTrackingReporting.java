@@ -23,10 +23,14 @@ import org.apache.logging.log4j.ThreadContext;
 
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class StepTrackingReporting implements EventListener {
+    private static final Logger LOGGER = LogManager.getLogger(StepTrackingReporting.class);
+    private static final String CONTEXT_TEST_ID = "testId";
+    private static final String CONTEXT_FEATURE = "feature";
     private final Map<UUID, Logger> scenarioToLogger = new ConcurrentHashMap<>();
     private final Map<UUID, TestRun.Builder> inflightRuns = new ConcurrentHashMap<>();
     private final TestRuns testRuns = ScenarioTestRuns.instance();
@@ -42,9 +46,7 @@ public class StepTrackingReporting implements EventListener {
 
     private void handleScenarioStarted(final TestCaseStarted scenarioStarted) {
         inflightRuns.computeIfAbsent(scenarioStarted.getTestCase().getId(),
-                key -> TestRun.builder()
-                        .uuid(scenarioStarted.getTestCase().getId())
-                        .name(scenarioStarted.getTestCase().getName()));
+                key -> TestRun.builder().name(scenarioStarted.getTestCase().getName()));
     }
 
     private void handleStepStarted(final TestStepStarted stepStarted) {
@@ -61,12 +63,14 @@ public class StepTrackingReporting implements EventListener {
         Logger logger = scenarioToLogger.get(stepFinished.getTestCase().getId());
         if (Objects.nonNull(logger) && stepFinished.getTestStep() instanceof PickleStepTestStep) {
             PickleStepTestStep step = (PickleStepTestStep) stepFinished.getTestStep();
+            TestRun.Builder builder = inflightRuns.get(stepFinished.getTestCase().getId());
+            Optional.ofNullable(ThreadContext.get(CONTEXT_TEST_ID)).ifPresent(builder::testId);
+            Optional.ofNullable(ThreadContext.get(CONTEXT_FEATURE)).ifPresent(builder::feature);
             if (stepFinished.getResult().getStatus() == Status.FAILED) {
                 logger.error("Failed step: '{}'",
                         step.getStep().getText(),
                         stepFinished.getResult().getError());
-                inflightRuns.computeIfPresent(stepFinished.getTestCase().getId(),
-                        (key, run) -> run.failed(true).message("Failed '" + step.getStep().getText() + "'"));
+                builder.failed(true).message("Failed '" + step.getStep().getText() + "'");
             } else {
                 logger.debug("Finished step: '{}' with status {}",
                         step.getStep().getText(),
@@ -76,7 +80,7 @@ public class StepTrackingReporting implements EventListener {
     }
 
     private void handleScenarioFinished(final TestCaseFinished scenarioFinished) {
-        Logger logger = scenarioToLogger.get(scenarioFinished.getTestCase().getId());
+        Logger logger = scenarioToLogger.remove(scenarioFinished.getTestCase().getId());
         TestRun.Builder builder = inflightRuns.remove(scenarioFinished.getTestCase().getId());
         if (Objects.nonNull(builder)) {
             testRuns.track(builder.duration(scenarioFinished.getResult().getDuration())
@@ -91,12 +95,14 @@ public class StepTrackingReporting implements EventListener {
 
     private void handleTestSuiteFinished(final TestRunFinished suiteFinished) {
         for (TestRun run : testRuns.tracking()) {
-            Logger logger = scenarioToLogger.remove(run.uuid());
+            ThreadContext.put(CONTEXT_TEST_ID, run.testId());
+            ThreadContext.put(CONTEXT_FEATURE, run.feature());
             if (run.failed()) {
-                logger.error("{} - Failed: {}", run.name(), run.message());
+                LOGGER.error("Failed: '{}': {}", run.name(), run.message());
             } else {
-                logger.info("{} - Passed", run.name());
+                LOGGER.info("Passed: '{}'", run.name());
             }
+            ThreadContext.clearMap();
         }
     }
 }

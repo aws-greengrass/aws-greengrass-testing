@@ -7,13 +7,14 @@ package com.aws.greengrass.testing.launcher;
 
 import com.aws.greengrass.testing.api.ParameterValues;
 import com.aws.greengrass.testing.api.model.ParameterValue;
+import com.google.auto.service.AutoService;
 
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 class TestLauncherParameterValues implements ParameterValues {
-    private static  final Map<String, ParameterValue> PARAMETER_VALUE_MAP = new ConcurrentHashMap<>();
+    private static final Map<String, ParameterValue> PARAMETER_VALUE_MAP = new ConcurrentHashMap<>();
 
     @Override
     public Optional<ParameterValue> get(String name) {
