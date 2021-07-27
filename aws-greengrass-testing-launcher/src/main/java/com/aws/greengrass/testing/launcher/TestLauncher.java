@@ -7,6 +7,7 @@ package com.aws.greengrass.testing.launcher;
 
 import com.aws.greengrass.testing.api.ParameterValues;
 import com.aws.greengrass.testing.api.Parameters;
+import com.aws.greengrass.testing.api.ScenarioTestRuns;
 import com.aws.greengrass.testing.api.model.ParameterValue;
 import com.aws.greengrass.testing.launcher.reporting.StepTrackingReporting;
 import io.cucumber.core.feature.FeatureWithLines;
@@ -37,10 +38,6 @@ public final class TestLauncher {
     private static final Logger LOGGER = LogManager.getLogger(TestLauncher.class);
     private static final String DEFAULT_GLUE_PATH = "com.aws.greengrass";
     private static final String DEFAULT_FEATURES = "classpath:greengrass/features";
-    private static final String LOG_LEVEL = "log.level";
-    private static final String FEATURE_PATH = "feature.path";
-    private static final String TEST_RESULTS_XML = "test.results.xml";
-    private static final String TEST_RESULTS_LOG = "test.results.log";
     private static final String TEST_LOG_FILE = "greengrass-test-run.log";
 
     private static CommandLine.Model.CommandSpec createCommandSpec() {
@@ -55,6 +52,7 @@ public final class TestLauncher {
                     .description(parameter.description())
                     .required(parameter.required())
                     .paramLabel(parameter.name())
+                    .defaultValue("") // Needed to trigger the pre-processor
                     .preprocessor((stack, commandSpec12, argSpec, map) -> {
                         defaultValues.getString(argSpec.paramLabel()).ifPresent(stack::push);
                         return false;
@@ -62,7 +60,9 @@ public final class TestLauncher {
                     .parameterConsumer((stack, argSpec, commandSpec1) -> {
                         if (!stack.empty()) {
                             String value = stack.pop();
-                            TestLauncherParameterValues.put(parameter.name(), ParameterValue.of(value));
+                            if (!value.isEmpty()) {
+                                TestLauncherParameterValues.put(parameter.name(), ParameterValue.of(value));
+                            }
                         }
                     })
                     .build());
@@ -90,8 +90,9 @@ public final class TestLauncher {
         RuntimeOptionsBuilder optionsBuilder = new RuntimeOptionsBuilder()
                 .addFeature(FeatureWithLines.parse(DEFAULT_FEATURES))
                 .addGlue(GluePath.parse(DEFAULT_GLUE_PATH))
+                .setStrict(true)
                 .addPluginName(StepTrackingReporting.class.getName(), true);
-        values.getString("tags").ifPresent(tags -> {
+        values.getString(TestLauncherParameters.TAGS).ifPresent(tags -> {
             if (!tags.contains("@")) {
                 // Assuming JUnit style tags being supplied here
                 final Matcher matcher = Pattern.compile("([A-Za-z0-9_\\.]+)").matcher(tags);
@@ -102,13 +103,19 @@ public final class TestLauncher {
             optionsBuilder.addTagFilter(tags);
         });
 
-        if (values.getBoolean(TEST_RESULTS_XML).orElse(true)) {
+        values.getString(TestLauncherParameters.ADDITIONAL_PLUGINS).ifPresent(plugins -> {
+            for (String plugin : plugins.split("\\s*,\\s*")) {
+                optionsBuilder.addPluginName(plugin, true);
+            }
+        });
+
+        if (values.getBoolean(TestLauncherParameters.TEST_RESULTS_XML).orElse(true)) {
             final Path resultsXml = output.toAbsolutePath().resolve("TEST-greengrass-results.xml");
             optionsBuilder.addPluginName("junit:" + resultsXml, true);
         }
 
         // Allow external feature files. This enables framework features to work with static features.
-        values.getString(FEATURE_PATH).ifPresent(featurePath -> {
+        values.getString(TestLauncherParameters.FEATURE_PATH).ifPresent(featurePath -> {
             try (DirectoryStream<Path> paths = Files.newDirectoryStream(Paths.get(featurePath), "*.feature")) {
                 paths.forEach(path -> optionsBuilder.addFeature(FeatureWithLines.parse("file:" + path)));
             } catch (NotDirectoryException nde) {
@@ -123,10 +130,6 @@ public final class TestLauncher {
                 .build();
         runtime.run();
 
-        int exitStatus = runtime.exitStatus();
-        if (exitStatus != 0) {
-            LOGGER.error("Scenario tests failed.");
-        }
         System.exit(runtime.exitStatus());
     }
 
@@ -138,10 +141,10 @@ public final class TestLauncher {
      * @param output the output path to place the log file
      */
     private static void addFileAppender(final ParameterValues values, final Path output) {
-        final Level level = Level.valueOf(values.getString(LOG_LEVEL).orElse("info"));
+        final Level level = Level.valueOf(values.getString(TestLauncherParameters.LOG_LEVEL).orElse("info"));
         final LoggerContext context = (LoggerContext) LogManager.getContext(false);
         final LoggerConfig config = context.getConfiguration().getRootLogger();
-        if (values.getBoolean(TEST_RESULTS_LOG).orElse(false)) {
+        if (values.getBoolean(TestLauncherParameters.TEST_RESULTS_LOG).orElse(false)) {
             final Layout layout = PatternLayout.newBuilder().withPattern(
                     "%d{yyyy-MMM-dd HH:mm:ss,SSS} [%X{feature}] [%X{testId}] [%level] %logger{36} - %msg%n").build();
             FileAppender.Builder appenderBuilder = FileAppender.newBuilder()

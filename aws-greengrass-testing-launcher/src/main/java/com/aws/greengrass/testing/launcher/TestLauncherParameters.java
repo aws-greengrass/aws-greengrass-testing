@@ -14,23 +14,31 @@ import java.util.List;
 
 @AutoService(Parameters.class)
 public class TestLauncherParameters implements Parameters {
+    static final String TAGS = "tags";
+    static final String LOG_LEVEL = "log.level";
+    static final String FEATURE_PATH = "feature.path";
+    static final String TEST_RESULTS_LOG = "test.results.log";
+    static final String TEST_RESULTS_XML = "test.results.xml";
+    static final String ADDITIONAL_PLUGINS = "additional.plugins";
+
     @Override
     public List<Parameter> available() {
         return Arrays.asList(
-                Parameter.of("tags", "Only run feature tags. Can be intersected with '&'"),
-                Parameter.of("feature.path", "File or directory containing additional feature files. "
+                Parameter.of(TAGS, "Only run feature tags. Can be intersected with '&'"),
+                Parameter.of(FEATURE_PATH, "File or directory containing additional feature files. "
                         + "Default is no additional feature files are used."),
                 Parameter.builder()
-                        .name("test.results.log")
+                        .name(TEST_RESULTS_LOG)
                         .description("Flag to determine if the console output is generated written to disk. "
                                 + "Defaults to false.")
                         .build(),
                 Parameter.builder()
-                        .name("test.results.xml")
+                        .name(TEST_RESULTS_XML)
                         .description("Flag to determine if a resulting JUnit XML report is generated written to disk. "
                                 + "Defaults to true.")
                         .build(),
-                Parameter.of("log.level", "Log level of the test run. Defaults to \"INFO\"")
+                Parameter.of(LOG_LEVEL, "Log level of the test run. Defaults to \"INFO\""),
+                Parameter.of(ADDITIONAL_PLUGINS, "Optional additional Cucumber plugins.")
         );
     }
 }

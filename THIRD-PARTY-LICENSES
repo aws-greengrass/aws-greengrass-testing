@@ -12,6 +12,7 @@ https://github.com/aws/aws-iot-device-sdk-java-v2
 https://logging.apache.org/log4j/log4j-2.8/log4j-slf4j-impl/index.html
 ** findbugs-jsr305; version 3.0.2 --
 https://mvnrepository.com/artifact/com.google.code.findbugs/jsr305/3.0.0
+** picocli; version 4.6.1 -- https://picocli.info/
 ** validation-api; version 1.0.0 --
 https://jar-download.com/artifacts/javax.validation/validation-api/1.0.0.GA/source-code
 
@@ -268,8 +269,10 @@ limitations under the License.
 * For log4j-slf4j see also this required NOTICE:
     Apache Log4j
     Copyright 1999-2017 Apache Software Foundation
-* Forfindbugs-jsr305 see also this required NOTICE:
+* For findbugs-jsr305 see also this required NOTICE:
     Copyright 2020 University of Maryland
+* For picocli see also this required NOTICE:
+    Copyright 2020 Remko Popma
 * For validation-api see also this required NOTICE:
     JBoss, Home of Professional Open Source Copyright 2009, Red Hat, Inc.
     and/or its affiliates, and individual contributors by the @authors tag. See
