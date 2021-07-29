@@ -94,6 +94,9 @@ public class StepTrackingReporting implements EventListener {
     }
 
     private void handleTestSuiteFinished(final TestRunFinished suiteFinished) {
+        if (testRuns.tracking().isEmpty()) {
+            LOGGER.warn("Suite finished reporting 0 scenarios. This will result in a failure.");
+        }
         for (TestRun run : testRuns.tracking()) {
             ThreadContext.put(CONTEXT_TEST_ID, run.testId());
             ThreadContext.put(CONTEXT_FEATURE, run.feature());

@@ -30,7 +30,7 @@ public class FeatureParameters implements Parameters {
         return Arrays.asList(
                 Parameter.of(DEVICE_MODE, "The target device under test. Defaults to local device."),
                 Parameter.of(NUCLEUS_VERSION, "Overrides the version of the running Greengrass "
-                        + "Nucleus component. Defauls to the value found in " + NUCLEUS_ARCHIVE_PATH),
+                        + "Nucleus component. Defaults to the value found in " + NUCLEUS_ARCHIVE_PATH),
                 Parameter.builder()
                         .name(NUCLEUS_ARCHIVE_PATH)
                         .description("The path to the archived Greengrass Nucleus component.")
