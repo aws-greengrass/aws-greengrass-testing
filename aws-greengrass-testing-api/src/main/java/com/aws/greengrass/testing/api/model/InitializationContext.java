@@ -8,11 +8,14 @@ package com.aws.greengrass.testing.api.model;
 import org.immutables.value.Value;
 
 import java.util.Collection;
-
+import java.util.Set;
 
 @Value.Immutable
 @Value.Style(jdkOnly = true, visibility = Value.Style.ImplementationVisibility.PACKAGE)
-public abstract class CleanupContext {
+public abstract class InitializationContext {
+
+    public abstract Set<PersistMode> persistModes();
+
     @Value.Default
     public boolean persistAWSResources() {
         return false;
@@ -29,22 +32,26 @@ public abstract class CleanupContext {
     }
 
     public static Builder builder() {
-        return ImmutableCleanupContext.builder();
+        return ImmutableInitializationContext.builder();
     }
 
     public interface Builder extends PersistenceBuilder<Builder> {
-        CleanupContext build();
+        public Builder addPersistModes(PersistMode mode);
+
+        public Builder addPersistModes(PersistMode...modes);
+
+        InitializationContext build();
     }
 
     /**
-     * Create a concrete {@link CleanupContext} from a collection of {@link PersistMode}.
+     * Creates a test run initialization context that mirrors the {@link CleanupContext}.
      *
-     * @param modes User provided {@link PersistMode} to be used to bypass cleanup.
+     * @param modes a {@link Collection} of {@link PersistMode}s
      * @return
      */
-    public static CleanupContext fromModes(Collection<PersistMode> modes) {
-        final Builder builder = CleanupContext.builder();
-        modes.forEach(mode -> mode.apply(builder));
+    public static InitializationContext fromModes(Collection<PersistMode> modes) {
+        final Builder builder = builder();
+        modes.forEach(mode -> mode.apply(builder.addPersistModes(mode)));
         return builder.build();
     }
 }

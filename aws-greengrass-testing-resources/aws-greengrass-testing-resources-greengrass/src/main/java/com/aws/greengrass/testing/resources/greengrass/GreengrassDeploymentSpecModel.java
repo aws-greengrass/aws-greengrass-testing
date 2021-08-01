@@ -55,21 +55,21 @@ interface GreengrassDeploymentSpecModel extends ResourceSpec<GreengrassV2Client,
         AtomicReference<String> targetArn = new AtomicReference<>();
         final List<String> thingNames = new ArrayList<>();
         Optional.ofNullable(thingArn()).ifPresent(arn -> {
+            targetArn.set(arn);
             resources.trackingSpecs(IotThingSpec.class)
                     .filter(thing -> thing.resource().thingArn().equals(arn))
                     .findFirst()
                     .ifPresent(thing -> {
                         thingNames.add(thing.thingName());
-                        targetArn.set(thing.resource().thingArn());
                     });
         });
         Optional.ofNullable(thingGroupArn()).ifPresent(arn -> {
+            targetArn.set(arn);
             IotLifecycle lc = resources.lifecycle(IotLifecycle.class);
             resources.trackingSpecs(IotThingGroupSpec.class)
                     .filter(group -> group.resource().groupArn().equals(arn))
                     .findFirst()
                     .ifPresent(group -> {
-                        targetArn.set(group.resource().groupArn());
                         lc.listThingsForGroup(group.groupName()).things().stream().forEach(thingNames::add);
                     });
         });

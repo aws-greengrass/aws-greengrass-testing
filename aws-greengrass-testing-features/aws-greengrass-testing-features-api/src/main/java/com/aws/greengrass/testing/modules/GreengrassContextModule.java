@@ -7,8 +7,10 @@ package com.aws.greengrass.testing.modules;
 
 import com.aws.greengrass.testing.api.ParameterValues;
 import com.aws.greengrass.testing.api.model.CleanupContext;
+import com.aws.greengrass.testing.api.model.InitializationContext;
 import com.aws.greengrass.testing.model.GreengrassContext;
 import com.aws.greengrass.testing.modules.exception.ModuleProvisionException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.auto.service.AutoService;
@@ -26,6 +28,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.zip.ZipEntry;
@@ -35,7 +38,8 @@ import javax.inject.Named;
 @AutoService(Module.class)
 public class GreengrassContextModule extends AbstractModule {
     private static final Logger LOGGER = LogManager.getLogger(GreengrassContextModule.class);
-    private static String DEFAULT_NUCLEUS_VERSION;
+    static String DEFAULT_NUCLEUS_VERSION;
+    static String DEFAULT_CORE_THING_NAME;
 
     static void extractZip(ObjectMapper mapper, Path archivePath, Path stagingPath) throws IOException {
         LOGGER.info("Extracting {} into {}", archivePath, stagingPath);
@@ -70,12 +74,9 @@ public class GreengrassContextModule extends AbstractModule {
     static GreengrassContext providesNucleusContext(
             final ParameterValues parameterValues,
             @Named(JacksonModule.YAML) ObjectMapper mapper,
+            final InitializationContext initializationContext,
             final CleanupContext cleanupContext) {
         try {
-            final Path archivePath = parameterValues.getString(FeatureParameters.NUCLEUS_ARCHIVE_PATH)
-                    .map(Paths::get)
-                    .orElseThrow(() -> new IllegalArgumentException("Parameter "
-                            + FeatureParameters.NUCLEUS_ARCHIVE_PATH + " is required"));
             Path tempDirectory;
             Optional<String> tempDirectoryName = parameterValues.getString(FeatureParameters.TEST_TEMP_PATH);
             if (tempDirectoryName.isPresent()) {
@@ -84,11 +85,27 @@ public class GreengrassContextModule extends AbstractModule {
             } else {
                 tempDirectory = Files.createTempDirectory("gg-testing-");
             }
-            extractZip(mapper, archivePath, tempDirectory.resolve("greengrass"));
+            if (!initializationContext.persistInstalledSoftware()) {
+                final Path archivePath = parameterValues.getString(FeatureParameters.NUCLEUS_ARCHIVE_PATH)
+                        .map(Paths::get)
+                        .orElseThrow(() -> new IllegalArgumentException("Parameter "
+                                + FeatureParameters.NUCLEUS_ARCHIVE_PATH + " is required if not testing against "
+                                + "pre-installed versions of Greengrass on the device."));
+                extractZip(mapper, archivePath, tempDirectory.resolve("greengrass"));
+            } else {
+                Path installRoot = parameterValues.getString(FeatureParameters.NUCLEUS_INSTALL_ROOT)
+                        .map(Paths::get)
+                        .filter(Files::exists)
+                        .orElseThrow(() -> new IllegalArgumentException("Parameter "
+                                + FeatureParameters.NUCLEUS_INSTALL_ROOT + " must exist with a valid registration."));
+                Path effectiveConfig = installRoot.resolve("config").resolve("effectiveConfig.yaml");
+                JsonNode config = mapper.readTree(Files.readAllBytes(effectiveConfig));
+                DEFAULT_NUCLEUS_VERSION = config.get("services").get("aws.greengrass.Nucleus").get("version").asText();
+                DEFAULT_CORE_THING_NAME = config.get("system").get("thingName").asText();
+            }
             return GreengrassContext.builder()
                     .version(parameterValues.getString(FeatureParameters.NUCLEUS_VERSION)
                             .orElse(DEFAULT_NUCLEUS_VERSION))
-                    .archivePath(archivePath)
                     .tempDirectory(tempDirectory)
                     .cleanupContext(cleanupContext)
                     .build();

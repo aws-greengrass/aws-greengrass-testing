@@ -19,8 +19,6 @@ import java.nio.file.Path;
 interface GreengrassContextModel extends Closeable {
     String version();
 
-    Path archivePath();
-
     Path tempDirectory();
 
     CleanupContext cleanupContext();

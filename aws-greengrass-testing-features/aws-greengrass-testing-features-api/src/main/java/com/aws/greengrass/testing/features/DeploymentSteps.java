@@ -15,7 +15,8 @@ import com.aws.greengrass.testing.model.TestContext;
 import com.aws.greengrass.testing.resources.AWSResources;
 import com.aws.greengrass.testing.resources.greengrass.GreengrassDeploymentSpec;
 import com.aws.greengrass.testing.resources.greengrass.GreengrassV2Lifecycle;
-import com.aws.greengrass.testing.resources.iot.IotThingSpec;
+import com.aws.greengrass.testing.resources.iot.IotLifecycle;
+import com.aws.greengrass.testing.resources.iot.IotThing;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -79,10 +80,8 @@ public class DeploymentSteps {
      */
     @Given("I create a Greengrass deployment with components")
     public void createDeployment(List<List<String>> componentNames) {
-        IotThingSpec thingSpec = resources.trackingSpecs(IotThingSpec.class)
-                .filter(thing -> thing.resource().thingName().equals(testContext.testId().idFor("ggc-thing")))
-                .findFirst()
-                .orElseThrow(() -> new IllegalStateException("A Greengrass deployment needs a valid target."));
+        IotLifecycle lifecycle = resources.lifecycle(IotLifecycle.class);
+        IotThing thing = lifecycle.thingByThingName(testContext.coreThingName());
         final Map<String, ComponentDeploymentSpecification> components =
                 new HashMap<String, ComponentDeploymentSpecification>() {{
                     put("aws.greengrass.Nucleus", ComponentDeploymentSpecification.builder()
@@ -109,10 +108,10 @@ public class DeploymentSteps {
             components.put(name, builder.build());
         });
         LOGGER.debug("Creating deployment configuration with components to {}: {}",
-                thingSpec.thingName(), components);
+                thing.thingArn(), components);
         deployment = GreengrassDeploymentSpec.builder()
                 .deploymentName(testContext.testId().idFor("gg-deployment"))
-                .thingArn(thingSpec.resource().thingArn())
+                .thingArn(thing.thingArn())
                 .putAllComponents(components)
                 .build();
     }
@@ -189,7 +188,7 @@ public class DeploymentSteps {
                 .filter(deployment -> deployment.deploymentName().equals(deploymentName))
                 .findFirst()
                 .orElseThrow(() -> new IllegalStateException("Could not find a deployment " + deploymentName));
-        return ggv2.listDeviceDeployments(testContext.testId().idFor("ggc-thing")).effectiveDeployments().stream()
+        return ggv2.listDeviceDeployments(testContext.coreThingName()).effectiveDeployments().stream()
                 .filter(deployment -> deployment.deploymentId().equals(ggcDeployment.resource().deploymentId()))
                 .peek(deployment -> LOGGER.debug("Greengrass Deployment {} is in {}",
                         deployment.deploymentId(), deployment.coreDeviceExecutionStatusAsString()))

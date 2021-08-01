@@ -9,14 +9,14 @@ import java.util.Arrays;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-public enum PersistMode implements Function<ImmutableCleanupContext.Builder, ImmutableCleanupContext.Builder> {
-    AWS_RESOURCES(ImmutableCleanupContext.Builder::persistAWSResources),
-    INSTALLED_SOFTWARE(ImmutableCleanupContext.Builder::persistInstalledSofware),
-    GENERATED_FILES(ImmutableCleanupContext.Builder::persistGeneratedFiles);
+public enum PersistMode implements Function<PersistenceBuilder, PersistenceBuilder> {
+    AWS_RESOURCES(PersistenceBuilder::persistAWSResources),
+    INSTALLED_SOFTWARE(PersistenceBuilder::persistInstalledSoftware),
+    GENERATED_FILES(PersistenceBuilder::persistGeneratedFiles);
 
-    BiFunction<ImmutableCleanupContext.Builder, Boolean, ImmutableCleanupContext.Builder> applicator;
+    BiFunction<PersistenceBuilder, Boolean, PersistenceBuilder> applicator;
 
-    PersistMode(BiFunction<ImmutableCleanupContext.Builder, Boolean, ImmutableCleanupContext.Builder> applicator) {
+    PersistMode(BiFunction<PersistenceBuilder, Boolean, PersistenceBuilder> applicator) {
         this.applicator = applicator;
     }
 
@@ -42,7 +42,7 @@ public enum PersistMode implements Function<ImmutableCleanupContext.Builder, Imm
     }
 
     @Override
-    public ImmutableCleanupContext.Builder apply(ImmutableCleanupContext.Builder builder) {
+    public PersistenceBuilder apply(PersistenceBuilder builder) {
         return applicator.apply(builder, true);
     }
 }

@@ -7,6 +7,7 @@ package com.aws.greengrass.testing.modules;
 
 import com.aws.greengrass.testing.api.ParameterValues;
 import com.aws.greengrass.testing.api.model.CleanupContext;
+import com.aws.greengrass.testing.api.model.InitializationContext;
 import com.aws.greengrass.testing.api.model.ParameterValue;
 import com.aws.greengrass.testing.api.model.PersistMode;
 import com.google.auto.service.AutoService;
@@ -25,6 +26,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -88,15 +90,29 @@ public class AWSResourcesCleanupModule extends AbstractModule {
         }
     }
 
-    @Provides
-    @Singleton
-    static CleanupContext providesCleanUpContext(final ParameterValues parameterValues) {
+    static Set<PersistMode> fromParameterValues(ParameterValues parameterValues, String key) {
         // TODO: switch to SPI so modules can specify their own persistence type and provider
-        final Set<PersistMode> modes = parameterValues.getString(ModuleParameters.PERSIST_TESTING_RESOURCES)
+        return parameterValues.getString(key)
                 .map(resources -> resources.split("\\s*,\\s*"))
                 .map(Arrays::stream)
                 .map(stream -> stream.map(PersistMode::fromConfig).collect(Collectors.toSet()))
                 .orElseGet(Collections::emptySet);
+    }
+
+    @Provides
+    @Singleton
+    static InitializationContext providesInitializationContext(final ParameterValues parameterValues) {
+        return InitializationContext.fromModes(fromParameterValues(parameterValues,
+                ModuleParameters.RUNTIME_TESTING_RESOURCES));
+    }
+
+    @Provides
+    @Singleton
+    static CleanupContext providesCleanUpContext(
+            final InitializationContext initializationContext,
+            final ParameterValues parameterValues) {
+        final Set<PersistMode> modes = new HashSet<>(initializationContext.persistModes());
+        modes.addAll(fromParameterValues(parameterValues, ModuleParameters.PERSIST_TESTING_RESOURCES));
         LOGGER.debug("Using persist modes: {}", modes);
         return CleanupContext.fromModes(modes);
     }

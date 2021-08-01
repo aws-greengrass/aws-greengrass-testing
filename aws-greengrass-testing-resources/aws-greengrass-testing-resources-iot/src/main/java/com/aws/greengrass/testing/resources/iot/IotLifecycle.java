@@ -11,6 +11,8 @@ import com.aws.greengrass.testing.resources.AbstractAWSResourceLifecycle;
 import com.google.auto.service.AutoService;
 import software.amazon.awssdk.services.iot.IotClient;
 import software.amazon.awssdk.services.iot.model.DescribeEndpointRequest;
+import software.amazon.awssdk.services.iot.model.DescribeThingRequest;
+import software.amazon.awssdk.services.iot.model.DescribeThingResponse;
 import software.amazon.awssdk.services.iot.model.ListThingsInThingGroupRequest;
 import software.amazon.awssdk.services.iot.paginators.ListThingsInThingGroupIterable;
 
@@ -46,6 +48,26 @@ public class IotLifecycle extends AbstractAWSResourceLifecycle<IotClient> {
 
     public String dataEndpoint() {
         return endpointType(DATA_ENDPOINT);
+    }
+
+    /**
+     * Operation to pull a thing resource by it's canonical name.
+     * <strong>Note</strong>: This operation only exists in the absence of an {@link AWSResourceLifecycle}::load
+     * method. Proper resource loading means test resources will be tracked for a scenario.
+     *
+     * @param thingName canonical name of the AWS IoT Thing
+     * @return
+     */
+    public IotThing thingByThingName(String thingName) {
+        // TODO: This whole method is removed in favor of a "resource spec loading" mechanism
+        DescribeThingResponse response = client.describeThing(DescribeThingRequest.builder()
+                .thingName(thingName)
+                .build());
+        return IotThing.builder()
+                .thingArn(response.thingArn())
+                .thingId(response.thingId())
+                .thingName(response.thingName())
+                .build();
     }
 
     /**

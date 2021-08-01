@@ -7,6 +7,7 @@ package com.aws.greengrass.testing.modules;
 
 import com.aws.greengrass.testing.api.Parameters;
 import com.aws.greengrass.testing.api.model.Parameter;
+import com.aws.greengrass.testing.api.model.PersistMode;
 import com.google.auto.service.AutoService;
 
 import java.util.Arrays;
