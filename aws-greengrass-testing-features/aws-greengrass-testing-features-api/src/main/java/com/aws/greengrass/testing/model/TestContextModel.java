@@ -6,6 +6,7 @@
 package com.aws.greengrass.testing.model;
 
 import com.aws.greengrass.testing.api.model.CleanupContext;
+import com.aws.greengrass.testing.api.model.InitializationContext;
 import com.aws.greengrass.testing.api.model.TestId;
 import com.aws.greengrass.testing.api.model.TestingModel;
 import com.aws.greengrass.testing.api.util.FileUtils;
@@ -28,11 +29,15 @@ interface TestContextModel extends Closeable {
 
     CleanupContext cleanupContext();
 
+    InitializationContext initializationContext();
+
     String logLevel();
 
     Path installRoot();
 
     String currentUser();
+
+    String coreThingName();
 
     @Override
     default void close() throws IOException {

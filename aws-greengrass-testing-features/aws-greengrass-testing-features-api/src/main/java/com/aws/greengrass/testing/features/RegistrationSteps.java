@@ -5,7 +5,6 @@
 
 package com.aws.greengrass.testing.features;
 
-import com.aws.greengrass.testing.api.device.Device;
 import com.aws.greengrass.testing.api.model.ProxyConfig;
 import com.aws.greengrass.testing.model.GreengrassContext;
 import com.aws.greengrass.testing.model.RegistrationContext;
@@ -70,9 +69,18 @@ public class RegistrationSteps {
         this.iotSteps = iotSteps;
     }
 
+    /**
+     * Entry point for newly registering a Greengrass device ona device.
+     *
+     * @param configName the config name to use for the base config
+     * @throws IOException thrown when failing to read the config
+     */
     @Given("my device is registered as a Thing using config {word}")
     public void registerAsThing(String configName) throws IOException {
-        registerAsThing(configName, testContext.testId().idFor("ggc-group"));
+        // Already registered ... already installed
+        if (!testContext.initializationContext().persistInstalledSoftware()) {
+            registerAsThing(configName, testContext.testId().idFor("ggc-group"));
+        }
     }
 
     @Given("my device is registered as a Thing")
@@ -85,7 +93,7 @@ public class RegistrationSteps {
 
         // TODO: move this into iot steps.
         IotThingSpec thingSpec = resources.create(IotThingSpec.builder()
-                .thingName(testContext.testId().idFor("ggc-thing"))
+                .thingName(testContext.coreThingName())
                 .addThingGroups(IotThingGroupSpec.of(thingGroupName))
                 .createCertificate(true)
                 .policySpec(resources.trackingSpecs(IotPolicySpec.class)

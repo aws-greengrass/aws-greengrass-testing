@@ -7,6 +7,7 @@ package com.aws.greengrass.testing.modules;
 
 import com.aws.greengrass.testing.api.ParameterValues;
 import com.aws.greengrass.testing.api.model.CleanupContext;
+import com.aws.greengrass.testing.api.model.InitializationContext;
 import com.aws.greengrass.testing.api.model.TestId;
 import com.aws.greengrass.testing.api.model.TimeoutMultiplier;
 import com.aws.greengrass.testing.model.GreengrassContext;
@@ -24,7 +25,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.SecureRandom;
-import java.util.Optional;
 import javax.inject.Singleton;
 
 @AutoService(Module.class)
@@ -63,6 +63,7 @@ public class TestContextModule extends AbstractModule {
             final ParameterValues parameterValues,
             final TestId testId,
             final CleanupContext cleanupContext,
+            final InitializationContext initializationContext,
             final GreengrassContext greengrassContext) {
         Path testDirectory = greengrassContext.tempDirectory().resolve(testId.prefixedId());
         Path testResultsPath = parameterValues.getString(FeatureParameters.TEST_RESULTS_PATH)
@@ -74,12 +75,14 @@ public class TestContextModule extends AbstractModule {
         } catch (IOException ie) {
             throw new ModuleProvisionException(ie);
         }
-        Path installPath;
-        Optional<String> installRoot = parameterValues.getString(FeatureParameters.NUCLEUS_INSTALL_ROOT);
-        if (installRoot.isPresent()) {
-            installPath = Paths.get(installRoot.get(), testDirectory.getFileName().toString());
-        } else {
-            installPath = testDirectory.toAbsolutePath();
+        String coreThingName = testId.idFor("ggc-thing");
+        Path installPath = parameterValues.getString(FeatureParameters.NUCLEUS_INSTALL_ROOT)
+                .map(s -> Paths.get(s, testDirectory.getFileName().toString()))
+                .orElseGet(testDirectory::toAbsolutePath);
+        if (initializationContext.persistInstalledSoftware()) {
+            installPath = installPath.getParent();
+            // TODO: improve this coupling, perhaps with a package visible field on GreengrassContext
+            coreThingName = GreengrassContextModule.DEFAULT_CORE_THING_NAME;
         }
         return TestContext.builder()
                 .logLevel(parameterValues.getString(FeatureParameters.NUCLEUS_LOG_LEVEL).orElse("INFO"))
@@ -90,6 +93,8 @@ public class TestContextModule extends AbstractModule {
                 .installRoot(installPath)
                 .testDirectory(testDirectory)
                 .cleanupContext(cleanupContext)
+                .coreThingName(coreThingName)
+                .initializationContext(initializationContext)
                 .build();
     }
 }

@@ -6,19 +6,28 @@
 package com.aws.greengrass.testing.features;
 
 import com.aws.greengrass.testing.api.device.Device;
+import com.aws.greengrass.testing.model.ScenarioContext;
 import com.aws.greengrass.testing.model.TestContext;
 import com.aws.greengrass.testing.platform.Platform;
 import io.cucumber.guice.ScenarioScoped;
 import io.cucumber.java.After;
+import io.cucumber.java.ParameterType;
 import io.cucumber.java.Scenario;
+import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
+import io.cucumber.java.en.When;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.BufferedWriter;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import javax.inject.Inject;
 
 @ScenarioScoped
@@ -27,15 +36,36 @@ public class FileSteps {
     private static final int DEFAULT_TIMEOUT = 30;
     private final Platform platform;
     private final TestContext testContext;
+    private final ScenarioContext scenarioContext;
     private final WaitSteps waits;
+
+    private enum ByteNotation implements Function<Long, Long> {
+        B(1),
+        KB(1024),
+        MB(1024 * 1024),
+        GB(1024 * 1024 * 1024);
+
+        long factor;
+
+        ByteNotation(long factor) {
+            this.factor = factor;
+        }
+
+        @Override
+        public Long apply(Long value) {
+            return value * factor;
+        }
+    }
 
     @Inject
     FileSteps(
             Platform platform,
             TestContext testContext,
+            ScenarioContext scenarioContext,
             WaitSteps waits) {
         this.platform = platform;
         this.testContext = testContext;
+        this.scenarioContext = scenarioContext;
         this.waits = waits;
     }
 
@@ -106,6 +136,59 @@ public class FileSteps {
         }
     }
 
+    @ParameterType("B|KB|MB|GB")
+    public ByteNotation bytes(String bytes) {
+        return ByteNotation.valueOf(bytes);
+    }
+
+    /**
+     * Creates a file on the host agent containing random bytes, with the name of the file and byte length specified
+     * by the caller. <strong>Note</strong>: fileName can be interpolated with {@link ScenarioContext}, but will
+     * resolve to the {@link TestContext}::testDirectory location.
+     *
+     * @param length number of bytes multiplied by the notation
+     * @param notation human readable byte notation in the form of B, KB, MB, or GB respectively
+     * @param fileName name of the file to generate
+     * @throws IOException thrown for any IO exception for creating the random file
+     */
+    @Given("I create a random file that is {long}{bytes} large, named {word}")
+    public void generateRandomlySizedFile(long length, ByteNotation notation, String fileName) throws IOException {
+        Path filePath = testContext.testDirectory().resolve(scenarioContext.applyInline(fileName));
+        if (Files.exists(filePath)) {
+            throw new IllegalStateException("The file " + filePath + " already exists");
+        }
+        Random random = new Random();
+        try (BufferedWriter writer = Files.newBufferedWriter(filePath, StandardCharsets.UTF_8)) {
+            random.ints(0, 127).limit(notation.apply(length)).forEach(singleByte -> {
+                try {
+                    writer.write(singleByte);
+                } catch (IOException e) {
+                    throw new IllegalStateException("Failed to generate " + filePath + " that is " + length + notation
+                            + " large.");
+                }
+            });
+        }
+    }
+
+    /**
+     * Copies any local file on the host agent to the device at a specified location.
+     * <strong>Note</strong>: both localFile and remoteFile can be interpolated with {@link ScenarioContext} values.
+     * The location of localFile will ultimately be rooted in {@link TestContext}::testDirectory.
+     *
+     * @param localFile the name of a file or folder to copy to the device
+     * @param remoteFile the full path of the file or folder on the device
+     */
+    @When("I copy the file {word} to my device at {word}")
+    public void copyLocalFileToRemoteLocation(String localFile, String remoteFile) {
+        Path localPath = testContext.testDirectory().resolve(scenarioContext.applyInline(localFile));
+        Path remotePath = Paths.get(scenarioContext.applyInline(remoteFile));
+        if (Files.notExists(localPath)) {
+            throw new IllegalStateException("The local file " + localPath + " does not exist");
+        }
+        platform.files().copyTo(localPath, remotePath);
+    }
+
+
     /**
      * Copy logs for the {@link Scenario} from the {@link Device} to the host.
      *
@@ -125,7 +208,7 @@ public class FileSteps {
                             logFile, testContext.testResultsPath(), ie);
                 }
             });
-            if (!testContext.cleanupContext().persistInstalledSofware()) {
+            if (!testContext.cleanupContext().persistInstalledSoftware()) {
                 // Remove the rest
                 platform.files().delete(testContext.installRoot());
             }

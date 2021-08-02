@@ -129,7 +129,6 @@ public final class TestLauncher {
                 .withRuntimeOptions(optionsBuilder.build())
                 .build();
         runtime.run();
-
         System.exit(runtime.exitStatus());
     }
 

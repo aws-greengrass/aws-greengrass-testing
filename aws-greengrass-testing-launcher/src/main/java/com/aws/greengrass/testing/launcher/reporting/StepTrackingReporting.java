@@ -83,10 +83,18 @@ public class StepTrackingReporting implements EventListener {
         Logger logger = scenarioToLogger.remove(scenarioFinished.getTestCase().getId());
         TestRun.Builder builder = inflightRuns.remove(scenarioFinished.getTestCase().getId());
         if (Objects.nonNull(builder)) {
-            testRuns.track(builder.duration(scenarioFinished.getResult().getDuration())
-                        .skipped(scenarioFinished.getResult().getStatus().equals(Status.SKIPPED))
-                        .passed(scenarioFinished.getResult().getStatus().equals(Status.PASSED))
-                        .build());
+            TestRun run = builder.duration(scenarioFinished.getResult().getDuration())
+                    .failed(scenarioFinished.getResult().getStatus().equals(Status.FAILED))
+                    .skipped(scenarioFinished.getResult().getStatus().equals(Status.SKIPPED))
+                    .passed(scenarioFinished.getResult().getStatus().equals(Status.PASSED))
+                    .build();
+            if (run.failed() && run.message() == null) {
+                run = TestRun.builder()
+                        .from(run)
+                        .message(scenarioFinished.getResult().getError().getMessage())
+                        .build();
+            }
+            testRuns.track(run);
         }
         if (Objects.nonNull(logger)) {
             logger.debug("Finished '{}'", scenarioFinished.getTestCase().getName());
@@ -94,6 +102,9 @@ public class StepTrackingReporting implements EventListener {
     }
 
     private void handleTestSuiteFinished(final TestRunFinished suiteFinished) {
+        if (testRuns.tracking().isEmpty()) {
+            LOGGER.warn("Suite finished reporting 0 scenarios. This will result in a failure.");
+        }
         for (TestRun run : testRuns.tracking()) {
             ThreadContext.put(CONTEXT_TEST_ID, run.testId());
             ThreadContext.put(CONTEXT_FEATURE, run.feature());
