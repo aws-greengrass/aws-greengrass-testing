@@ -43,7 +43,6 @@ public class RegistrationSteps {
     private final TestContext testContext;
     private final RegistrationContext registrationContext;
     private final AWSResourcesContext resourcesContext;
-    private final GreengrassContext greengrassContext;
     private final AWSResources resources;
     private final IamSteps iamSteps;
     private final IotSteps iotSteps;
@@ -57,14 +56,12 @@ public class RegistrationSteps {
             IotSteps iotSteps,
             TestContext testContext,
             RegistrationContext registrationContext,
-            GreengrassContext greengrassContext,
             AWSResourcesContext resourcesContext) {
         this.platform = platform;
         this.resources = resources;
         this.iamSteps = iamSteps;
         this.testContext = testContext;
         this.registrationContext = registrationContext;
-        this.greengrassContext = greengrassContext;
         this.resourcesContext = resourcesContext;
         this.iotSteps = iotSteps;
     }
@@ -150,7 +147,7 @@ public class RegistrationSteps {
         config = config.replace("{proxy_url}",
                 resourcesContext.proxyConfig().map(ProxyConfig::proxyUrl).orElse(""));
         config = config.replace("{aws_region}", resourcesContext.region().metadata().id());
-        config = config.replace("{nucleus_version}", greengrassContext.version());
+        config = config.replace("{nucleus_version}", testContext.coreVersion());
         config = config.replace("{env_stage}", resourcesContext.envStage());
         config = config.replace("{posix_user}", testContext.currentUser());
         config = config.replace("{data_plane_port}", Integer.toString(registrationContext.connectionPort()));

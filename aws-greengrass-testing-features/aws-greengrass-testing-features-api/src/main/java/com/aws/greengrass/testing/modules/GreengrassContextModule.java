@@ -39,7 +39,6 @@ import javax.inject.Named;
 public class GreengrassContextModule extends AbstractModule {
     private static final Logger LOGGER = LogManager.getLogger(GreengrassContextModule.class);
     static String DEFAULT_NUCLEUS_VERSION;
-    static String DEFAULT_CORE_THING_NAME;
 
     static void extractZip(ObjectMapper mapper, Path archivePath, Path stagingPath) throws IOException {
         LOGGER.info("Extracting {} into {}", archivePath, stagingPath);
@@ -92,16 +91,6 @@ public class GreengrassContextModule extends AbstractModule {
                                 + FeatureParameters.NUCLEUS_ARCHIVE_PATH + " is required if not testing against "
                                 + "pre-installed versions of Greengrass on the device."));
                 extractZip(mapper, archivePath, tempDirectory.resolve("greengrass"));
-            } else {
-                Path installRoot = parameterValues.getString(FeatureParameters.NUCLEUS_INSTALL_ROOT)
-                        .map(Paths::get)
-                        .filter(Files::exists)
-                        .orElseThrow(() -> new IllegalArgumentException("Parameter "
-                                + FeatureParameters.NUCLEUS_INSTALL_ROOT + " must exist with a valid registration."));
-                Path effectiveConfig = installRoot.resolve("config").resolve("effectiveConfig.yaml");
-                JsonNode config = mapper.readTree(Files.readAllBytes(effectiveConfig));
-                DEFAULT_NUCLEUS_VERSION = config.get("services").get("aws.greengrass.Nucleus").get("version").asText();
-                DEFAULT_CORE_THING_NAME = config.get("system").get("thingName").asText();
             }
             return GreengrassContext.builder()
                     .version(parameterValues.getString(FeatureParameters.NUCLEUS_VERSION)

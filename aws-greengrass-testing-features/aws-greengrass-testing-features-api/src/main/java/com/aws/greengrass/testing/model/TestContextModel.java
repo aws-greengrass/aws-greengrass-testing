@@ -39,6 +39,8 @@ interface TestContextModel extends Closeable {
 
     String coreThingName();
 
+    String coreVersion();
+
     @Override
     default void close() throws IOException {
         if (!cleanupContext().persistGeneratedFiles()) {

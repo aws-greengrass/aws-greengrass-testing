@@ -47,7 +47,6 @@ public class DeploymentSteps {
     private final ComponentPreparationService componentPreparation;
     private final ComponentOverrides overrides;
     private final TestContext testContext;
-    private final GreengrassContext greengrassContext;
     private final WaitSteps waits;
     private final ObjectMapper mapper;
     private final ScenarioContext scenarioContext;
@@ -58,7 +57,6 @@ public class DeploymentSteps {
             final AWSResources resources,
             final ComponentOverrides overrides,
             final TestContext testContext,
-            final GreengrassContext greengrassContext,
             final ComponentPreparationService componentPreparation,
             final ScenarioContext scenarioContext,
             final WaitSteps waits,
@@ -66,7 +64,6 @@ public class DeploymentSteps {
         this.resources = resources;
         this.overrides = overrides;
         this.testContext = testContext;
-        this.greengrassContext = greengrassContext;
         this.componentPreparation = componentPreparation;
         this.scenarioContext = scenarioContext;
         this.waits = waits;
@@ -85,7 +82,7 @@ public class DeploymentSteps {
         final Map<String, ComponentDeploymentSpecification> components =
                 new HashMap<String, ComponentDeploymentSpecification>() {{
                     put("aws.greengrass.Nucleus", ComponentDeploymentSpecification.builder()
-                            .componentVersion(greengrassContext.version())
+                            .componentVersion(testContext.coreVersion())
                             .build());
                 }};
         LOGGER.debug("Potential overrides: {}", overrides);

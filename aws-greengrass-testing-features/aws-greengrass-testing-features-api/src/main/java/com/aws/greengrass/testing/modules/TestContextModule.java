@@ -13,6 +13,9 @@ import com.aws.greengrass.testing.api.model.TimeoutMultiplier;
 import com.aws.greengrass.testing.model.GreengrassContext;
 import com.aws.greengrass.testing.model.TestContext;
 import com.aws.greengrass.testing.modules.exception.ModuleProvisionException;
+import com.aws.greengrass.testing.platform.Platform;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.auto.service.AutoService;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
@@ -25,6 +28,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.SecureRandom;
+import javax.inject.Named;
 import javax.inject.Singleton;
 
 @AutoService(Module.class)
@@ -64,7 +68,9 @@ public class TestContextModule extends AbstractModule {
             final TestId testId,
             final CleanupContext cleanupContext,
             final InitializationContext initializationContext,
-            final GreengrassContext greengrassContext) {
+            final GreengrassContext greengrassContext,
+            @Named(JacksonModule.YAML) final ObjectMapper mapper,
+            final Platform platform) {
         Path testDirectory = greengrassContext.tempDirectory().resolve(testId.prefixedId());
         Path testResultsPath = parameterValues.getString(FeatureParameters.TEST_RESULTS_PATH)
                 .map(Paths::get)
@@ -76,13 +82,20 @@ public class TestContextModule extends AbstractModule {
             throw new ModuleProvisionException(ie);
         }
         String coreThingName = testId.idFor("ggc-thing");
+        String coreVersion = greengrassContext.version();
         Path installPath = parameterValues.getString(FeatureParameters.NUCLEUS_INSTALL_ROOT)
                 .map(s -> Paths.get(s, testDirectory.getFileName().toString()))
                 .orElseGet(testDirectory::toAbsolutePath);
         if (initializationContext.persistInstalledSoftware()) {
             installPath = installPath.getParent();
-            // TODO: improve this coupling, perhaps with a package visible field on GreengrassContext
-            coreThingName = GreengrassContextModule.DEFAULT_CORE_THING_NAME;
+            byte[] bytes = platform.files().readBytes(installPath.resolve("config").resolve("effectiveConfig.yaml"));
+            try {
+                JsonNode config = mapper.readTree(bytes);
+                coreVersion = config.get("services").get("aws.greengrass.Nucleus").get("version").asText();
+                coreThingName = config.get("system").get("thingName").asText();
+            } catch (IOException e) {
+                throw new ModuleProvisionException(e);
+            }
         }
         return TestContext.builder()
                 .logLevel(parameterValues.getString(FeatureParameters.NUCLEUS_LOG_LEVEL).orElse("INFO"))
@@ -94,6 +107,7 @@ public class TestContextModule extends AbstractModule {
                 .testDirectory(testDirectory)
                 .cleanupContext(cleanupContext)
                 .coreThingName(coreThingName)
+                .coreVersion(coreVersion)
                 .initializationContext(initializationContext)
                 .build();
     }
