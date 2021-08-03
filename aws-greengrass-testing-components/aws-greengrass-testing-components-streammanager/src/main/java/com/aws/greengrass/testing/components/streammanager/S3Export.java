@@ -34,8 +34,6 @@ import javax.inject.Singleton;
 
 @Singleton
 public class S3Export {
-    private static final String STATUS_STREAM_NAME = "ExportStatusStream";
-    private static final String STREAM_NAME = "LargeFileStream";
     private final StreamManagerClient client;
 
     @Inject
@@ -46,37 +44,38 @@ public class S3Export {
     /**
      * Will stream upload a local file to S3 via the specified {@link S3ExportTaskDefinition}.
      *
+     * @param streamName contains the name of the export stream in StreamManager
      * @param definition contains the fully qualified {@link S3ExportTaskDefinition}
      * @return immediately retuns a {@link CompletableFuture} eventually containing a terminal {@link StatusMessage}
      * @throws StreamManagerException any failure to initialize the stream upload
      * @throws JsonProcessingException any JSON serialization failure
      */
-    public CompletableFuture<StatusMessage> export(S3ExportTaskDefinition definition)
+    public CompletableFuture<StatusMessage> export(String streamName, S3ExportTaskDefinition definition)
             throws StreamManagerException, JsonProcessingException {
         ExportDefinition exports = new ExportDefinition()
                 .withS3TaskExecutor(Collections.singletonList(
-                        new S3ExportTaskExecutorConfig().withIdentifier("S3Export" + STREAM_NAME).withStatusConfig(
+                        new S3ExportTaskExecutorConfig().withIdentifier("S3Export" + streamName).withStatusConfig(
                                 new StatusConfig().withStatusLevel(StatusLevel.INFO)
-                                        .withStatusStreamName(STATUS_STREAM_NAME))));
+                                        .withStatusStreamName(streamName + "Status"))));
 
         client.createMessageStream(new MessageStreamDefinition()
-                .withName(STATUS_STREAM_NAME)
+                .withName(streamName + "Status")
                 .withStrategyOnFull(StrategyOnFull.OverwriteOldestData));
 
         client.createMessageStream(new MessageStreamDefinition()
-                .withName(STREAM_NAME)
+                .withName(streamName)
                 .withStrategyOnFull(StrategyOnFull.OverwriteOldestData)
                 .withExportDefinition(exports));
 
-        client.appendMessage(STREAM_NAME, ValidateAndSerialize.validateAndSerializeToJsonBytes(definition));
+        client.appendMessage(streamName, ValidateAndSerialize.validateAndSerializeToJsonBytes(definition));
 
-        return CompletableFuture.supplyAsync(this::terminalStatus);
+        return CompletableFuture.supplyAsync(() -> terminalStatus(streamName));
     }
 
-    private StatusMessage terminalStatus() {
+    private StatusMessage terminalStatus(final String streamName) {
         while (true) {
             try {
-                List<Message> messages = client.readMessages(STATUS_STREAM_NAME, new ReadMessagesOptions()
+                List<Message> messages = client.readMessages(streamName + "Status", new ReadMessagesOptions()
                         .withMaxMessageCount(1L)
                         .withReadTimeoutMillis(1000L));
                 Set<Status> terminalStatus = new HashSet<Status>() {{
@@ -92,7 +91,7 @@ public class S3Export {
                     }
                 }
             } catch (StreamManagerException e) {
-                System.err.println("Error occurred when reading " + STATUS_STREAM_NAME + ". Trying again.");
+                System.err.println("Error occurred when reading " + streamName + "Status. Trying again.");
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }

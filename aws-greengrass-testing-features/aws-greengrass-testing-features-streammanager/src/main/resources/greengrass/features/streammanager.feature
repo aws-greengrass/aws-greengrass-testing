@@ -18,7 +18,8 @@ Feature: Greengrass V2 Stream Manager
           "MERGE": {
             "bucketName": "${aws.resources:s3:bucket:bucketName}",
             "key": "export/streammanager-input.log",
-            "inputFile": "file:${test.context:installRoot}/streammanager-input.log"
+            "inputFile": "file:${test.context:installRoot}/streammanager-input.log",
+            "streamName": "S3Export-${test.id}"
           }
         }
       """
