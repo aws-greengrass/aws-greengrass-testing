@@ -32,7 +32,7 @@ public class StreamManagerExport {
         final String key = System.getProperty("s3.key");
         final String file = System.getProperty("file.input");
         final String streamName = System.getProperty("sm.streamName", STREAM_NAME);
-        final CompletableFuture<StatusMessage> result = component.s3().export( streamName, new S3ExportTaskDefinition()
+        final CompletableFuture<StatusMessage> result = component.s3().export(streamName, new S3ExportTaskDefinition()
                 .withBucket(bucketName)
                 .withKey(key)
                 .withInputUrl(file));
