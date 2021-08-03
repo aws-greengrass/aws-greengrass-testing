@@ -9,6 +9,7 @@ ComponentConfiguration:
     bucketName: greengrass-bucket-name
     key: test.text
     inputFile: test.text
+    streamName: S3Export
 ComponentDependencies:
   aws.greengrass.StreamManager:
     VersionRequirement: ^2.0.0
@@ -18,4 +19,4 @@ Manifests:
       - URI: "classpath:/greengrass/components/artifacts/streammanager-component.jar"
     Lifecycle:
       Run: |
-        java -jar -Ds3.bucketName={configuration:/bucketName} -Ds3.key={configuration:/key} -Dfile.input={configuration:/inputFile} {artifacts:path}/streammanager-component.jar
+        java -jar -Dsm.streamName={configuration:/streamName} -Ds3.bucketName={configuration:/bucketName} -Ds3.key={configuration:/key} -Dfile.input={configuration:/inputFile} {artifacts:path}/streammanager-component.jar

@@ -15,6 +15,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 public class StreamManagerExport {
+    static final String STREAM_NAME = "LargeFileStream";
 
     /**
      * This component entry serves a single purpose: Upload a file to S3.
@@ -30,7 +31,8 @@ public class StreamManagerExport {
         final String bucketName = System.getProperty("s3.bucketName");
         final String key = System.getProperty("s3.key");
         final String file = System.getProperty("file.input");
-        final CompletableFuture<StatusMessage> result = component.s3().export(new S3ExportTaskDefinition()
+        final String streamName = System.getProperty("sm.streamName", STREAM_NAME);
+        final CompletableFuture<StatusMessage> result = component.s3().export(streamName, new S3ExportTaskDefinition()
                 .withBucket(bucketName)
                 .withKey(key)
                 .withInputUrl(file));
