@@ -13,10 +13,13 @@ import org.immutables.value.Value;
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.file.Path;
+import javax.annotation.Nullable;
+
 
 @TestingModel
 @Value.Immutable
 interface GreengrassContextModel extends Closeable {
+    @Nullable
     String version();
 
     Path tempDirectory();
