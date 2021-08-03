@@ -126,7 +126,7 @@ public class RecipeComponentPreparationService implements ComponentPreparationSe
             Map<String, Object> recipe = mapper.readValue(loader.load(overrideNameVersion.version().value()),
                     new TypeReference<Map<String, Object>>() {});
             recipe.compute(COMPONENT_VERSION, (key, originalValue) -> {
-                return originalValue + "+" + testContext.testId().id();
+                return originalValue + "-" + testContext.testId().id();
             });
             List<Map<String, Object>> manifests = (List<Map<String, Object>>) recipe.get(MANIFESTS);
             for (Map<String, Object> manifest : manifests) {
