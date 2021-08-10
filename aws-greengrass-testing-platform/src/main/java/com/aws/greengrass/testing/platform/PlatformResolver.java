@@ -78,7 +78,7 @@ public class PlatformResolver {
             if (sysver.contains("ubuntu")) {
                 ranks.put("ubuntu", 20);
             }
-            if (sysver.contains("darwin")) {
+            if (sysver.contains("darwin") || sysver.contains("Darwin")) {
                 ranks.put("macos", 20);
             }
             if (sysver.contains("raspbian")) {

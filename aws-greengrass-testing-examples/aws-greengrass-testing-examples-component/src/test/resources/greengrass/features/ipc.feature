@@ -8,7 +8,7 @@ Feature: Testing a Java Component
     When I create a Greengrass deployment with components
       | com.aws.PingPong | LATEST |
     And I deploy the Greengrass deployment configuration
-    Then the Greengrass deployment is COMPLETED on the device after 30 seconds
+    Then the Greengrass deployment is COMPLETED on the device after 120 seconds
     And the com.aws.PingPong log on the device contains the line "Connected to IPC" within 20 seconds
     And the com.aws.PingPong log on the device contains the line "Received Pong from Ping" within 10 seconds
     And the com.aws.PingPong log on the device contains the line "Received Ping from Pong" within 10 seconds

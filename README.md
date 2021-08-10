@@ -35,9 +35,26 @@ mvn clean compile
 
 __Run integration tests for the example component__
 
+- Download latest greengrass archive at the example component path
 ```
-mvn -DskipTests=false -pl aws-greengrass-testing-examples/aws-greengrass-testing-examples-component -am integration-tests
+curl https://d2s8p88vqu9w66.cloudfront.net/releases/greengrass-nucleus-latest.zip -o aws-greengrass-testing-examples/aws-greengrass-testing-examples-component/greengrass-nucleus-latest.zip
 ```
+
+- Get credentials for AWS account. The test needs credentials to identify the AWS account to use and to be able to create
+  test resources in the account. [Here](https://docs.aws.amazon.com/sdk-for-java/v1/developer-guide/credentials.html#credentials-default) 
+  is the defaul credential provider chain. The credentials need to made available on the device. Some options are:
+  - Copy temporary credentials and set them as env variables
+  - Set AWS profile for your environment
+
+- Run the tests
+```
+mvn -DskipTests=false -pl aws-greengrass-testing-examples/aws-greengrass-testing-examples-component -am integration-test
+```
+
+__Debugging test failures__
+
+The test logs path is set using the "test.log.path" property in the project. The default value for this will be
+"testResults". Thus, by default logs for example component test run will be found at `aws-greengrass-testing-examples/aws-greengrass-testing-examples-component/testResults`
 
 __Fixing licenses__
 
