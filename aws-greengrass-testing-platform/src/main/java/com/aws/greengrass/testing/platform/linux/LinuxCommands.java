@@ -25,7 +25,7 @@ public class LinuxCommands extends UnixCommands {
     }
 
     @Override
-    public List<Integer> findDescendants(int pid) throws CommandExecutionException{
+    public List<Integer> findDescendants(int pid) throws CommandExecutionException {
         final String result = executeToString(CommandInput.builder()
                 .line("ls /proc/" + pid + "/task")
                 .build());
