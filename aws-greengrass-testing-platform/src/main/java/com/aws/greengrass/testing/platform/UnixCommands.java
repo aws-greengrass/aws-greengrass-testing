@@ -12,13 +12,13 @@ import com.aws.greengrass.testing.api.device.model.PlatformOS;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.StringJoiner;
-import java.util.regex.Matcher;
+// import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -70,17 +70,7 @@ public abstract class UnixCommands implements Commands, UnixPathsMixin {
 
     @Override
     public List<Integer> findDescendants(int pid) throws CommandExecutionException {
-        final String result = executeToString(CommandInput.builder()
-                .line("pstree -p " + pid)
-                .build());
-        return Arrays.stream(result.split("\\r?\\n")).map(String::trim).flatMap(line -> {
-            final Matcher matcher = PID_REGEX.matcher(line);
-            final List<Integer> pids = new ArrayList<>();
-            while (matcher.find()) {
-                pids.add(Integer.parseInt(matcher.group(1).trim()));
-            }
-            return pids.stream();
-        }).collect(Collectors.toList());
+        return findDirectDecendants().get(pid);
     }
 
     @Override
@@ -90,5 +80,17 @@ public abstract class UnixCommands implements Commands, UnixPathsMixin {
                         .map(i -> Integer.toString(i))
                         .collect(Collectors.joining(" ")))
                 .build());
+    }
+
+    protected Map<Integer, List<Integer>> findDirectDecendants() throws CommandExecutionException {
+        CommandInput.builder().line("sudo script -c \"ls /proc\" processes_info.txt").build();
+        final String ppids = executeToString(CommandInput.builder().line("cat processes_info.txt").build());
+        System.out.println(ppids);
+        // final Matcher matcher = PID_REGEX.matcher(line);
+        final Map<Integer, List<Integer>> pidMapping = new HashMap<>();
+        // while (matcher.find()) {
+        //     pidMapping.put(Integer.parseInt(matcher.group(1).trim()), new ArrayList<Integer>());
+        // }
+        return pidMapping;
     }
 }
