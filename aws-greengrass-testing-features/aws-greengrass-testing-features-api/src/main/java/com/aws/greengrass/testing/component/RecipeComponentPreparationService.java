@@ -12,7 +12,9 @@ import com.aws.greengrass.testing.api.model.ComponentOverrides;
 import com.aws.greengrass.testing.model.GreengrassContext;
 import com.aws.greengrass.testing.model.TestContext;
 import com.aws.greengrass.testing.resources.AWSResources;
+import com.aws.greengrass.testing.resources.greengrass.GreengrassComponent;
 import com.aws.greengrass.testing.resources.greengrass.GreengrassComponentSpec;
+import com.aws.greengrass.testing.resources.greengrass.GreengrassV2Lifecycle;
 import com.aws.greengrass.testing.resources.s3.S3BucketSpec;
 import com.aws.greengrass.testing.resources.s3.S3Lifecycle;
 import com.aws.greengrass.testing.resources.s3.S3ObjectSpec;
@@ -41,6 +43,8 @@ public class RecipeComponentPreparationService implements ComponentPreparationSe
     private static final String MANIFESTS = "Manifests";
     private static final String ARTIFACTS = "Artifacts";
     private static final String URI = "URI";
+    private static final String COMPONENT_DEPENDENCIES = "ComponentDependencies";
+    private static final String VERSION_REQUIREMENT = "VersionRequirement";
     private final ContentLoader loader;
     private final ObjectMapper mapper;
     private final TestContext testContext;
@@ -123,11 +127,35 @@ public class RecipeComponentPreparationService implements ComponentPreparationSe
     @Override
     public Optional<ComponentOverrideNameVersion> prepare(ComponentOverrideNameVersion overrideNameVersion) {
         try {
+
             Map<String, Object> recipe = mapper.readValue(loader.load(overrideNameVersion.version().value()),
                     new TypeReference<Map<String, Object>>() {});
             recipe.compute(COMPONENT_VERSION, (key, originalValue) -> {
                 return originalValue + "-" + testContext.testId().id();
             });
+
+            Map<String, Object> dependencies = (Map<String, Object>) recipe.get(COMPONENT_DEPENDENCIES);
+            if (dependencies != null) {
+                for (Map.Entry<String, Object> dependency : dependencies.entrySet()) {
+                    Map<String, Object> dependencyMap = (Map<String, Object>) dependency.getValue();
+                    dependencyMap.compute(VERSION_REQUIREMENT, (key, originalValue) -> {
+                        // If the dependency component has been created as part of the test,
+                        // then the version created by the test will be used.
+                        Optional<GreengrassComponent> component =
+                                resources.lifecycle(GreengrassV2Lifecycle.class)
+                                        .trackingSpecs(GreengrassComponentSpec.class)
+                                .filter(componentSpec -> componentSpec.resource().componentName()
+                                        .equals(dependency.getKey()))
+                                .findFirst()
+                                .map(greengrassComponentSpec -> greengrassComponentSpec.resource());
+                        if (component.isPresent()) {
+                            return "=" + component.get().componentVersion();
+                        }
+                        return originalValue;
+                    });
+                }
+            }
+
             List<Map<String, Object>> manifests = (List<Map<String, Object>>) recipe.get(MANIFESTS);
             for (Map<String, Object> manifest : manifests) {
                 List<Map<String, Object>> artifacts = (List<Map<String, Object>>) manifest.get(ARTIFACTS);
@@ -151,7 +179,7 @@ public class RecipeComponentPreparationService implements ComponentPreparationSe
                             .build())
                     .build());
         } catch (NullPointerException e) {
-            LOGGER.warn("Resource not found: {}", e.getMessage());
+            LOGGER.warn("Resource not found: {}", e);
             return Optional.empty();
         } catch (IOException ie) {
             LOGGER.error("Failed to load {}:", overrideNameVersion, ie);

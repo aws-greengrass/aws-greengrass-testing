@@ -1,0 +1,35 @@
+#
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+
+---
+RecipeFormatVersion: '2020-01-25'
+ComponentName: aws.greengrass.IotMqttSubscriber
+ComponentVersion: '1.0.0'
+ComponentDescription: IoT MQTT Subscriber
+ComponentPublisher: Amazon
+ComponentConfiguration:
+  DefaultConfiguration:
+    topic: idt/Mqtt/Test
+    QOS: 1
+    expectedPayload: test message
+    accessControl:
+      aws.greengrass.ipc.mqttproxy:
+        "com.aws.IotMqttSubscriber:sub:1":
+          policyDescription: Allows access to subscribe to iot topics.
+          operations:
+            - "aws.greengrass#SubscribeToIoTCore"
+          resources:
+            - "*"
+
+Manifests:
+  - Artifacts:
+      - URI: file:target/aws-greengrass-testing-features-mqtt.zip
+        Unarchive: ZIP
+        Permission:
+          Read: ALL
+          Execute: ALL
+    Lifecycle:
+      Run: |
+        java -Dipc.operation="mqttPubsub" -DcomponentName="IotMqttSubscriber" -jar  {artifacts:decompressedPath}/aws-greengrass-testing-features-mqtt/aws-greengrass-testing-features-mqtt/ggipc-component.jar {configuration:/topic} {configuration:/QOS} "{configuration:/expectedPayload}"

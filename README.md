@@ -51,6 +51,10 @@ curl https://d2s8p88vqu9w66.cloudfront.net/releases/greengrass-nucleus-latest.zi
 mvn -DskipTests=false -pl aws-greengrass-testing-examples/aws-greengrass-testing-examples-component -am integration-test
 ```
 
+- Run mqtt tests
+```
+mvn clean -DskipTests=false -pl aws-greengrass-testing-features/aws-greengrass-testing-features-mqtt/ -am integration-test
+```
 __Debugging test failures__
 
 The test logs path is set using the "test.log.path" property in the project. The default value for this will be

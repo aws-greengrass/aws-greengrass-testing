@@ -11,6 +11,79 @@
 
     <artifactId>aws-greengrass-testing-features-mqtt</artifactId>
 
+    <properties>
+        <skipTests>true</skipTests>
+        <components>aws-greengrass-testing-components</components>
+        <component>${components}-ggipc</component>
+    </properties>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <appendAssemblyId>false</appendAssemblyId>
+                            <finalName>aws-greengrass-testing-features-mqtt</finalName>
+                            <descriptors>
+                                <descriptor>src/main/assembly/assembly.xml</descriptor>
+                            </descriptors>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>3.0.0</version>
+                <executions>
+                    <execution>
+                        <id>download-latest-greengrass</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <!-- download file -->
+                                <get src="https://d2s8p88vqu9w66.cloudfront.net/releases/greengrass-nucleus-latest.zip"
+                                     dest="${project.basedir}/"
+                                     verbose="false"
+                                     usetimestamp="true"/>
+                            </target>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>feature-test</id>
+                        <phase>integration-test</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <skip>${skipTests}</skip>
+                            <target>
+                                <echo message="Feature Test Suite"/>
+                                <java classname="com.aws.greengrass.testing.launcher.TestLauncher"
+                                      fork="true"
+                                      failonerror="true"
+                                      newenvironment="true"
+                                      classpathref="maven.test.classpath">
+                                    <sysproperty key="ggc.archive" value="greengrass-nucleus-latest.zip"/>
+                                </java>
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
     <dependencies>
         <dependency>
             <groupId>${project.parent.groupId}</groupId>
@@ -18,9 +91,21 @@
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
+            <groupId>com.aws.greengrass</groupId>
+            <artifactId>aws-greengrass-testing-launcher</artifactId>
+            <version>${project.parent.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>software.amazon.awssdk.iotdevicesdk</groupId>
             <artifactId>aws-iot-device-sdk</artifactId>
             <version>${iotdevicesdk.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.aws.greengrass</groupId>
+            <artifactId>${component}</artifactId>
+            <version>${project.parent.version}</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 
