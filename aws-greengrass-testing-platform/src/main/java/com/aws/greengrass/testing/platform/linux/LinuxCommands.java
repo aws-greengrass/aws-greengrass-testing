@@ -23,19 +23,4 @@ public class LinuxCommands extends UnixCommands {
     public LinuxCommands(final Device device) {
         super(device);
     }
-
-    @Override
-    public List<Integer> findDescendants(int pid) throws CommandExecutionException {
-        final String result = executeToString(CommandInput.builder()
-                .line("ls /proc/" + pid + "/task")
-                .build());
-        return Arrays.stream(result.split("\\s")).map(String::trim).flatMap(line -> {
-            final Matcher matcher = PID_REGEX.matcher(line);
-            final List<Integer> pids = new ArrayList<>();
-            while (matcher.find()) {
-                pids.add(Integer.parseInt(matcher.group(1).trim()));
-            }
-            return pids.stream();
-        }).collect(Collectors.toList());
-    }
 }
