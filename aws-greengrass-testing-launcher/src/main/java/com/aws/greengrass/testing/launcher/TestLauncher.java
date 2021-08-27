@@ -7,7 +7,6 @@ package com.aws.greengrass.testing.launcher;
 
 import com.aws.greengrass.testing.api.ParameterValues;
 import com.aws.greengrass.testing.api.Parameters;
-import com.aws.greengrass.testing.api.ScenarioTestRuns;
 import com.aws.greengrass.testing.api.model.ParameterValue;
 import com.aws.greengrass.testing.launcher.reporting.StepTrackingReporting;
 import io.cucumber.core.feature.FeatureWithLines;
