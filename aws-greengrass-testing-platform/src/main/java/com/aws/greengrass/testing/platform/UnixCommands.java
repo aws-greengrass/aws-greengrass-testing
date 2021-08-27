@@ -9,8 +9,6 @@ import com.aws.greengrass.testing.api.device.Device;
 import com.aws.greengrass.testing.api.device.exception.CommandExecutionException;
 import com.aws.greengrass.testing.api.device.model.CommandInput;
 import com.aws.greengrass.testing.api.device.model.PlatformOS;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -25,7 +23,6 @@ import java.util.StringJoiner;
 import java.util.stream.Collectors;
 
 public abstract class UnixCommands implements Commands, UnixPathsMixin {
-    private static final Logger LOGGER = LogManager.getLogger(UnixCommands.class);
     protected final Device device;
     private final PlatformOS host;
 
@@ -87,7 +84,8 @@ public abstract class UnixCommands implements Commands, UnixPathsMixin {
     protected Map<Integer, List<Integer>> findDirectDescendants() throws CommandExecutionException {
         // TODO: replace all system FS commands with a platform independent solution
         final Map<Integer, List<Integer>> pidMapping = new HashMap<>();
-        //check if process has any child process running
+        // check if process has any child process running
+        // Example Output: /proc/<childPID>/status:PPid: <parentPID>
         final String processIds = executeToString(CommandInput.builder()
                 .line("find /proc/ -name 'status' -maxdepth 2 -exec grep PPid /dev/null {} \\;").build());
         List<String> processes = Arrays.stream(processIds.split("\\r?\\n")).map(String::trim)
