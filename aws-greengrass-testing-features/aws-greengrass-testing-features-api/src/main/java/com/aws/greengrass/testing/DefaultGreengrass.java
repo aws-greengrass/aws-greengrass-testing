@@ -8,6 +8,7 @@ package com.aws.greengrass.testing;
 import com.aws.greengrass.testing.api.Greengrass;
 import com.aws.greengrass.testing.api.device.exception.CommandExecutionException;
 import com.aws.greengrass.testing.api.device.model.CommandInput;
+import com.aws.greengrass.testing.features.WaitSteps;
 import com.aws.greengrass.testing.model.GreengrassContext;
 import com.aws.greengrass.testing.model.TestContext;
 import com.aws.greengrass.testing.modules.model.AWSResourcesContext;
@@ -16,6 +17,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.nio.file.Path;
+import java.util.concurrent.TimeUnit;
 
 public class DefaultGreengrass implements Greengrass {
     private static final Logger LOGGER = LogManager.getLogger(DefaultGreengrass.class);
@@ -25,6 +27,7 @@ public class DefaultGreengrass implements Greengrass {
     private final GreengrassContext greengrassContext;
     private int greengrassProcess;
     private final TestContext testContext;
+    private final WaitSteps waits;
 
     /**
      * Creates a {@link Greengrass} software instance.
@@ -33,16 +36,19 @@ public class DefaultGreengrass implements Greengrass {
      * @param resourcesContext the global {@link AWSResourcesContext} for the test run
      * @param greengrassContext the global {@link GreengrassContext} for the test suite
      * @param testContext The underlying {@link TestContext}
+     * @param waits The underlying {@link WaitSteps}
      */
     public DefaultGreengrass(
             final Platform platform,
             AWSResourcesContext resourcesContext,
             GreengrassContext greengrassContext,
-            TestContext testContext) {
+            TestContext testContext,
+            WaitSteps waits) {
         this.platform = platform;
         this.resourcesContext = resourcesContext;
         this.greengrassContext = greengrassContext;
         this.testContext = testContext;
+        this.waits = waits;
     }
 
     private boolean isRunning() {
@@ -101,11 +107,18 @@ public class DefaultGreengrass implements Greengrass {
             }
             if (greengrassProcess > 0) {
                 platform.commands().killAll(greengrassProcess);
+                if (!waits.untilTrue(() -> platform.commands().findDescendants(greengrassProcess).size() == 1,
+                        30, TimeUnit.SECONDS)) {
+                    throw new IllegalStateException("Failed to successfully remove the Greengrass process "
+                            + greengrassProcess);
+                }
                 LOGGER.info("Stopped Greengrass on pid {}", greengrassProcess);
                 greengrassProcess = 0;
             }
         } catch (CommandExecutionException e) {
             LOGGER.warn("Failed to kill Greengrass process {}: {}", greengrassProcess, e.getMessage());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
     }
 }
