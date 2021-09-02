@@ -109,7 +109,7 @@ public abstract class UnixCommands implements Commands, UnixPathsMixin {
                 .collect(Collectors.toList());
         for (String process : processes) {
             if (process.contains("No such file or directory")) {
-                LOGGER.info("Process {} no longer exists", process.substring(13, 18));
+                LOGGER.debug("Process no longer exists, {}", process);
                 continue;
             }
             String[] ppid = process.split("\\s");

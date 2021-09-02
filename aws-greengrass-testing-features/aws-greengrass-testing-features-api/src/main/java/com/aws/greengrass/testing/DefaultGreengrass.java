@@ -118,7 +118,7 @@ public class DefaultGreengrass implements Greengrass {
         } catch (CommandExecutionException e) {
             LOGGER.warn("Failed to kill Greengrass process {}: {}", greengrassProcess, e.getMessage());
         } catch (InterruptedException e) {
-            LOGGER.warn("Kill greengrass is interrupted {}", e.getMessage());
+            Thread.currentThread().interrupt();
         }
     }
 }
