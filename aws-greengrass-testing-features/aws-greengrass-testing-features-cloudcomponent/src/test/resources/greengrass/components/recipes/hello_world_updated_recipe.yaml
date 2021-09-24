@@ -1,0 +1,21 @@
+#
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+
+---
+RecipeFormatVersion: 2020-01-25
+ComponentName: com.aws.HelloWorld
+ComponentVersion: '1.0.1'
+ComponentDescription: Hello World Cloud Component -- Updated Version.
+ComponentPublisher: Amazon
+Manifests:
+  - Artifacts:
+      - URI: file:target/aws-greengrass-testing-features-cloudcomponent.zip
+        Unarchive: ZIP
+        Permission:
+          Read: ALL
+          Execute: ALL
+    Lifecycle:
+      Run: |
+        java -DcomponentName="HelloWorldUpdated" -jar {artifacts:decompressedPath}/aws-greengrass-testing-features-cloudcomponent/aws-greengrass-testing-features-cloudcomponent/cloudcomponent.jar

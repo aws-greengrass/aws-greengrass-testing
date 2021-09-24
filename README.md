@@ -55,6 +55,12 @@ mvn -DskipTests=false -pl aws-greengrass-testing-examples/aws-greengrass-testing
 ```
 mvn clean -DskipTests=false -pl aws-greengrass-testing-features/aws-greengrass-testing-features-mqtt/ -am integration-test
 ```
+
+- Run cloud component tests
+```
+mvn clean -DskipTests=false -pl aws-greengrass-testing-features/aws-greengrass-testing-features-cloudcomponent/ -am integration-test
+```
+
 __Debugging test failures__
 
 The test logs path is set using the "test.log.path" property in the project. The default value for this will be
