@@ -15,6 +15,7 @@
     <modules>
         <module>aws-greengrass-testing-components-streammanager</module>
         <module>aws-greengrass-testing-components-ggipc</module>
+        <module>aws-greengrass-testing-components-cloudcomponent</module>
     </modules>
 
 

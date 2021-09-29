@@ -18,6 +18,7 @@
         <module>aws-greengrass-testing-features-mqtt</module>
         <module>aws-greengrass-testing-features-streammanager</module>
         <module>aws-greengrass-testing-features-docker</module>
+        <module>aws-greengrass-testing-features-cloudcomponent</module>
     </modules>
 
 </project>
