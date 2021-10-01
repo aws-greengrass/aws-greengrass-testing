@@ -13,7 +13,6 @@ import com.aws.greengrass.testing.api.util.FileUtils;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -81,6 +80,19 @@ public class LocalFiles implements PlatformFiles {
                     .collect(Collectors.toList());
         } catch (IOException e) {
             throw new CommandExecutionException(e, CommandInput.of("listContents: " + filePath));
+        }
+    }
+
+    @Override
+    public void writeBytes(Path filePath, byte[] bytes) {
+
+        try {
+            if (!Files.exists(filePath)) {
+                Files.createFile(filePath);
+            }
+            Files.write(filePath, bytes);
+        } catch (IOException e) {
+            throw new CommandExecutionException(e, CommandInput.of("write bytes: " + filePath));
         }
     }
 }

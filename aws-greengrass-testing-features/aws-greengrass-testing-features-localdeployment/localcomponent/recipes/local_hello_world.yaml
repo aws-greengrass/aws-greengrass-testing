@@ -1,0 +1,21 @@
+#
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+
+---
+RecipeFormatVersion: 2020-01-25
+ComponentName: aws.greengrass.LocalHelloWorld
+ComponentVersion: '1.0.0'
+ComponentDescription: Hello World local Component.
+ComponentPublisher: Amazon
+Manifests:
+  - Artifacts:
+      - URI: file:target/cloudcomponent.jar
+        Unarchive: ZIP
+        Permission:
+          Read: ALL
+          Execute: ALL
+    Lifecycle:
+      Run: |
+         java -DcomponentName="HelloWorld" -jar {artifacts:path}/cloudcomponent.jar
