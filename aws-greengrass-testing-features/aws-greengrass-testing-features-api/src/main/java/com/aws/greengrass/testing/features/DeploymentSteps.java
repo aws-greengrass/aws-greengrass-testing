@@ -6,12 +6,13 @@
 package com.aws.greengrass.testing.features;
 
 import com.aws.greengrass.testing.api.ComponentPreparationService;
+import com.aws.greengrass.testing.api.device.model.CommandInput;
 import com.aws.greengrass.testing.api.model.ComponentOverrideNameVersion;
 import com.aws.greengrass.testing.api.model.ComponentOverrideVersion;
 import com.aws.greengrass.testing.api.model.ComponentOverrides;
-import com.aws.greengrass.testing.model.GreengrassContext;
 import com.aws.greengrass.testing.model.ScenarioContext;
 import com.aws.greengrass.testing.model.TestContext;
+import com.aws.greengrass.testing.platform.Platform;
 import com.aws.greengrass.testing.resources.AWSResources;
 import com.aws.greengrass.testing.resources.greengrass.GreengrassDeploymentSpec;
 import com.aws.greengrass.testing.resources.greengrass.GreengrassV2Lifecycle;
@@ -31,6 +32,9 @@ import software.amazon.awssdk.services.greengrassv2.model.ComponentDeploymentSpe
 import software.amazon.awssdk.services.greengrassv2.model.EffectiveDeployment;
 import software.amazon.awssdk.services.greengrassv2.model.EffectiveDeploymentExecutionStatus;
 
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -39,6 +43,11 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
+
+import static com.aws.greengrass.testing.component.LocalComponentPreparationService.ARTIFACTS_DIR;
+import static com.aws.greengrass.testing.component.LocalComponentPreparationService.LOCAL_STORE;
+import static com.aws.greengrass.testing.component.LocalComponentPreparationService.RECIPE_DIR;
+import static com.aws.greengrass.testing.features.GreengrassCliSteps.LOCAL_DEPLOYMENT_ID;
 
 @ScenarioScoped
 public class DeploymentSteps {
@@ -51,6 +60,9 @@ public class DeploymentSteps {
     private final ObjectMapper mapper;
     private final ScenarioContext scenarioContext;
     private GreengrassDeploymentSpec deployment;
+    private Platform platform;
+    private Path artifactPath;
+    private Path recipePath;
 
     @Inject
     DeploymentSteps(
@@ -60,7 +72,8 @@ public class DeploymentSteps {
             final ComponentPreparationService componentPreparation,
             final ScenarioContext scenarioContext,
             final WaitSteps waits,
-            final ObjectMapper mapper) {
+            final ObjectMapper mapper,
+            final Platform platform) {
         this.resources = resources;
         this.overrides = overrides;
         this.testContext = testContext;
@@ -68,6 +81,9 @@ public class DeploymentSteps {
         this.scenarioContext = scenarioContext;
         this.waits = waits;
         this.mapper = mapper;
+        this.platform = platform;
+        this.artifactPath = testContext.testDirectory().resolve(LOCAL_STORE).resolve(ARTIFACTS_DIR);;
+        this.recipePath = testContext.testDirectory().resolve(LOCAL_STORE).resolve(RECIPE_DIR);
     }
 
     /**
@@ -86,6 +102,50 @@ public class DeploymentSteps {
                             .build());
                 }};
         LOGGER.debug("Potential overrides: {}", overrides);
+        components.putAll(parseComponentNamesAndPrepare(componentNames));
+        LOGGER.debug("Creating deployment configuration with components to {}: {}",
+                thing.thingArn(), components);
+        deployment = GreengrassDeploymentSpec.builder()
+                .deploymentName(testContext.testId().idFor("gg-deployment"))
+                .thingArn(thing.thingArn())
+                .putAllComponents(components)
+                .build();
+    }
+
+    /**
+     * Create a local deployment using greengrass cli.
+     * @param componentNames map of component name to source of the component
+     */
+    @When("I create a local deployment with components")
+    public void createLocalDeployment(List<List<String>> componentNames) {
+        // find the component artifacts and copy into a local store
+        final Map<String, ComponentDeploymentSpecification> components = parseComponentNamesAndPrepare(componentNames);
+
+        // execute the command
+        List<String> commandArgs = new ArrayList<>();
+
+        commandArgs.addAll(Arrays.asList("deployment", "create",
+                "--artifactDir "  + artifactPath.toString(),
+                "--recipeDir " + recipePath.toString()));
+
+        for (Map.Entry<String, ComponentDeploymentSpecification> entry : components.entrySet()) {
+            commandArgs.add(" --merge ");
+            commandArgs.add(entry.getKey() + "=" + entry.getValue().componentVersion());
+        }
+
+        String response = platform.commands().executeToString(CommandInput.builder()
+                .line(testContext.installRoot().resolve("bin").resolve("greengrass-cli").toString())
+                .addAllArgs(commandArgs)
+                .build());
+        String[] responseArray = response.split(":");
+        String deploymentId = responseArray[responseArray.length - 1];
+        LOGGER.info("The local deployment response is " + deploymentId);
+        scenarioContext.put(LOCAL_DEPLOYMENT_ID, deploymentId);
+    }
+
+    private Map<String, ComponentDeploymentSpecification> parseComponentNamesAndPrepare(
+            List<List<String>> componentNames) {
+        Map<String, ComponentDeploymentSpecification> components = new HashMap<>();
         componentNames.forEach(tuple -> {
             String name = tuple.get(0);
             String value = tuple.get(1);
@@ -97,20 +157,13 @@ public class DeploymentSteps {
             } else {
                 overrideNameVersion.version(ComponentOverrideVersion.of("cloud", parts[0]));
             }
-            overrides.component(name).ifPresent(overrideNameVersion::from);
             ComponentDeploymentSpecification.Builder builder = ComponentDeploymentSpecification.builder();
             componentPreparation.prepare(overrideNameVersion.build()).ifPresent(nameVersion -> {
                 builder.componentVersion(nameVersion.version().value());
             });
             components.put(name, builder.build());
         });
-        LOGGER.debug("Creating deployment configuration with components to {}: {}",
-                thing.thingArn(), components);
-        deployment = GreengrassDeploymentSpec.builder()
-                .deploymentName(testContext.testId().idFor("gg-deployment"))
-                .thingArn(thing.thingArn())
-                .putAllComponents(components)
-                .build();
+        return components;
     }
 
     /**

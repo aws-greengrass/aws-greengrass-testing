@@ -82,4 +82,12 @@ public abstract class UnixFiles implements PlatformFiles, UnixPathsMixin {
                 .map(Paths::get)
                 .collect(Collectors.toList());
     }
+
+    @Override
+    public void writeBytes(Path filePath, byte[] bytes) {
+        commands.execute(CommandInput.builder()
+                .line("echo ")
+                .addArgs(String.format("'%s'",bytes.toString()), " > ", filePath.toString())
+                .build());
+    }
 }

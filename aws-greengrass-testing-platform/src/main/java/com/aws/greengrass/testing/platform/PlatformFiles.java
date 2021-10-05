@@ -21,6 +21,8 @@ public interface PlatformFiles {
         return new String(readBytes(filePath), StandardCharsets.UTF_8);
     }
 
+    void writeBytes(Path filePath, byte[] bytes);
+
     void delete(Path filePath) throws  CommandExecutionException;
 
     void makeDirectories(Path filePath) throws CommandExecutionException;

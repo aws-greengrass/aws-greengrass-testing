@@ -98,4 +98,12 @@ public class DevicePredicatePlatformFiles implements PlatformFiles {
     public List<Path> listContents(Path filePath) throws CommandExecutionException {
         return delegate(files -> files.listContents(filePath));
     }
+
+    @Override
+    public void writeBytes(Path filepath, byte[] bytes) {
+        delegate(files -> {
+            files.writeBytes(filepath, bytes);
+            return null;
+        });
+    }
 }

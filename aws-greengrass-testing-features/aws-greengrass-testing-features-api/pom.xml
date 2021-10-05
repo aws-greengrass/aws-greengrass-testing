@@ -74,6 +74,5 @@
             <version>${immutables.version}</version>
             <scope>provided</scope>
         </dependency>
-
     </dependencies>
 </project>
