@@ -6,6 +6,7 @@
 package com.aws.greengrass.testing.platform.windows;
 
 import com.aws.greengrass.testing.api.device.Device;
+import com.aws.greengrass.testing.platform.DevicePredicatePlatformFiles;
 import com.aws.greengrass.testing.platform.Platform;
 import com.aws.greengrass.testing.platform.PlatformFiles;
 import com.google.auto.service.AutoService;
@@ -25,6 +26,7 @@ public class WindowsPlatform implements Platform {
 
     @Override
     public PlatformFiles files() {
-        throw new UnsupportedOperationException("No Windows yet!");
+        // throw new UnsupportedOperationException("No Windows yet!");
+        return DevicePredicatePlatformFiles.localOrRemote(device, new WindowsFiles(commands(), device));
     }
 }

@@ -8,6 +8,7 @@ package com.aws.greengrass.testing;
 import com.aws.greengrass.testing.api.Greengrass;
 import com.aws.greengrass.testing.api.device.exception.CommandExecutionException;
 import com.aws.greengrass.testing.api.device.model.CommandInput;
+import com.aws.greengrass.testing.api.device.model.PlatformOS;
 import com.aws.greengrass.testing.features.WaitSteps;
 import com.aws.greengrass.testing.model.GreengrassContext;
 import com.aws.greengrass.testing.model.TestContext;
@@ -67,6 +68,8 @@ public class DefaultGreengrass implements Greengrass {
     @Override
     public void install() {
         if (!isRegistered()) {
+            System.out.println("install greengrass");
+            System.out.println(platform.files().getClass());
             platform.files().copyTo(
                     greengrassContext.greengrassPath(),
                     testContext.installRoot().resolve("greengrass"));
@@ -87,9 +90,18 @@ public class DefaultGreengrass implements Greengrass {
 
     @Override
     public void start() {
+        System.out.println("start greengrass");
         if (!isRunning()) {
-            Path loaderPath = testContext.installRoot().resolve("alts/current/distro/bin/loader");
+            Path loaderPath = null;
+            if (PlatformOS.currentPlatform().isWindows()) {
+                loaderPath = testContext.installRoot().resolve("alts/current/distro/bin/loader");
+                System.out.println("loaderPath: " + loaderPath);
+            } else {
+                loaderPath = testContext.installRoot().resolve("alts/current/distro/bin/loader");
+                System.out.println("loaderPath: " + loaderPath);
+            }
             platform.commands().makeExecutable(testContext.installRoot().resolve(loaderPath));
+            System.out.println("after makeExecutable");
             greengrassProcess = platform.commands().executeInBackground(CommandInput.builder()
                     .workingDirectory(testContext.installRoot())
                     .line(loaderPath.toString())

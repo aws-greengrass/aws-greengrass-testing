@@ -93,7 +93,7 @@
                         <configuration>
                             <target>
                                 <!-- download file -->
-                                <get src="https://d2s8p88vqu9w66.cloudfront.net/releases/greengrass-nucleus-latest.zip"
+                                <get src="https://d20etehnlyeqqf.cloudfront.net/artifacts/aws.greengrass.nucleus.zip"
                                      dest="${project.basedir}/"
                                      verbose="false"
                                      usetimestamp="true"/>
@@ -115,7 +115,7 @@
                                       failonerror="true"
                                       newenvironment="true"
                                       classpathref="maven.test.classpath">
-                                    <sysproperty key="ggc.archive" value="greengrass-nucleus-latest.zip"/>
+                                    <sysproperty key="ggc.archive" value="aws.greengrass.nucleus.zip"/>
                                 </java>
                             </target>
                         </configuration>
