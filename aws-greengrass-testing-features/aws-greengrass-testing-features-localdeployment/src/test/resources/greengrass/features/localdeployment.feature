@@ -4,6 +4,7 @@ Feature: Testing local deployment using CLI in Greengrass
     Given my device is registered as a Thing
     And my device is running Greengrass
 
+  @LocalDeployment @IDT
   Scenario: A component is deployed locally using CLI
     When I create a Greengrass deployment with components
       | aws.greengrass.Cli | 2.4.0 |
