@@ -4,7 +4,7 @@ Feature: Greengrass V2 Stream Manager
     Given my device is registered as a Thing
     And my device is running Greengrass
 
-  @StreamManager
+  @StreamManager @IDT
   Scenario: I can install and run aws.greengrass.StreamManager on my device
     Given I create a random file that is 500KB large, named streammanager-input.log
     When I create an S3 bucket for testing
