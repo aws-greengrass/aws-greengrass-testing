@@ -67,10 +67,10 @@ public class StepTrackingReporting implements EventListener {
             Optional.ofNullable(ThreadContext.get(CONTEXT_TEST_ID)).ifPresent(builder::testId);
             Optional.ofNullable(ThreadContext.get(CONTEXT_FEATURE)).ifPresent(builder::feature);
             if (stepFinished.getResult().getStatus() == Status.FAILED) {
-                logger.error("Failed step: '{}'",
+                logger.error("Failed at step: '{}'",
                         step.getStep().getText(),
                         stepFinished.getResult().getError());
-                builder.failed(true).message("Failed '" + step.getStep().getText() + "'");
+                builder.failed(true).message("Failed at '" + step.getStep().getText() + "'");
             } else {
                 logger.debug("Finished step: '{}' with status {}",
                         step.getStep().getText(),

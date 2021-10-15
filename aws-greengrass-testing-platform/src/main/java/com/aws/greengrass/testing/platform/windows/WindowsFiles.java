@@ -95,7 +95,6 @@ public class WindowsFiles implements PlatformFiles {
 
     @Override
     public void copyTo(Path source, Path destination) throws CopyException {
-        System.out.println("copy files in Windows");
         device.copyTo(source.toString(), destination.toString());
     }
 

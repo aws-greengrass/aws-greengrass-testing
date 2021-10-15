@@ -67,40 +67,46 @@ public class DefaultGreengrass implements Greengrass {
     @Override
     public void install() {
         if (!isRegistered()) {
-            System.out.println("install greengrass");
-            System.out.println(platform.files().getClass());
             platform.files().copyTo(
                     greengrassContext.greengrassPath(),
                     testContext.installRoot().resolve("greengrass"));
-            platform.commands().execute(CommandInput.builder()
-                    .line("java")
-                    .addArgs(
-                            "-Droot=" + testContext.installRoot(),
-                            "-Dlog.store=FILE",
-                            "-Dlog.level=" + testContext.logLevel(),
-                            "-jar", testContext.installRoot().resolve("greengrass/lib/Greengrass.jar").toString(),
-                            "--aws-region", resourcesContext.region().metadata().id(),
-                            "--env-stage", resourcesContext.envStage(),
-                            "--start", "false")
-                    .timeout(TIMEOUT_IN_SECONDS)
-                    .build());
+            if (PlatformOS.currentPlatform().isWindows()) {
+                platform.commands().execute(CommandInput.builder()
+                        .line("java")
+                        .addArgs(
+                                "-Droot=" + testContext.installRoot(),
+                                "-Dlog.store=FILE",
+                                "-Dlog.level=" + testContext.logLevel(),
+                                "-jar", testContext.installRoot().resolve("greengrass/lib/Greengrass.jar").toString(),
+                                "--aws-region", resourcesContext.region().metadata().id(),
+                                "--env-stage", resourcesContext.envStage(),
+                                "--start", "true",
+                                "--setup-system-service", "true",
+                                "--component-default-user", "ggc_user")
+                        .timeout(TIMEOUT_IN_SECONDS)
+                        .build());
+            } else {
+                platform.commands().execute(CommandInput.builder()
+                        .line("java")
+                        .addArgs(
+                                "-Droot=" + testContext.installRoot(),
+                                "-Dlog.store=FILE",
+                                "-Dlog.level=" + testContext.logLevel(),
+                                "-jar", testContext.installRoot().resolve("greengrass/lib/Greengrass.jar").toString(),
+                                "--aws-region", resourcesContext.region().metadata().id(),
+                                "--env-stage", resourcesContext.envStage(),
+                                "--start", "false")
+                        .timeout(TIMEOUT_IN_SECONDS)
+                        .build());
+            }
         }
     }
 
     @Override
     public void start() {
-        System.out.println("start greengrass");
         if (!isRunning()) {
-            Path loaderPath = null;
-            if (PlatformOS.currentPlatform().isWindows()) {
-                loaderPath = testContext.installRoot().resolve("alts/current/distro/bin/loader");
-                System.out.println("loaderPath: " + loaderPath);
-            } else {
-                loaderPath = testContext.installRoot().resolve("alts/current/distro/bin/loader");
-                System.out.println("loaderPath: " + loaderPath);
-            }
+            Path loaderPath = testContext.installRoot().resolve("alts/current/distro/bin/loader");
             platform.commands().makeExecutable(testContext.installRoot().resolve(loaderPath));
-            System.out.println("after makeExecutable");
             greengrassProcess = platform.commands().executeInBackground(CommandInput.builder()
                     .workingDirectory(testContext.installRoot())
                     .line(loaderPath.toString())

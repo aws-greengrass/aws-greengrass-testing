@@ -75,6 +75,7 @@
                                       newenvironment="true"
                                       classpathref="maven.test.classpath">
                                     <sysproperty key="ggc.archive" value="aws.greengrass.nucleus.zip"/>
+                                    <sysproperty key="ggc.install.root" value="C:\"/>
                                 </java>
                             </target>
                         </configuration>
