@@ -71,6 +71,21 @@
             <artifactId>log4j-slf4j-impl</artifactId>
             <version>${log4j.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.aws.greengrass</groupId>
+            <artifactId>aws-greengrass-testing-features-localdeployment</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.aws.greengrass</groupId>
+            <artifactId>aws-greengrass-testing-features-cloudcomponent</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.aws.greengrass</groupId>
+            <artifactId>aws-greengrass-testing-features-mqtt</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
     </dependencies>
 
 </project>
