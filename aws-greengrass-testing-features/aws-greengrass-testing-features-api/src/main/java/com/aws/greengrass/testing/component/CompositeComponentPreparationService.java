@@ -7,12 +7,15 @@ package com.aws.greengrass.testing.component;
 
 import com.aws.greengrass.testing.api.ComponentPreparationService;
 import com.aws.greengrass.testing.api.model.ComponentOverrideNameVersion;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.Map;
 import java.util.Optional;
 import javax.inject.Inject;
 
 public class CompositeComponentPreparationService implements ComponentPreparationService {
+    private static final Logger LOGGER = LogManager.getLogger(CompositeComponentPreparationService.class);
     private final Map<String, ComponentPreparationService> services;
 
     @Inject
@@ -23,7 +26,10 @@ public class CompositeComponentPreparationService implements ComponentPreparatio
     @Override
     public Optional<ComponentOverrideNameVersion> prepare(final ComponentOverrideNameVersion name) {
         return Optional.ofNullable(services.get(name.version().type()))
-                .map(service -> service.prepare(name))
+                .map(service -> {
+                    LOGGER.debug("Selecting the component prep service {} for {} ", service.getClass(), name);
+                    return service.prepare(name);
+                })
                 .orElseThrow(() -> new IllegalArgumentException("Could not find service for " + name.version().type()));
     }
 }

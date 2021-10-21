@@ -157,6 +157,7 @@ public class DeploymentSteps {
             } else {
                 overrideNameVersion.version(ComponentOverrideVersion.of("cloud", parts[0]));
             }
+            overrides.component(name).ifPresent(overrideNameVersion::from);
             ComponentDeploymentSpecification.Builder builder = ComponentDeploymentSpecification.builder();
             componentPreparation.prepare(overrideNameVersion.build()).ifPresent(nameVersion -> {
                 builder.componentVersion(nameVersion.version().value());
