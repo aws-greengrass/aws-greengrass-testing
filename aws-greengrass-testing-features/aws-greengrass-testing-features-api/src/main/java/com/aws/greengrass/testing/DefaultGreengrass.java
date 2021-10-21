@@ -59,8 +59,9 @@ public class DefaultGreengrass implements Greengrass {
     }
 
     private boolean isRegistered() {
-        return platform.files().exists(testContext.installRoot()
-                .resolve("config").resolve("effectiveConfig.yaml"));
+        return testContext.initializationContext().persistInstalledSoftware()
+                && platform.files().exists(testContext.installRoot()
+                        .resolve("config").resolve("effectiveConfig.yaml"));
     }
 
     @Override
