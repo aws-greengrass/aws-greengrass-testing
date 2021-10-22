@@ -9,6 +9,7 @@ public class TestRouter {
 
     public static final String MQTT_PUBSUB_OPERATION = "mqttPubsub";
     public static final String IPC_OPERATION_SYS_PROP = "ipc.operation";
+    public static final String SECRET_OPERATION = "secretManager";
 
     /**
      * Main entry method.
@@ -20,6 +21,10 @@ public class TestRouter {
         switch (operationName) {
             case MQTT_PUBSUB_OPERATION: {
                 DaggerMqttComponents.create().getMqttPubsubComponents().accept(args);
+                break;
+            }
+            case SECRET_OPERATION: {
+                DaggerSecretComponents.create().getSecretManagerComponents().accept(args);
                 break;
             }
             default: {

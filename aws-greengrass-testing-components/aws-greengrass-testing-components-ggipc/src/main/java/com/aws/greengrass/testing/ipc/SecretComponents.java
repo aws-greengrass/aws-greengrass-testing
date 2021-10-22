@@ -9,13 +9,10 @@ import dagger.Component;
 
 import javax.inject.Singleton;
 
-@Component (modules = IPCModule.class)
+@Component(modules = IPCModule.class)
 @Singleton
-public interface MqttComponents {
-    LocalMqttPublisher getPublisher();
+public interface SecretComponents {
 
-    LocalMqttSubscriber getSubscriber();
-
-    MqttPubsubComponents getMqttPubsubComponents();
+    SecretManagerComponents getSecretManagerComponents();
 
 }

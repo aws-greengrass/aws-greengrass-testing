@@ -73,7 +73,7 @@ public class AWSResources implements Closeable {
      */
     public <U extends AWSResourceLifecycle> U lifecycle(Class<U> lifecycleType) {
         return lifecycles.stream()
-                .peek(lc -> LOGGER.debug("Available lifecycle {}", lc))
+                .peek(lc -> LOGGER.info("Available lifecycle {}", lc))
                 .filter(lc -> lifecycleType.isAssignableFrom(lc.getClass()))
                 .map(lifecycleType::cast)
                 .findFirst()

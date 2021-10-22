@@ -20,6 +20,7 @@
         <module>aws-greengrass-testing-features-docker</module>
         <module>aws-greengrass-testing-features-cloudcomponent</module>
         <module>aws-greengrass-testing-features-localdeployment</module>
+        <module>aws-greengrass-testing-features-secret</module>
     </modules>
 
 </project>
