@@ -124,4 +124,19 @@ public abstract class UnixCommands implements Commands, UnixPathsMixin {
         }
         return pidMapping;
     }
+
+    @Override
+    public void installNucleus(CommandInput input, String user) throws CommandExecutionException {
+        execute(CommandInput
+                .builder()
+                .from(input)
+                .addArgs("--start", "false")
+                .build());
+    }
+
+    @Override
+    public int startNucleus(Path path, CommandInput input) throws CommandExecutionException {
+        makeExecutable(path);
+        return executeInBackground(input);
+    }
 }

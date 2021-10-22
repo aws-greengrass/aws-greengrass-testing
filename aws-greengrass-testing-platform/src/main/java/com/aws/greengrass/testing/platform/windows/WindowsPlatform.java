@@ -26,7 +26,6 @@ public class WindowsPlatform implements Platform {
 
     @Override
     public PlatformFiles files() {
-        // throw new UnsupportedOperationException("No Windows yet!");
         return DevicePredicatePlatformFiles.localOrRemote(device, new WindowsFiles(commands(), device));
     }
 }

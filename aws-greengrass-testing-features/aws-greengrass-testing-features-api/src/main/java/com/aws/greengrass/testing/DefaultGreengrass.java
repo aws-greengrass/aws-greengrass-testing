@@ -8,7 +8,6 @@ package com.aws.greengrass.testing;
 import com.aws.greengrass.testing.api.Greengrass;
 import com.aws.greengrass.testing.api.device.exception.CommandExecutionException;
 import com.aws.greengrass.testing.api.device.model.CommandInput;
-import com.aws.greengrass.testing.api.device.model.PlatformOS;
 import com.aws.greengrass.testing.features.WaitSteps;
 import com.aws.greengrass.testing.model.GreengrassContext;
 import com.aws.greengrass.testing.model.TestContext;
@@ -60,8 +59,9 @@ public class DefaultGreengrass implements Greengrass {
     }
 
     private boolean isRegistered() {
-        return platform.files().exists(testContext.installRoot()
-                .resolve("config").resolve("effectiveConfig.yaml"));
+        return testContext.initializationContext().persistInstalledSoftware()
+                && platform.files().exists(testContext.installRoot()
+                        .resolve("config").resolve("effectiveConfig.yaml"));
     }
 
     @Override
@@ -70,35 +70,17 @@ public class DefaultGreengrass implements Greengrass {
             platform.files().copyTo(
                     greengrassContext.greengrassPath(),
                     testContext.installRoot().resolve("greengrass"));
-            if (PlatformOS.currentPlatform().isWindows()) {
-                platform.commands().execute(CommandInput.builder()
-                        .line("java")
-                        .addArgs(
-                                "-Droot=" + testContext.installRoot(),
-                                "-Dlog.store=FILE",
-                                "-Dlog.level=" + testContext.logLevel(),
-                                "-jar", testContext.installRoot().resolve("greengrass/lib/Greengrass.jar").toString(),
-                                "--aws-region", resourcesContext.region().metadata().id(),
-                                "--env-stage", resourcesContext.envStage(),
-                                "--start", "true",
-                                "--setup-system-service", "true",
-                                "--component-default-user", "ggc_user")
-                        .timeout(TIMEOUT_IN_SECONDS)
-                        .build());
-            } else {
-                platform.commands().execute(CommandInput.builder()
-                        .line("java")
-                        .addArgs(
-                                "-Droot=" + testContext.installRoot(),
-                                "-Dlog.store=FILE",
-                                "-Dlog.level=" + testContext.logLevel(),
-                                "-jar", testContext.installRoot().resolve("greengrass/lib/Greengrass.jar").toString(),
-                                "--aws-region", resourcesContext.region().metadata().id(),
-                                "--env-stage", resourcesContext.envStage(),
-                                "--start", "false")
-                        .timeout(TIMEOUT_IN_SECONDS)
-                        .build());
-            }
+            platform.commands().installNucleus(CommandInput.builder()
+                    .line("java")
+                    .addArgs(
+                            "-Droot=" + testContext.installRoot(),
+                            "-Dlog.store=FILE",
+                            "-Dlog.level=" + testContext.logLevel(),
+                            "-jar", testContext.installRoot().resolve("greengrass/lib/Greengrass.jar").toString(),
+                            "--aws-region", resourcesContext.region().metadata().id(),
+                            "--env-stage", resourcesContext.envStage())
+                    .timeout(TIMEOUT_IN_SECONDS)
+                    .build(), testContext.currentUser());
         }
     }
 
@@ -106,8 +88,7 @@ public class DefaultGreengrass implements Greengrass {
     public void start() {
         if (!isRunning()) {
             Path loaderPath = testContext.installRoot().resolve("alts/current/distro/bin/loader");
-            platform.commands().makeExecutable(testContext.installRoot().resolve(loaderPath));
-            greengrassProcess = platform.commands().executeInBackground(CommandInput.builder()
+            greengrassProcess = platform.commands().startNucleus(loaderPath, CommandInput.builder()
                     .workingDirectory(testContext.installRoot())
                     .line(loaderPath.toString())
                     .timeout(TIMEOUT_IN_SECONDS)

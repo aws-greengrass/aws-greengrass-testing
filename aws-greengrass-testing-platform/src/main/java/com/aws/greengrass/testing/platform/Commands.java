@@ -30,4 +30,8 @@ public interface Commands {
     default void killAll(int pid) throws CommandExecutionException {
         kill(findDescendants(pid));
     }
+
+    void installNucleus(CommandInput input, String user) throws CommandExecutionException;
+
+    int startNucleus(Path path, CommandInput input) throws CommandExecutionException;
 }
