@@ -11,12 +11,16 @@ import org.immutables.value.Value;
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 import software.amazon.awssdk.services.secretsmanager.model.DeleteSecretRequest;
 
+import javax.annotation.Nullable;
+
 @TestingModel
 @Value.Immutable
 interface SecretModel extends AWSResource<SecretsManagerClient> {
     String secretId();
 
     String secretValue();
+
+    String secretArn();
 
     @Override
     default void remove(SecretsManagerClient client) {

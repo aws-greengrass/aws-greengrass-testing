@@ -10,6 +10,7 @@ policyDocument: >
         "logs:CreateLogStream",
         "logs:PutLogEvents",
         "logs:DescribeLogStreams",
+        "secretsmanager:GetSecretValue",
         "s3:GetBucketLocation"
       ],
       "Resource": "*"
