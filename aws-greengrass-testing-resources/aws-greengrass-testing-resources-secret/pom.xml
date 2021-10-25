@@ -36,9 +36,9 @@
         </dependency>
         <dependency>
             <groupId>com.google.auto.service</groupId>
-            <artifactId>auto-service-annotations</artifactId>
-            <version>1.0</version>
-            <scope>compile</scope>
+            <artifactId>auto-service</artifactId>
+            <version>${auto.service.version}</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>javax.inject</groupId>

@@ -10,6 +10,7 @@ import software.amazon.awssdk.aws.greengrass.GreengrassCoreIPC;
 import software.amazon.awssdk.aws.greengrass.GreengrassCoreIPCClient;
 import software.amazon.awssdk.aws.greengrass.model.GetSecretValueRequest;
 import software.amazon.awssdk.aws.greengrass.model.GetSecretValueResponse;
+import software.amazon.awssdk.crt.io.SocketOptions;
 import software.amazon.awssdk.eventstreamrpc.EventStreamRPCConnection;
 
 import java.util.Optional;
@@ -33,11 +34,11 @@ public class SecretManagerComponents implements Consumer<String[]> {
         this.ipc = new GreengrassCoreIPCClient(eventStreamRPCConnection);
     }
 
+
+
     @Override
     public void accept(String[] strings) {
-        EventStreamRPCConnection eventStreamRpcConnection = null;
-        try {
-
+        t
             GetSecretValueRequest request = new GetSecretValueRequest();
 
             String secretId = strings[0];
@@ -77,9 +78,9 @@ public class SecretManagerComponents implements Consumer<String[]> {
         } catch (InterruptedException | ExecutionException e) {
             System.err.println("Error occurred while get secret : " + e);
         } finally {
-            if (eventStreamRpcConnection != null) {
+            if (this.eventStreamRPCConnection != null) {
 
-                eventStreamRpcConnection.close();
+                this.eventStreamRPCConnection.close();
 
             }
         }

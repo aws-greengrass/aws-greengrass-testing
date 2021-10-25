@@ -4,12 +4,14 @@ Feature: Testing Secret manager in Greengrass
     Given my device is registered as a Thing
     And my device is running Greengrass
 
-  Scenario: Component publishes MQTT message to Iot core and retrieves it as well
-
-    When I create a Greengrass deployment with components
+  Scenario:  I can install and run aws.greengrass.SecretManager on my device
+    When I create a secret named EGUAT12345678 with value password
+    And I create a Greengrass deployment with components
       | aws.greengrass.secretComponents | classpath:/greengrass/components/recipes/secret.yaml |
-    And I create a secret named EGUAT with value password
-    And I deploy the Greengrass deployment configuration
+      | aws.greengrass.SecretManager | LATEST |
 
+    And I update secrets manager with configured secrets
+    And I deploy the Greengrass deployment configuration
     Then the Greengrass deployment is COMPLETED on the device after 180 seconds
+    And the aws.greengrass.secretComponents log on the device contains the line "\"secretString\":{\"value\":\"password\"}" within 30 seconds
 

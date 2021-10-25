@@ -5,46 +5,29 @@
 
 package com.aws.greengrass.testing.features.secret;
 
+import com.aws.greengrass.testing.features.DeploymentSteps;
 import com.aws.greengrass.testing.features.IotSteps;
 import com.aws.greengrass.testing.features.WaitSteps;
 import com.aws.greengrass.testing.model.RegistrationContext;
 import com.aws.greengrass.testing.model.ScenarioContext;
 import com.aws.greengrass.testing.model.TestContext;
 import com.aws.greengrass.testing.resources.AWSResources;
-import com.aws.greengrass.testing.resources.iot.IotLifecycle;
-import com.aws.greengrass.testing.resources.iot.IotThingSpec;
-import com.aws.greengrass.testing.resources.s3.S3BucketSpec;
 import com.aws.greengrass.testing.resources.secret.SecretLifecycle;
 import com.aws.greengrass.testing.resources.secret.SecretSpec;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
 import io.cucumber.guice.ScenarioScoped;
-import io.cucumber.java.After;
-import io.cucumber.java.en.Given;
-import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import software.amazon.awssdk.crt.io.ClientBootstrap;
-import software.amazon.awssdk.crt.io.EventLoopGroup;
-import software.amazon.awssdk.crt.io.HostResolver;
-import software.amazon.awssdk.crt.mqtt.MqttClientConnection;
-import software.amazon.awssdk.crt.mqtt.MqttMessage;
-import software.amazon.awssdk.crt.mqtt.QualityOfService;
-import software.amazon.awssdk.iot.AwsIotMqttConnectionBuilder;
+import software.amazon.awssdk.aws.greengrass.GreengrassCoreIPC;
+import software.amazon.awssdk.eventstreamrpc.EventStreamRPCConnection;
 
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.StringJoiner;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 import javax.inject.Inject;
-
 
 @ScenarioScoped
 public class SecretSteps {
@@ -57,6 +40,9 @@ public class SecretSteps {
     private final IotSteps iotSteps;
     private final RegistrationContext registrationContext;
     private final WaitSteps waits;
+    private String secretArn;
+    private final ObjectMapper mapper;
+    private final DeploymentSteps deploySteps;
 
 
 
@@ -64,16 +50,21 @@ public class SecretSteps {
     SecretSteps(
             final AWSResources resources,
             final TestContext testContext,
+            DeploymentSteps deploySteps,
             final ScenarioContext scenarioContext,
             final RegistrationContext registrationContext,
             final WaitSteps waits,
-            final IotSteps iotSteps) {
+            final IotSteps iotSteps,
+            final ObjectMapper mapper
+            ) {
         this.testContext = testContext;
         this.scenarioContext = scenarioContext;
         this.registrationContext = registrationContext;
         this.resources = resources;
         this.iotSteps = iotSteps;
         this.waits = waits;
+        this.mapper = mapper;
+        this.deploySteps = deploySteps;
     }
 
 
@@ -88,9 +79,32 @@ public class SecretSteps {
     @When("I create a secret named {word} with value {word}")
     public void createSecret(String secretId, String secretString) {
         SecretLifecycle secret = resources.lifecycle(SecretLifecycle.class);
-        resources.create(SecretSpec.builder().secretId(secretId).secretValue(secretString).build());
+        SecretSpec update = resources.create(SecretSpec.builder()
+                .secretId(secretId).secretValue(secretString).build());
+        secretArn = update.resource().secretArn();
+    }
 
+    /**
+     * Update secret config.
+     * @throws JsonProcessingException exception
+     */
+    @When("I update secrets manager with configured secrets")
+    public void updateConfig() throws JsonProcessingException {
 
+        Gson gson = new Gson();
+        String secretString = gson.toJson(getSecretConfiguration());
+        deploySteps.updateDeployment("aws.greengrass.SecretManager", secretString);
+    }
+
+    private Map<String, Map<String, Object>> getSecretConfiguration() {
+        Map<String, Map<String, Object>> configuration = new HashMap<>();
+        configuration.put("MERGE", new HashMap<>());
+
+        String createdArn = secretArn;
+        Map<String, Object> secretKeyToValue = new HashMap<>();
+        secretKeyToValue.putIfAbsent("arn", createdArn);
+        configuration.get("MERGE").put("cloudSecrets", Collections.singletonList(secretKeyToValue));
+        return configuration;
     }
 
 
