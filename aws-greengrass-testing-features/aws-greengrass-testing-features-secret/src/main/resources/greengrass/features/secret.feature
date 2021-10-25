@@ -5,7 +5,7 @@ Feature: Testing Secret manager in Greengrass
     And my device is running Greengrass
 
   Scenario:  I can install and run aws.greengrass.SecretManager on my device
-    When I create a secret named EGUAT12345678 with value password
+    When I create a secret named EGUAT with value password
     And I create a Greengrass deployment with components
       | aws.greengrass.secretComponents | classpath:/greengrass/components/recipes/secret.yaml |
       | aws.greengrass.SecretManager | LATEST |

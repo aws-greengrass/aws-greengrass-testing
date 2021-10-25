@@ -19,11 +19,6 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>com.aws.greengrass</groupId>
-            <version>${project.parent.version}</version>
-            <artifactId>aws-greengrass-testing-resources-secret</artifactId>
-        </dependency>
-        <dependency>
             <groupId>com.google.auto.service</groupId>
             <artifactId>auto-service</artifactId>
             <version>${auto.service.version}</version>
