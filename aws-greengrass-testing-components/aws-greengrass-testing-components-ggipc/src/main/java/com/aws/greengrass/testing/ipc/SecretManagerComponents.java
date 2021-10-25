@@ -38,7 +38,7 @@ public class SecretManagerComponents implements Consumer<String[]> {
 
     @Override
     public void accept(String[] strings) {
-        t
+        try {
             GetSecretValueRequest request = new GetSecretValueRequest();
 
             String secretId = strings[0];
@@ -70,7 +70,8 @@ public class SecretManagerComponents implements Consumer<String[]> {
 
             Gson gson = new Gson();
             GetSecretValueResponse result =
-                    ipc.getSecretValue(request, Optional.empty()).getResponse().get();
+                    this.ipc.getSecretValue(request, Optional.empty()).getResponse().get();
+            System.out.println("jjjjjjjj");
             result.getSecretValue().postFromJson();
             System.out.println("Got secret response " + new String(result.toPayload(gson)));
 
