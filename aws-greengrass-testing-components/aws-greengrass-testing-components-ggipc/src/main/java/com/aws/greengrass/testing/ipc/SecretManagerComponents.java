@@ -10,7 +10,6 @@ import software.amazon.awssdk.aws.greengrass.GreengrassCoreIPC;
 import software.amazon.awssdk.aws.greengrass.GreengrassCoreIPCClient;
 import software.amazon.awssdk.aws.greengrass.model.GetSecretValueRequest;
 import software.amazon.awssdk.aws.greengrass.model.GetSecretValueResponse;
-import software.amazon.awssdk.crt.io.SocketOptions;
 import software.amazon.awssdk.eventstreamrpc.EventStreamRPCConnection;
 
 import java.util.Optional;
@@ -33,8 +32,6 @@ public class SecretManagerComponents implements Consumer<String[]> {
         this.eventStreamRPCConnection = eventStreamRPCConnection;
         this.ipc = new GreengrassCoreIPCClient(eventStreamRPCConnection);
     }
-
-
 
     @Override
     public void accept(String[] strings) {
@@ -70,8 +67,7 @@ public class SecretManagerComponents implements Consumer<String[]> {
 
             Gson gson = new Gson();
             GetSecretValueResponse result =
-                    this.ipc.getSecretValue(request, Optional.empty()).getResponse().get();
-            System.out.println("jjjjjjjj");
+                    ipc.getSecretValue(request, Optional.empty()).getResponse().get();
             result.getSecretValue().postFromJson();
             System.out.println("Got secret response " + new String(result.toPayload(gson)));
 
