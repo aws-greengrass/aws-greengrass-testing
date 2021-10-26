@@ -11,8 +11,7 @@ ComponentDescription: Hello World local Component.
 ComponentPublisher: Amazon
 Manifests:
   - Artifacts:
-      - URI: file:target/cloudcomponent.jar
-        Unarchive: ZIP
+      - URI: classpath:/greengrass/components/artifacts/cloudcomponent.jar
         Permission:
           Read: ALL
           Execute: ALL
