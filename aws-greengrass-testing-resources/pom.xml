@@ -18,6 +18,7 @@
         <module>aws-greengrass-testing-resources-iot</module>
         <module>aws-greengrass-testing-resources-greengrass</module>
         <module>aws-greengrass-testing-resources-s3</module>
+        <module>aws-greengrass-testing-resources-secret</module>
     </modules>
 
 </project>
