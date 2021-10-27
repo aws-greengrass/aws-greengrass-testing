@@ -14,12 +14,14 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.StringJoiner;
 import java.util.stream.Collectors;
 
 public class WindowsCommands implements Commands {
     private final Device device;
+    private static final long TIMEOUT_IN_SECONDS = 30L;
 
     WindowsCommands(final Device device) {
         this.device = device;
@@ -35,11 +37,6 @@ public class WindowsCommands implements Commands {
                 .input(input.input())
                 .timeout(input.timeout())
                 .build());
-    }
-
-    @Override
-    public int executeInBackground(CommandInput input) throws CommandExecutionException {
-        throw new UnsupportedOperationException("Windows does not support this operation");
     }
 
     @Override
@@ -62,36 +59,27 @@ public class WindowsCommands implements Commands {
     }
 
     @Override
-    public void makeExecutable(Path file) throws CommandExecutionException {
-        throw new UnsupportedOperationException("Windows does not support this operation");
-    }
-
-    @Override
-    public void installNucleus(CommandInput input, String user) throws CommandExecutionException {
-        addUser(user);
+    public void installNucleus(Path rootDirectory, Map<String, String> args) throws CommandExecutionException {
         /* In Windows Greengrass needs to be setup as System service
            to let it deploy components on device with user other than default user */
-        execute(CommandInput
-                .builder()
-                .from(input)
-                .addArgs("--start", "true",
+        execute(CommandInput.builder()
+                .line("java")
+                .addArgs("-Droot=" + rootDirectory,
+                        "-Dlog.store=" + args.get("-Dlog.store="),
+                        "-Dlog.level=" + args.get("-Dlog.level="),
+                        "-jar " + rootDirectory.resolve("greengrass/lib/Greengrass.jar").toString(),
+                        "--aws-region " + args.get("--aws-region"),
+                        "--env-stage " + args.get("--env-stage"),
+                        "--start", "true",
                         "--setup-system-service", "true",
-                        "--component-default-user", user)
+                        "--component-default-user", args.get("--component-default-user"))
+                .timeout(TIMEOUT_IN_SECONDS)
                 .build());
     }
 
     @Override
-    public int startNucleus(Path path, CommandInput input) throws CommandExecutionException {
+    public int startNucleus(Path rootDirectory) throws CommandExecutionException {
         return greengrassPID();
-    }
-
-    private void addUser(String user) throws CommandExecutionException {
-        // For Windows Greengrass doesn't support creation of user
-        if (!executeToString(CommandInput.of("net user " + user)).contains(user)) {
-            execute(CommandInput.of("net user /add " + user + " Greengrass@123"));
-            execute(CommandInput.of("psexec -s cmd /c cmdkey /generic:" + user
-                    + " /user:" + user + " /pass:Greengrass@123"));
-        }
     }
 
     private int greengrassPID() throws CommandExecutionException {
