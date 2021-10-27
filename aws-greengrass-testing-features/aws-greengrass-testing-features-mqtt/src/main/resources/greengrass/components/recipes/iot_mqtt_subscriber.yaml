@@ -25,7 +25,7 @@ ComponentConfiguration:
 
 Manifests:
   - Artifacts:
-      - URI: file:target/aws-greengrass-testing-features-mqtt.zip
+      - URI: classpath:/greengrass/components/artifacts/aws-greengrass-testing-features-mqtt.zip
         Unarchive: ZIP
         Permission:
           Read: ALL

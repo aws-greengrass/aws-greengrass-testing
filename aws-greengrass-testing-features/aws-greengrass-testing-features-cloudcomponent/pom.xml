@@ -40,9 +40,44 @@
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.2.4</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <artifactSet>
+                                <includes>
+                                    <include>greengrass/features/cloudComponent.feature</include>
+                                    <include>greengrass/components/artifacts/${project.artifactId}.zip</include>
+                                </includes>
+                            </artifactSet>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-antrun-plugin</artifactId>
                 <version>3.0.0</version>
                 <executions>
+                    <!-- Adding it here and not in shade plugin transform so it is included in classpath for local run-->
+                    <execution>
+                        <id>copy-artifact-to-resources</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target name="copy mqtt component zip file">
+                                <copy file="${project.basedir}/target/${project.artifactId}.zip"
+                                      tofile="${project.basedir}/src/main/resources/greengrass/components/artifacts/${project.artifactId}.zip"/>
+                            </target>
+                        </configuration>
+                    </execution>
                     <execution>
                         <id>download-latest-greengrass</id>
                         <phase>prepare-package</phase>
@@ -52,6 +87,7 @@
                         <configuration>
                             <target>
                                 <!-- download file -->
+                                <!-- Nucleus 2.5.0: https://d20etehnlyeqqf.cloudfront.net/artifacts/aws.greengrass.nucleus.zip-->
                                 <get src="https://d2s8p88vqu9w66.cloudfront.net/releases/greengrass-nucleus-latest.zip"
                                      dest="${project.basedir}/"
                                      verbose="false"
