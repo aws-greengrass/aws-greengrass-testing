@@ -24,3 +24,5 @@ jobs:
         run: mvn -U -ntp process-resources
       - name: Build with Maven
         run: mvn -U -ntp clean verify
+      - name: Run stable integration test
+        run: mvn -DskipTests=false integration-test
