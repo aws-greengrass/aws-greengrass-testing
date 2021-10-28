@@ -5,7 +5,6 @@
 
 package com.aws.greengrass.testing.model;
 
-import com.aws.greengrass.testing.api.model.TestId;
 import com.aws.greengrass.testing.platform.Platform;
 import com.aws.greengrass.testing.resources.AWSResources;
 import com.aws.greengrass.testing.resources.ResourceSpec;

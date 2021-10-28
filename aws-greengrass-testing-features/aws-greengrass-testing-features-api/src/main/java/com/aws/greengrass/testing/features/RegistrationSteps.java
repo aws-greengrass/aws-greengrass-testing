@@ -6,7 +6,6 @@
 package com.aws.greengrass.testing.features;
 
 import com.aws.greengrass.testing.api.model.ProxyConfig;
-import com.aws.greengrass.testing.model.GreengrassContext;
 import com.aws.greengrass.testing.model.RegistrationContext;
 import com.aws.greengrass.testing.model.TestContext;
 import com.aws.greengrass.testing.modules.model.AWSResourcesContext;

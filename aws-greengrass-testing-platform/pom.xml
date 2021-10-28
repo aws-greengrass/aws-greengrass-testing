@@ -10,30 +10,15 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>aws-greengrass-testing-platform</artifactId>
+    <packaging>pom</packaging>
+    <modules>
+        <module>aws-greengrass-testing-platform-pillbox</module>
+        <module>aws-greengrass-testing-platform-api</module>
+    </modules>
 
     <properties>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
     </properties>
-
-    <dependencies>
-        <dependency>
-            <groupId>org.immutables</groupId>
-            <artifactId>value</artifactId>
-            <version>${immutables.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.aws.greengrass</groupId>
-            <artifactId>aws-greengrass-testing-api</artifactId>
-            <version>${project.parent.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.google.auto.service</groupId>
-            <artifactId>auto-service</artifactId>
-            <version>${auto.service.version}</version>
-            <scope>provided</scope>
-        </dependency>
-    </dependencies>
 
 </project>
