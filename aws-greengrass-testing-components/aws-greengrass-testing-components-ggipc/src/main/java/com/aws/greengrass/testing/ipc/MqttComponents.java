@@ -17,5 +17,4 @@ public interface MqttComponents {
     LocalMqttSubscriber getSubscriber();
 
     MqttPubsubComponents getMqttPubsubComponents();
-
 }

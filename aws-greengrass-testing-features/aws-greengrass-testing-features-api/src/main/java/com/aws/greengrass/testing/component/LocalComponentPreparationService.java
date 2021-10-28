@@ -8,6 +8,7 @@ package com.aws.greengrass.testing.component;
 import com.aws.greengrass.testing.api.ComponentPreparationService;
 import com.aws.greengrass.testing.api.model.ComponentOverrideNameVersion;
 import com.aws.greengrass.testing.api.model.ComponentOverrideVersion;
+import com.aws.greengrass.testing.model.GreengrassContext;
 import com.aws.greengrass.testing.model.TestContext;
 import com.aws.greengrass.testing.modules.JacksonModule;
 import com.aws.greengrass.testing.platform.Platform;
@@ -15,7 +16,9 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import software.amazon.awssdk.utils.IoUtils;
 
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -25,6 +28,7 @@ import java.nio.file.Paths;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -45,6 +49,7 @@ public class LocalComponentPreparationService implements ComponentPreparationSer
     private final TestContext testContext;
     private final ContentLoader loader;
     private final ObjectMapper mapper;
+    private final GreengrassContext greengrassContext;
 
     @FunctionalInterface
     public interface ContentLoader {
@@ -56,15 +61,18 @@ public class LocalComponentPreparationService implements ComponentPreparationSer
      * @param platform platform for the device
      * @param testContext {@link TestContext}
      * @param objectMapper {@link ObjectMapper}
+     * @param greengrassContext {@link GreengrassContext}
      */
     @Inject
     public LocalComponentPreparationService(Platform platform,
                                             TestContext testContext,
-                                            @Named(JacksonModule.YAML) ObjectMapper objectMapper) {
+                                            @Named(JacksonModule.YAML) ObjectMapper objectMapper,
+                                            GreengrassContext greengrassContext) {
         this.platform = platform;
         this.testContext = testContext;
-        this.loader = value -> Files.newInputStream(Paths.get(value));
+        this.loader = LocalComponentPreparationService.class::getResourceAsStream;
         this.mapper = objectMapper;
+        this.greengrassContext = greengrassContext;
     }
 
     @Override
@@ -87,6 +95,24 @@ public class LocalComponentPreparationService implements ComponentPreparationSer
                         iterator.remove();
                         String filepath = uri.split(":")[1];
                         copyArtifactToLocalStore(Paths.get(filepath),componentName,componentVersion);
+                    } else if (uri.startsWith("classpath")) {
+                        iterator.remove();
+                        String filepath = uri.split(":")[1];
+                        Path componentArtifact;
+                        try (InputStream content = Objects.requireNonNull(getClass().getResourceAsStream(filepath),
+                                "not found on classpath " + filepath)) {
+                            Path contentPath = Paths.get(filepath);
+                            componentArtifact = greengrassContext.tempDirectory()
+                                    .resolve(testContext.testId().id())
+                                    .resolve("components")
+                                    .resolve(componentName);
+                            Files.createDirectories(componentArtifact);
+                            componentArtifact = componentArtifact.resolve(contentPath.getFileName());
+                            try (FileOutputStream fos = new FileOutputStream(componentArtifact.toFile())) {
+                                IoUtils.copy(content, fos);
+                            }
+                        }
+                        copyArtifactToLocalStore(componentArtifact,componentName,componentVersion);
                     }
                 }
                 if (artifacts.isEmpty()) {

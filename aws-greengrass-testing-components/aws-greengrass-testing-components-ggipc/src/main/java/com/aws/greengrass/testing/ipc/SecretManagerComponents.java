@@ -6,10 +6,13 @@
 package com.aws.greengrass.testing.ipc;
 
 import com.google.gson.Gson;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import software.amazon.awssdk.aws.greengrass.GreengrassCoreIPC;
 import software.amazon.awssdk.aws.greengrass.GreengrassCoreIPCClient;
 import software.amazon.awssdk.aws.greengrass.model.GetSecretValueRequest;
 import software.amazon.awssdk.aws.greengrass.model.GetSecretValueResponse;
+import software.amazon.awssdk.aws.greengrass.model.ReportedLifecycleState;
 import software.amazon.awssdk.eventstreamrpc.EventStreamRPCConnection;
 
 import java.util.Optional;
@@ -18,6 +21,8 @@ import java.util.function.Consumer;
 import javax.inject.Inject;
 
 public class SecretManagerComponents implements Consumer<String[]> {
+
+    private static final Logger logger = LogManager.getLogger(SecretManagerComponents.class);
 
     private EventStreamRPCConnection eventStreamRPCConnection;
     private GreengrassCoreIPC ipc;
@@ -31,15 +36,21 @@ public class SecretManagerComponents implements Consumer<String[]> {
     public SecretManagerComponents(EventStreamRPCConnection eventStreamRPCConnection) {
         this.eventStreamRPCConnection = eventStreamRPCConnection;
         this.ipc = new GreengrassCoreIPCClient(eventStreamRPCConnection);
+        this.ipcUtils = new IPCUtils(ipc);
     }
 
     @Override
     public void accept(String[] strings) {
         try {
+            if (strings.length < 1) {
+                System.err.println("Need more arguments.");
+                ipcUtils.reportState(ReportedLifecycleState.ERRORED);
+                return;
+            }
             GetSecretValueRequest request = new GetSecretValueRequest();
 
             String secretId = strings[0];
-            System.out.println("Configured secret id: " + secretId);
+            logger.info("Configured secret id: " + secretId);
             request.setSecretId(secretId);
 
             String versionStage = null;
@@ -48,9 +59,9 @@ public class SecretManagerComponents implements Consumer<String[]> {
                 if (versionStage != null && !versionStage.equals("null")) {
                     request.setVersionStage(versionStage);
                 }
-                System.out.println("Configured version stage: " + versionStage);
+                logger.info("Configured version stage: " + versionStage);
             } catch (ArrayIndexOutOfBoundsException e) {
-                System.out.println("No configured version stage");
+                logger.info("No configured version stage");
                 // ignore
             }
             String versionId = null;
@@ -59,9 +70,9 @@ public class SecretManagerComponents implements Consumer<String[]> {
                 if (versionId != null && !versionId.equals("null")) {
                     request.setVersionId(versionId);
                 }
-                System.out.println("Configured version id: " + versionId);
+                logger.info("Configured version id: " + versionId);
             } catch (ArrayIndexOutOfBoundsException e) {
-                System.out.println("No configured version id");
+                logger.info("No configured version id");
                 // ignore
             }
 
@@ -71,9 +82,21 @@ public class SecretManagerComponents implements Consumer<String[]> {
             result.getSecretValue().postFromJson();
             System.out.println("Got secret response " + new String(result.toPayload(gson)));
 
+        } catch (ExecutionException | InterruptedException e) {
+            if (eventStreamRPCConnection != null) {
+                eventStreamRPCConnection.disconnect();
+            }
+            try {
+                ipcUtils.reportState(ReportedLifecycleState.ERRORED);
+            } catch (ExecutionException executionException) {
+                executionException.printStackTrace();
+            } catch (InterruptedException interruptedException) {
+                interruptedException.printStackTrace();
+            }
+            logger.error("Error occurred while get secret : " + e);
 
-        } catch (InterruptedException | ExecutionException e) {
-            System.err.println("Error occurred while get secret : " + e);
+            System.exit(1);
+
         } finally {
             if (this.eventStreamRPCConnection != null) {
 

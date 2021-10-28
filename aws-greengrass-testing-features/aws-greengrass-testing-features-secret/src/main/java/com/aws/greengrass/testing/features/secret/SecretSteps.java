@@ -16,13 +16,10 @@ import com.aws.greengrass.testing.resources.secret.SecretLifecycle;
 import com.aws.greengrass.testing.resources.secret.SecretSpec;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.gson.Gson;
 import io.cucumber.guice.ScenarioScoped;
 import io.cucumber.java.en.When;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import software.amazon.awssdk.aws.greengrass.GreengrassCoreIPC;
-import software.amazon.awssdk.eventstreamrpc.EventStreamRPCConnection;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -91,8 +88,8 @@ public class SecretSteps {
     @When("I update secrets manager with configured secrets")
     public void updateConfig() throws JsonProcessingException {
 
-        Gson gson = new Gson();
-        String secretString = gson.toJson(getSecretConfiguration());
+        ObjectMapper mapper = new ObjectMapper();
+        String secretString = mapper.writeValueAsString(getSecretConfiguration());
         deploySteps.updateDeployment("aws.greengrass.SecretManager", secretString);
     }
 
