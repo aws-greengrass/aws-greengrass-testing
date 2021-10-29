@@ -23,7 +23,7 @@
                 <artifactId>maven-assembly-plugin</artifactId>
                 <executions>
                     <execution>
-                        <phase>package</phase>
+                        <phase>prepare-package</phase>
                         <goals>
                             <goal>single</goal>
                         </goals>
@@ -39,44 +39,9 @@
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <version>3.2.4</version>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                        <configuration>
-                            <artifactSet>
-                                <includes>
-                                    <include>greengrass/features/mqtt.feature</include>
-                                    <include>greengrass/components/artifacts/*.zip</include>
-                                </includes>
-                            </artifactSet>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-antrun-plugin</artifactId>
                 <version>3.0.0</version>
                 <executions>
-                    <!-- Adding it here and not in shade plugin transform so it is included in classpath for local run-->
-                    <execution>
-                        <id>copy-artifact-to-resources</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                        <configuration>
-                            <target name="copy mqtt component zip file">
-                                <copy file="${project.basedir}/target/${project.artifactId}.zip"
-                                      tofile="${project.basedir}/src/main/resources/greengrass/components/artifacts/${project.artifactId}.zip"/>
-                            </target>
-                        </configuration>
-                    </execution>
                     <execution>
                         <id>download-latest-greengrass</id>
                         <phase>prepare-package</phase>
@@ -111,6 +76,33 @@
                                     <sysproperty key="ggc.archive" value="greengrass-nucleus-latest.zip"/>
                                 </java>
                             </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.2.4</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <artifactSet>
+                                <includes>
+                                    <include>greengrass/features/mqtt.feature</include>
+                                    <include>greengrass/components/artifacts/${project.artifactId}.zip</include>
+                                </includes>
+                            </artifactSet>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.IncludeResourceTransformer">
+                                    <resource>greengrass/components/artifacts/${project.artifactId}.zip</resource>
+                                    <file>${project.basedir}/target/${project.artifactId}.zip</file>
+                                </transformer>
+                            </transformers>
                         </configuration>
                     </execution>
                 </executions>
