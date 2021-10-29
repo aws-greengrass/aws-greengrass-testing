@@ -4,7 +4,7 @@ Feature: Greengrass V2 Docker Component
     Given my device is registered as a Thing
     And my device is running Greengrass
 
-  @Docker
+  @Docker @IDT
   Scenario: I can deploy Docker containers as Greengrass Components
     Given the docker image amazon/amazon-ec2-metadata-mock:v1.9.0 does not exist on the device
     And I create a Greengrass deployment with components
