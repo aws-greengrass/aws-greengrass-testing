@@ -12,7 +12,6 @@ import com.aws.greengrass.testing.platform.linux.LinuxPlatform;
 import com.aws.greengrass.testing.platform.macos.MacosPlatform;
 import com.aws.greengrass.testing.platform.windows.WindowsPlatform;
 
-import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;

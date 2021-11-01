@@ -14,7 +14,7 @@
     <dependencies>
         <dependency>
             <groupId>com.aws.greengrass</groupId>
-            <artifactId>aws-greengrass-testing-platform</artifactId>
+            <artifactId>aws-greengrass-testing-platform-api</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
