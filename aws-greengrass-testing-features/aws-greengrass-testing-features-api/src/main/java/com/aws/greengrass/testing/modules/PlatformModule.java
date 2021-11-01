@@ -6,6 +6,7 @@
 package com.aws.greengrass.testing.modules;
 
 import com.aws.greengrass.testing.api.device.Device;
+import com.aws.greengrass.testing.api.model.PillboxContext;
 import com.aws.greengrass.testing.platform.Platform;
 import com.aws.greengrass.testing.platform.PlatformResolver;
 import com.google.auto.service.AutoService;
@@ -18,7 +19,7 @@ import io.cucumber.guice.ScenarioScoped;
 public class PlatformModule extends AbstractModule {
     @Provides
     @ScenarioScoped
-    static Platform providesPlatform(final Device device) {
-        return new PlatformResolver(device).resolve();
+    static Platform providesPlatform(final Device device, final PillboxContext pillboxContext) {
+        return new PlatformResolver(device, pillboxContext).resolve();
     }
 }

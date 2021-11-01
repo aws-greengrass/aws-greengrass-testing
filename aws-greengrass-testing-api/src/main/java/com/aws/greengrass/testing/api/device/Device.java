@@ -8,18 +8,14 @@ package com.aws.greengrass.testing.api.device;
 
 import com.aws.greengrass.testing.api.device.exception.CommandExecutionException;
 import com.aws.greengrass.testing.api.device.exception.CopyException;
-import com.aws.greengrass.testing.api.device.local.LocalDevice;
 import com.aws.greengrass.testing.api.device.model.CommandInput;
 import com.aws.greengrass.testing.api.device.model.PlatformOS;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
-import java.util.ServiceLoader;
-import java.util.Spliterator;
-import java.util.Spliterators;
-import java.util.stream.StreamSupport;
 
-public interface Device {
+public interface Device extends Closeable {
     String id();
 
     String type();
@@ -35,4 +31,15 @@ public interface Device {
     boolean exists(String path);
 
     void copyTo(String source, String destination) throws CopyException;
+
+    /**
+     * Implementations of {@link Device} can override this method to release any resources
+     * created by activating the device for testing.
+     *
+     * @throws IOException thrown if there was a problem cleaning up resources by activating the device
+     */
+    @Override
+    default void close() throws IOException {
+        // No-op
+    }
 }

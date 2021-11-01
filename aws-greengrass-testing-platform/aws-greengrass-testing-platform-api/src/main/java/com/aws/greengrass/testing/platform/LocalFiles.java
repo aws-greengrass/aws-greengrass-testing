@@ -82,17 +82,4 @@ public class LocalFiles implements PlatformFiles {
             throw new CommandExecutionException(e, CommandInput.of("listContents: " + filePath));
         }
     }
-
-    @Override
-    public void writeBytes(Path filePath, byte[] bytes) {
-
-        try {
-            if (!Files.exists(filePath)) {
-                Files.createFile(filePath);
-            }
-            Files.write(filePath, bytes);
-        } catch (IOException e) {
-            throw new CommandExecutionException(e, CommandInput.of("write bytes: " + filePath));
-        }
-    }
 }

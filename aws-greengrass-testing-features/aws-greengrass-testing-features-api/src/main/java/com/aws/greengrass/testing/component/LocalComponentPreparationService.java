@@ -144,11 +144,13 @@ public class LocalComponentPreparationService implements ComponentPreparationSer
         platform.files().copyTo(artifactFilePath, componentArtifactPath.resolve(artifactFilePath.getFileName()));
     }
 
-    private void copyRecipeToLocalStore(String recipe, String componentName, String componentVersion) {
+    private void copyRecipeToLocalStore(String recipe, String componentName, String componentVersion)
+            throws IOException {
         Path localStoreRecipePath = testContext.testDirectory().resolve(LOCAL_STORE).resolve(RECIPE_DIR);
-        platform.files().makeDirectories(localStoreRecipePath);
+        Files.createDirectories(localStoreRecipePath);
         // TODO: Add conditional for json as well
         Path componentRecipePath = localStoreRecipePath.resolve(componentName + "-" + componentVersion + ".yaml");
-        platform.files().writeBytes(componentRecipePath, recipe.getBytes(StandardCharsets.UTF_8));
+        Files.write(componentRecipePath, recipe.getBytes(StandardCharsets.UTF_8));
+        platform.files().copyTo(localStoreRecipePath, localStoreRecipePath);
     }
 }

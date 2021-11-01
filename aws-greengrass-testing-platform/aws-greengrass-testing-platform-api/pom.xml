@@ -28,12 +28,6 @@
             <artifactId>aws-greengrass-testing-api</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
-        <dependency>
-            <groupId>com.google.auto.service</groupId>
-            <artifactId>auto-service</artifactId>
-            <version>${auto.service.version}</version>
-            <scope>provided</scope>
-        </dependency>
     </dependencies>
 
 </project>

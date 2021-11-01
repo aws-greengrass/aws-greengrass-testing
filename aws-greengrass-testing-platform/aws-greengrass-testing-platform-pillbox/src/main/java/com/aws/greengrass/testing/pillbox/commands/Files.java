@@ -8,12 +8,13 @@ package com.aws.greengrass.testing.pillbox.commands;
 import com.aws.greengrass.testing.pillbox.commands.files.Cat;
 import com.aws.greengrass.testing.pillbox.commands.files.Exists;
 import com.aws.greengrass.testing.pillbox.commands.files.Find;
+import com.aws.greengrass.testing.pillbox.commands.files.Mkdir;
 import com.aws.greengrass.testing.pillbox.commands.files.Remove;
 import picocli.CommandLine;
 
 @CommandLine.Command(
         name = "files",
         description = "Platform independent file system interaction.",
-        subcommands = { Cat.class, Find.class, Exists.class, Remove.class})
+        subcommands = { Cat.class, Find.class, Exists.class, Remove.class, Mkdir.class })
 public class Files {
 }
