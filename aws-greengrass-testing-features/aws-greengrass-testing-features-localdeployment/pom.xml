@@ -36,6 +36,12 @@
                                     <include>greengrass/components/artifacts/cloudcomponent*</include>
                                 </includes>
                             </artifactSet>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.IncludeResourceTransformer">
+                                    <resource>greengrass/components/artifacts/cloudcomponent.jar</resource>
+                                    <file>${project.basedir}/../../${components}/${component}/target/${component}-${project.parent.version}.jar</file>
+                                </transformer>
+                            </transformers>
                         </configuration>
                     </execution>
                 </executions>
@@ -45,20 +51,6 @@
                 <artifactId>maven-antrun-plugin</artifactId>
                 <version>3.0.0</version>
                 <executions>
-                    <!-- Adding it here and not in shade plugin transform so it is included in classpath for local run-->
-                    <execution>
-                        <id>copy-artifact-to-resources</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                        <configuration>
-                            <target name="copy cloud component jar file">
-                                <copy file="${project.basedir}/../../${components}/${component}/target/${component}-${project.parent.version}.jar"
-                                      tofile="${project.basedir}/src/main/resources/greengrass/components/artifacts/cloudcomponent.jar"/>
-                            </target>
-                        </configuration>
-                    </execution>
                     <execution>
                         <id>download-latest-greengrass</id>
                         <phase>prepare-package</phase>
