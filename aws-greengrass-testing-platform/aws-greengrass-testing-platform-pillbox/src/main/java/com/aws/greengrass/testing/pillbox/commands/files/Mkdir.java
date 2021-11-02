@@ -10,6 +10,7 @@ import picocli.CommandLine;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Objects;
 import java.util.concurrent.Callable;
 
 @CommandLine.Command(
@@ -26,15 +27,16 @@ public class Mkdir implements Callable<Integer> {
     @Override
     public Integer call() throws Exception {
         final Path filePath = Paths.get(file);
-        final int existsCode = Exists.call(filePath);
-        if (existsCode != 0) {
-            return existsCode;
-        }
+        int exitCode = 0;
         if (recursive) {
             Files.createDirectories(filePath);
         } else {
+            Path parentPath = filePath.getParent();
+            if (Objects.nonNull(parentPath) && (exitCode = Exists.call(parentPath)) != 0) {
+                return exitCode;
+            }
             Files.createDirectory(filePath);
         }
-        return 0;
+        return exitCode;
     }
 }
