@@ -2,6 +2,8 @@
 target
 *.iml
 TEST-*
+aws-greengrass-testing-features/**/*.zip
+aws-greengrass-testing-features/**/*.jar
 greengrass-nucleus-latest.zip
 aws.greengrass.nucleus.zip
 dependency-reduced-pom.xml

@@ -7,11 +7,17 @@ package com.aws.greengrass.testing.platform;
 
 import com.aws.greengrass.testing.api.device.Device;
 import com.aws.greengrass.testing.api.device.exception.CommandExecutionException;
+import com.aws.greengrass.testing.api.device.local.LocalDevice;
 import com.aws.greengrass.testing.api.device.model.CommandInput;
 import com.aws.greengrass.testing.api.device.model.PlatformOS;
+import com.aws.greengrass.testing.api.model.PillboxContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.ArrayDeque;
@@ -29,12 +35,20 @@ import java.util.stream.Collectors;
 public abstract class UnixCommands implements Commands, UnixPathsMixin {
     private static final Logger LOGGER = LogManager.getLogger(UnixCommands.class);
     protected final Device device;
+    protected final PillboxContext pillboxContext;
     private final PlatformOS host;
     private static final long TIMEOUT_IN_SECONDS = 30L;
 
-    public UnixCommands(final Device device) {
-        this.device = device;
+    /**
+     * Constructs a new Unix based platform support with a device abstraction and pillbox binary.
+     *
+     * @param device the underlying {@link Device} abstraction representing this {@link Platform}
+     * @param pillboxContext the {@link PillboxContext} location for the pillbox binary
+     */
+    public UnixCommands(final Device device, final PillboxContext pillboxContext) {
         this.host = PlatformOS.currentPlatform();
+        this.device = device;
+        this.pillboxContext = pillboxContext;
     }
 
     @Override
@@ -73,18 +87,21 @@ public abstract class UnixCommands implements Commands, UnixPathsMixin {
 
     @Override
     public List<Integer> findDescendants(int pid) throws CommandExecutionException {
-        Map<Integer, List<Integer>> pidMap = findDirectDescendants();
-        List<Integer> child = new ArrayList<>();
-        Queue<Integer> queue = new ArrayDeque<>();
-        queue.add(pid);
-        while (!queue.isEmpty()) {
-            int process = queue.poll();
-            child.add(process);
-            if (pidMap.get(process) != null) {
-                pidMap.get(process).stream().forEach(processId -> queue.add(processId));
-            }
+        String pillboxPath = pillboxContext.onDevice().toString();
+        // We'll use the pillbox even on the local device
+        if (device.type().equals(LocalDevice.TYPE)) {
+            pillboxPath = pillboxContext.onHost().toString();
         }
-        return child;
+        final CommandInput in = CommandInput.builder()
+                .line("java")
+                .addArgs("-jar", pillboxPath)
+                .addArgs("process", "descendants", Integer.toString(pid))
+                .build();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(execute(in))))) {
+            return reader.lines().map(Integer::parseInt).collect(Collectors.toList());
+        } catch (IOException ie) {
+            throw new CommandExecutionException(ie, in);
+        }
     }
 
     @Override
@@ -94,34 +111,6 @@ public abstract class UnixCommands implements Commands, UnixPathsMixin {
                     .map(i -> Integer.toString(i))
                     .collect(Collectors.joining(" ")))
             .build());
-    }
-
-    protected Map<Integer, List<Integer>> findDirectDescendants() throws CommandExecutionException {
-        // TODO: replace all system FS commands with a platform independent solution
-        Map<Integer, List<Integer>> pidMapping = new HashMap<>();
-        // check if process has any child process running
-        // Example Output: /proc/<childPID>/status:PPid: <parentPID>
-        final String processIds = executeToString(CommandInput.builder()
-                .line("find /proc/ -name 'status' -maxdepth 2 -exec grep PPid /dev/null 2>&1 {} \\; || true")
-                .build());
-        List<String> processes = Arrays.stream(processIds.split("\\r?\\n")).map(String::trim)
-                .collect(Collectors.toList());
-        for (String process : processes) {
-            if (process.contains("No such file or directory")) {
-                LOGGER.debug("Process no longer exists, {}", process);
-                continue;
-            }
-            String[] ppid = process.split("\\s");
-            int childId = Integer.parseInt(ppid[0].split("/")[2]);
-            int parentId = Integer.parseInt(ppid[1]);
-            List<Integer> childPids = new ArrayList<>();
-            childPids.add(childId);
-            if (pidMapping.containsKey(parentId)) {
-                childPids.addAll(pidMapping.get(parentId));
-            }
-            pidMapping.put(Integer.parseInt(ppid[1]), childPids);
-        }
-        return pidMapping;
     }
 
     @Override

@@ -35,7 +35,7 @@ import java.util.concurrent.ConcurrentSkipListSet;
 @AutoService(Module.class)
 public class DeviceModule extends AbstractModule {
     private static final Set<String> PILLBOX_PLACED = new ConcurrentSkipListSet<>();
-    private static final String RESOURCE_PATH = "greengrass/platform/artifacts/pillbox.jar";
+    private static final String RESOURCE_PATH = "/greengrass/platform/artifacts/pillbox.jar";
 
     // TODO: move this into a module that is optional, and can be included for remote DUTs
     @Provides
@@ -70,7 +70,7 @@ public class DeviceModule extends AbstractModule {
 
     @Singleton
     @ProvidesIntoMap
-    @StringMapKey("LOCAL")
+    @StringMapKey(LocalDevice.TYPE)
     static Device providesLocalDevice(TimeoutMultiplier multiplier) {
         return new LocalDevice(multiplier);
     }

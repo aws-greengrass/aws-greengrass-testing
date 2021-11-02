@@ -17,6 +17,6 @@ public class MacosPlatform extends AbstractPlatform {
 
     @Override
     public MacosCommands commands() {
-        return new MacosCommands(device);
+        return new MacosCommands(device, pillboxContext);
     }
 }

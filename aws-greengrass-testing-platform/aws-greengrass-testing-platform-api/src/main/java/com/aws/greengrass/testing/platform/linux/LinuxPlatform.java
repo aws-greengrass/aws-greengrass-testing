@@ -16,6 +16,6 @@ public class LinuxPlatform extends AbstractPlatform {
 
     @Override
     public LinuxCommands commands() {
-        return new LinuxCommands(device);
+        return new LinuxCommands(device, pillboxContext);
     }
 }
