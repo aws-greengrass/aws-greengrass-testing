@@ -16,7 +16,7 @@ import java.io.IOException;
 
 public abstract class AbstractRemoteDevice implements Device {
     private static final Logger LOGGER = LogManager.getLogger(AbstractRemoteDevice.class);
-    private final PillboxContext pillboxContext;
+    protected final PillboxContext pillboxContext;
 
     public AbstractRemoteDevice(final PillboxContext pillboxContext) {
         this.pillboxContext = pillboxContext;
