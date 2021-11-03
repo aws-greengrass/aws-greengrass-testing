@@ -87,39 +87,39 @@ public class LocalComponentPreparationService implements ComponentPreparationSer
 
             for (Map<String, Object> manifest : manifests) {
                 List<Map<String, Object>> artifacts = (List<Map<String, Object>>) manifest.get(ARTIFACTS);
-                Iterator<Map<String, Object>> iterator = artifacts.iterator();
-                while (iterator.hasNext()) {
-                    Map<String, Object> artifact = iterator.next();
-                    String uri = artifact.get(URI).toString();
-                    if (uri.startsWith("file")) {
-                        iterator.remove();
-                        String filepath = uri.split(":")[1];
-                        copyArtifactToLocalStore(Paths.get(filepath),componentName,componentVersion);
-                    } else if (uri.startsWith("classpath")) {
-                        iterator.remove();
-                        String filepath = uri.split(":")[1];
-                        Path componentArtifact;
-                        try (InputStream content = Objects.requireNonNull(getClass().getResourceAsStream(filepath),
-                                "not found on classpath " + filepath)) {
-                            Path contentPath = Paths.get(filepath);
-                            componentArtifact = greengrassContext.tempDirectory()
-                                    .resolve(testContext.testId().id())
-                                    .resolve("components")
-                                    .resolve(componentName);
-                            Files.createDirectories(componentArtifact);
-                            componentArtifact = componentArtifact.resolve(contentPath.getFileName());
-                            try (FileOutputStream fos = new FileOutputStream(componentArtifact.toFile())) {
-                                IoUtils.copy(content, fos);
+                if (artifacts != null) {
+                    Iterator<Map<String, Object>> iterator = artifacts.iterator();
+                    while (iterator.hasNext()) {
+                        Map<String, Object> artifact = iterator.next();
+                        String uri = artifact.get(URI).toString();
+                        if (uri.startsWith("file")) {
+                            iterator.remove();
+                            String filepath = uri.split(":")[1];
+                            copyArtifactToLocalStore(Paths.get(filepath), componentName, componentVersion);
+                        } else if (uri.startsWith("classpath")) {
+                            iterator.remove();
+                            String filepath = uri.split(":")[1];
+                            Path componentArtifact;
+                            try (InputStream content = Objects.requireNonNull(getClass()
+                                    .getResourceAsStream(filepath), "not found on classpath " + filepath)) {
+                                Path contentPath = Paths.get(filepath);
+                                componentArtifact = greengrassContext.tempDirectory().resolve(testContext.testId().id())
+                                        .resolve("components").resolve(componentName);
+                                Files.createDirectories(componentArtifact);
+                                componentArtifact = componentArtifact.resolve(contentPath.getFileName());
+                                try (FileOutputStream fos = new FileOutputStream(componentArtifact.toFile())) {
+                                    IoUtils.copy(content, fos);
+                                }
                             }
+                            copyArtifactToLocalStore(componentArtifact, componentName, componentVersion);
                         }
-                        copyArtifactToLocalStore(componentArtifact,componentName,componentVersion);
+                    }
+                    if (artifacts.isEmpty()) {
+                        manifest.remove(ARTIFACTS);
                     }
                 }
-                if (artifacts.isEmpty()) {
-                    manifest.remove(ARTIFACTS);
-                }
             }
-
+            System.out.print("Recipe is " + recipe.toString());
             copyRecipeToLocalStore(mapper.writeValueAsString(recipe), componentName,
                     componentVersion);
 
@@ -149,6 +149,7 @@ public class LocalComponentPreparationService implements ComponentPreparationSer
         platform.files().makeDirectories(localStoreRecipePath);
         // TODO: Add conditional for json as well
         Path componentRecipePath = localStoreRecipePath.resolve(componentName + "-" + componentVersion + ".yaml");
+        System.out.println("The recipe being copied is " + recipe);
         platform.files().writeBytes(componentRecipePath, recipe.getBytes(StandardCharsets.UTF_8));
     }
 }

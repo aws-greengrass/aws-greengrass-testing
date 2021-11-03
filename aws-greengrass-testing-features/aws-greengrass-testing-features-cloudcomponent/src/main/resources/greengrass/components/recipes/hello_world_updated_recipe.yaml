@@ -11,7 +11,7 @@ ComponentDescription: Hello World Cloud Component -- Updated Version.
 ComponentPublisher: Amazon
 Manifests:
   - Artifacts:
-      - URI: file:target/aws-greengrass-testing-features-cloudcomponent.zip
+      - URI: classpath:/greengrass/components/artifacts/aws-greengrass-testing-features-cloudcomponent.zip
         Unarchive: ZIP
         Permission:
           Read: ALL
