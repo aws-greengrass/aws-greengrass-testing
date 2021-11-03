@@ -29,10 +29,10 @@ public abstract class AbstractRemoteDevice implements Device {
                     .line("java")
                     .addArgs("-jar", pillboxContext.onDevice().toString())
                     .addArgs("files", "exists", path)
-                    .build());
+                    .build());  
             return true;
         } catch (CommandExecutionException e) {
-            LOGGER.warn("Failed to check if path {} exists, assuming false", path, e);
+            LOGGER.debug("Failed to check if path {} exists, assuming false", path, e);
             return false;
         }
     }
