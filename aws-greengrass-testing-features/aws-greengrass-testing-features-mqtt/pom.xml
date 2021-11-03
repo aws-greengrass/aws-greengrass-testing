@@ -23,7 +23,7 @@
                 <artifactId>maven-assembly-plugin</artifactId>
                 <executions>
                     <execution>
-                        <phase>prepare-package</phase>
+                        <phase>package</phase>
                         <goals>
                             <goal>single</goal>
                         </goals>
@@ -42,6 +42,20 @@
                 <artifactId>maven-antrun-plugin</artifactId>
                 <version>3.0.0</version>
                 <executions>
+                    <execution>
+                        <id>copy-artifact-to-classpath</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <skip>${skipTests}</skip>
+                            <target name="copy mqtt component zip file">
+                                <copy file="${project.basedir}/target/${project.artifactId}.zip"
+                                      tofile="${project.basedir}/target/classes/greengrass/components/artifacts/${project.artifactId}.zip"/>
+                            </target>
+                        </configuration>
+                    </execution>
                     <execution>
                         <id>download-latest-greengrass</id>
                         <phase>prepare-package</phase>
@@ -68,6 +82,7 @@
                             <skip>${skipTests}</skip>
                             <target>
                                 <echo message="Feature Test Suite"/>
+
                                 <java classname="com.aws.greengrass.testing.launcher.TestLauncher"
                                       fork="true"
                                       failonerror="true"
@@ -108,6 +123,12 @@
                 </executions>
             </plugin>
         </plugins>
+
+        <testResources>
+            <testResource>
+                <directory>${project.basedir}/src/main/resources/greengrass/components/artifacts/</directory>
+            </testResource>
+        </testResources>
     </build>
 
     <dependencies>

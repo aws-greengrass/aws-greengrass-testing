@@ -13,11 +13,6 @@
     <formats>
         <format>zip</format>
     </formats>
-    <fileSets>
-        <fileSet>
-            <directory>${project.basedir}/recipes</directory>
-        </fileSet>
-    </fileSets>
     <files>
         <file>
             <source> ${project.basedir}/../../${components}/${component}/target/${component}-${project.parent.version}.jar</source>
