@@ -5,6 +5,7 @@
 
 package com.aws.greengrass.testing.component;
 
+import com.amazon.aws.iot.greengrass.component.common.ComponentRecipe;
 import com.aws.greengrass.testing.api.ComponentPreparationService;
 import com.aws.greengrass.testing.api.model.ComponentOverrideNameVersion;
 import com.aws.greengrass.testing.api.model.ComponentOverrideVersion;
@@ -32,6 +33,8 @@ import java.util.Objects;
 import java.util.Optional;
 import javax.inject.Inject;
 import javax.inject.Named;
+
+import static com.amazon.aws.iot.greengrass.component.common.SerializerFactory.getRecipeSerializer;
 
 public class LocalComponentPreparationService implements ComponentPreparationService {
 
@@ -151,5 +154,14 @@ public class LocalComponentPreparationService implements ComponentPreparationSer
         Path componentRecipePath = localStoreRecipePath.resolve(componentName + "-" + componentVersion + ".yaml");
         System.out.println("The recipe being copied is " + recipe);
         platform.files().writeBytes(componentRecipePath, recipe.getBytes(StandardCharsets.UTF_8));
+
+        try {
+            byte[] recipeBytes = platform.files().readBytes(componentRecipePath);
+            ComponentRecipe componentRecipe = getRecipeSerializer().readValue(recipeBytes,
+                    ComponentRecipe.class);
+            System.out.println("The component recipe is " + componentRecipe.toString());
+        } catch (IOException e) {
+            System.err.println("Caught error while deserializing the recipe " + e);
+        }
     }
 }
