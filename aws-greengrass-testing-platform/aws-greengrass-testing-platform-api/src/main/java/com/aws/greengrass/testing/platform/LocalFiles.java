@@ -29,6 +29,7 @@ public class LocalFiles implements PlatformFiles {
 
     @Override
     public byte[] readBytes(Path filePath) throws CommandExecutionException {
+        System.out.println("Reading bytes in local files from " + filePath.toString());
         try {
             return Files.readAllBytes(filePath);
         } catch (IOException e) {
@@ -85,7 +86,7 @@ public class LocalFiles implements PlatformFiles {
 
     @Override
     public void writeBytes(Path filePath, byte[] bytes) {
-
+        System.out.println("Writing bytes in local files from " + filePath.toString());
         try {
             if (!Files.exists(filePath)) {
                 Files.createFile(filePath);

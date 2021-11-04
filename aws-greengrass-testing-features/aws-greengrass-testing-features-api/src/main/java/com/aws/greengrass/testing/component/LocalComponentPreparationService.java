@@ -153,15 +153,23 @@ public class LocalComponentPreparationService implements ComponentPreparationSer
         // TODO: Add conditional for json as well
         Path componentRecipePath = localStoreRecipePath.resolve(componentName + "-" + componentVersion + ".yaml");
         System.out.println("The recipe being copied is " + recipe);
+        try {
+            ComponentRecipe componentRecipe = getRecipeSerializer()
+                    .readValue(recipe.getBytes(StandardCharsets.UTF_8), ComponentRecipe.class);
+        } catch (IOException e) {
+            System.err.println("Caught exception while deserializing recipe " + e);
+        }
         platform.files().writeBytes(componentRecipePath, recipe.getBytes(StandardCharsets.UTF_8));
-
+        System.out.println("Checking that this is updated v1");
         try {
             byte[] recipeBytes = platform.files().readBytes(componentRecipePath);
+            System.out.println("Recipe from File " + new String(recipeBytes, StandardCharsets.UTF_8));
             ComponentRecipe componentRecipe = getRecipeSerializer().readValue(recipeBytes,
                     ComponentRecipe.class);
             System.out.println("The component recipe is " + componentRecipe.toString());
         } catch (IOException e) {
             System.err.println("Caught error while deserializing the recipe " + e);
+            System.err.println("Error details : " + e.getCause().toString());
         }
     }
 }

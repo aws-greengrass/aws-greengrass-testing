@@ -12,6 +12,7 @@ import com.aws.greengrass.testing.api.device.exception.CopyException;
 import com.aws.greengrass.testing.api.device.model.CommandInput;
 import com.aws.greengrass.testing.api.device.model.PlatformOS;
 
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -42,7 +43,10 @@ public abstract class UnixFiles implements PlatformFiles, UnixPathsMixin {
 
     @Override
     public byte[] readBytes(final Path filePath) throws CommandExecutionException {
-        return commands.execute(CommandInput.of("cat " + filePath.toString()));
+        System.out.println("reading bytes from file path " + filePath.toString());
+        byte[] readBytes = commands.execute(CommandInput.of("cat " + filePath.toString()));
+        System.out.println("Bytes read are " + new String(readBytes, StandardCharsets.UTF_8));
+        return readBytes;
     }
 
     @Override
@@ -85,9 +89,11 @@ public abstract class UnixFiles implements PlatformFiles, UnixPathsMixin {
 
     @Override
     public void writeBytes(Path filePath, byte[] bytes) {
+        System.out.println("Writing bytes to the file path " + filePath.toString());
+        System.out.println("Bytes written : " + new String(bytes, StandardCharsets.UTF_8));
         commands.execute(CommandInput.builder()
                 .line("echo ")
-                .addArgs(String.format("'%s'",bytes.toString()), " > ", filePath.toString())
+                .addArgs(String.format("'%s'",new String(bytes, StandardCharsets.UTF_8)), " > ", filePath.toString())
                 .build());
     }
 }
