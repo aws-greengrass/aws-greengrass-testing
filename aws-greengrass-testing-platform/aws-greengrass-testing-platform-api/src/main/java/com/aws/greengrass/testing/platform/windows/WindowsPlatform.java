@@ -26,7 +26,10 @@ public class WindowsPlatform implements Platform {
 
     @Override
     public PlatformFiles files() {
+<<<<<<< HEAD:aws-greengrass-testing-platform/aws-greengrass-testing-platform-api/src/main/java/com/aws/greengrass/testing/platform/windows/WindowsPlatform.java
         // throw new UnsupportedOperationException("No Windows yet!");
+=======
+>>>>>>> 410f0fd5871bd25cd7545f056fe48bcced6b77c9:aws-greengrass-testing-platform/src/main/java/com/aws/greengrass/testing/platform/windows/WindowsPlatform.java
         return DevicePredicatePlatformFiles.localOrRemote(device, new WindowsFiles(commands(), device));
     }
 }

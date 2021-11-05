@@ -18,11 +18,13 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public class DefaultGreengrass implements Greengrass {
     private static final Logger LOGGER = LogManager.getLogger(DefaultGreengrass.class);
-    private static final long TIMEOUT_IN_SECONDS = 30L;
+
     private final AWSResourcesContext resourcesContext;
     private final Platform platform;
     private final GreengrassContext greengrassContext;
@@ -68,23 +70,23 @@ public class DefaultGreengrass implements Greengrass {
     @Override
     public void install() {
         if (!isRegistered()) {
+<<<<<<< HEAD
             System.out.println("install greengrass");
             System.out.println(platform.files().getClass());
+=======
+            Map<String, String> args = new HashMap<>();
+>>>>>>> 410f0fd5871bd25cd7545f056fe48bcced6b77c9
             platform.files().copyTo(
                     greengrassContext.greengrassPath(),
                     testContext.installRoot().resolve("greengrass"));
-            platform.commands().execute(CommandInput.builder()
-                    .line("java")
-                    .addArgs(
-                            "-Droot=" + testContext.installRoot(),
-                            "-Dlog.store=FILE",
-                            "-Dlog.level=" + testContext.logLevel(),
-                            "-jar", testContext.installRoot().resolve("greengrass/lib/Greengrass.jar").toString(),
-                            "--aws-region", resourcesContext.region().metadata().id(),
-                            "--env-stage", resourcesContext.envStage(),
-                            "--start", "false")
-                    .timeout(TIMEOUT_IN_SECONDS)
-                    .build());
+            args.put("-Droot=", testContext.installRoot().toString());
+            args.put("-Dlog.store=", "FILE");
+            args.put("-Dlog.level=", testContext.logLevel());
+            args.put("-jar", testContext.installRoot().resolve("greengrass/lib/Greengrass.jar").toString());
+            args.put("--aws-region", resourcesContext.region().metadata().id());
+            args.put("--env-stage", resourcesContext.envStage());
+            args.put("--component-default-user", testContext.currentUser());
+            platform.commands().installNucleus(testContext.installRoot(), args);
         }
     }
 
@@ -92,6 +94,7 @@ public class DefaultGreengrass implements Greengrass {
     public void start() {
         System.out.println("start greengrass");
         if (!isRunning()) {
+<<<<<<< HEAD
             Path loaderPath = null;
             if (PlatformOS.currentPlatform().isWindows()) {
                 loaderPath = testContext.installRoot().resolve("alts/current/distro/bin/loader");
@@ -107,6 +110,9 @@ public class DefaultGreengrass implements Greengrass {
                     .line(loaderPath.toString())
                     .timeout(TIMEOUT_IN_SECONDS)
                     .build());
+=======
+            greengrassProcess = platform.commands().startNucleus(testContext.installRoot());
+>>>>>>> 410f0fd5871bd25cd7545f056fe48bcced6b77c9
             LOGGER.info("Starting Greengrass on pid {}", greengrassProcess);
         }
     }

@@ -11,6 +11,7 @@ import com.aws.greengrass.testing.api.device.model.CommandInput;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 
 public interface Commands {
     byte[] execute(CommandInput input) throws CommandExecutionException;
@@ -19,10 +20,6 @@ public interface Commands {
         return new String(execute(input), StandardCharsets.UTF_8);
     }
 
-    void makeExecutable(Path file) throws CommandExecutionException;
-
-    int executeInBackground(CommandInput input) throws CommandExecutionException;
-
     List<Integer> findDescendants(int pid) throws CommandExecutionException;
 
     void kill(List<Integer> processIds) throws CommandExecutionException;
@@ -30,4 +27,8 @@ public interface Commands {
     default void killAll(int pid) throws CommandExecutionException {
         kill(findDescendants(pid));
     }
+
+    void installNucleus(Path rootDirectory, Map<String, String> args) throws CommandExecutionException;
+
+    int startNucleus(Path rootDirectory) throws CommandExecutionException;
 }

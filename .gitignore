@@ -3,5 +3,6 @@ target
 *.iml
 TEST-*
 greengrass-nucleus-latest.zip
+aws.greengrass.nucleus.zip
 dependency-reduced-pom.xml
 testResults

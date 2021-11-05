@@ -30,6 +30,7 @@ public abstract class UnixCommands implements Commands, UnixPathsMixin {
     private static final Logger LOGGER = LogManager.getLogger(UnixCommands.class);
     protected final Device device;
     private final PlatformOS host;
+    private static final long TIMEOUT_IN_SECONDS = 30L;
 
     public UnixCommands(final Device device) {
         this.device = device;
@@ -54,8 +55,7 @@ public abstract class UnixCommands implements Commands, UnixPathsMixin {
                 .build());
     }
 
-    @Override
-    public int executeInBackground(CommandInput input) throws CommandExecutionException {
+    private int executeInBackground(CommandInput input) throws CommandExecutionException {
         String output = "output.log";
         if (Objects.nonNull(input.workingDirectory())) {
             output = input.workingDirectory().resolve(output).toString();
@@ -67,8 +67,7 @@ public abstract class UnixCommands implements Commands, UnixPathsMixin {
         return Integer.parseInt(new String(rawBytes, StandardCharsets.UTF_8).trim());
     }
 
-    @Override
-    public void makeExecutable(Path file) throws CommandExecutionException {
+    private void makeExecutable(Path file) throws CommandExecutionException {
         execute(CommandInput.of("chmod +x " + file));
     }
 
@@ -123,5 +122,31 @@ public abstract class UnixCommands implements Commands, UnixPathsMixin {
             pidMapping.put(Integer.parseInt(ppid[1]), childPids);
         }
         return pidMapping;
+    }
+
+    @Override
+    public void installNucleus(Path rootDirectory, Map<String, String> args) throws CommandExecutionException {
+        execute(CommandInput.builder()
+                .line("java")
+                .addArgs("-Droot=" + rootDirectory,
+                        "-Dlog.store=" + args.get("-Dlog.store="),
+                        "-Dlog.level=" + args.get("-Dlog.level="),
+                        "-jar", rootDirectory.resolve("greengrass/lib/Greengrass.jar").toString(),
+                        "--aws-region", args.get("--aws-region"),
+                        "--env-stage", args.get("--env-stage"),
+                        "--start", "false")
+                .timeout(TIMEOUT_IN_SECONDS)
+                .build());
+    }
+
+    @Override
+    public int startNucleus(Path rootDirectory) throws CommandExecutionException {
+        Path loaderPath = rootDirectory.resolve("alts/current/distro/bin/loader");
+        makeExecutable(loaderPath);
+        return executeInBackground(CommandInput.builder()
+                .workingDirectory(rootDirectory)
+                .line(loaderPath.toString())
+                .timeout(TIMEOUT_IN_SECONDS)
+                .build());
     }
 }
