@@ -12,6 +12,7 @@ import com.aws.greengrass.testing.api.device.exception.CopyException;
 import com.aws.greengrass.testing.api.device.model.CommandInput;
 import com.aws.greengrass.testing.api.device.model.PlatformOS;
 
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -87,7 +88,7 @@ public abstract class UnixFiles implements PlatformFiles, UnixPathsMixin {
     public void writeBytes(Path filePath, byte[] bytes) {
         commands.execute(CommandInput.builder()
                 .line("echo ")
-                .addArgs(String.format("'%s'",bytes.toString()), " > ", filePath.toString())
+                .addArgs(String.format("'%s'",new String(bytes, StandardCharsets.UTF_8)), " > ", filePath.toString())
                 .build());
     }
 }
