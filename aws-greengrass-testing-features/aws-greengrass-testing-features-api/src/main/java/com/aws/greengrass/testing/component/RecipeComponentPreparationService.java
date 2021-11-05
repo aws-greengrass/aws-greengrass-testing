@@ -78,17 +78,18 @@ public class RecipeComponentPreparationService implements ComponentPreparationSe
         // TODO: make this an extension point
         switch (parts[0]) {
             case "classpath":
-                InputStream content = Objects.requireNonNull(getClass().getResourceAsStream(parts[1]),
-                        "Not found on classpath: " + parts[1]);
-                Path contentPath = Paths.get(parts[1]);
-                componentArtifact = greengrassContext.tempDirectory()
-                        .resolve(testContext.testId().id())
-                        .resolve("components")
-                        .resolve(componentName);
-                Files.createDirectories(componentArtifact);
-                componentArtifact = componentArtifact.resolve(contentPath.getFileName());
-                try (FileOutputStream fos = new FileOutputStream(componentArtifact.toFile())) {
-                    IoUtils.copy(content, fos);
+                try (InputStream content = Objects.requireNonNull(getClass().getResourceAsStream(parts[1]),
+                        "Not found on classpath: " + parts[1])) {
+                    Path contentPath = Paths.get(parts[1]);
+                    componentArtifact = greengrassContext.tempDirectory()
+                            .resolve(testContext.testId().id())
+                            .resolve("components")
+                            .resolve(componentName);
+                    Files.createDirectories(componentArtifact);
+                    componentArtifact = componentArtifact.resolve(contentPath.getFileName());
+                    try (FileOutputStream fos = new FileOutputStream(componentArtifact.toFile())) {
+                        IoUtils.copy(content, fos);
+                    }
                 }
                 break;
             case "file":

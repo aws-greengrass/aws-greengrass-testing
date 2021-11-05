@@ -47,6 +47,11 @@ public class GreengrassContextModule extends AbstractModule {
             ZipEntry entry = zipStream.getNextEntry();
             while (Objects.nonNull(entry)) {
                 final Path contentPath = stagingPath.resolve(entry.getName());
+                if (!contentPath.toFile().getCanonicalPath().startsWith(stagingPath.toString())) {
+                    LOGGER.warn("Archive attempted to write {} outside of {}, skipping",
+                            contentPath, stagingPath);
+                    continue;
+                }
                 if (entry.isDirectory()) {
                     Files.createDirectories(contentPath);
                     entry = zipStream.getNextEntry();

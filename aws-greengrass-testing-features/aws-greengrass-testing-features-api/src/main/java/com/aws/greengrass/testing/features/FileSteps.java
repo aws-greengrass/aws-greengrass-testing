@@ -25,7 +25,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Random;
+import java.security.SecureRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import javax.inject.Inject;
@@ -38,6 +38,7 @@ public class FileSteps {
     private final TestContext testContext;
     private final ScenarioContext scenarioContext;
     private final WaitSteps waits;
+    private final SecureRandom random;
 
     private enum ByteNotation implements Function<Long, Long> {
         B(1),
@@ -67,6 +68,8 @@ public class FileSteps {
         this.testContext = testContext;
         this.scenarioContext = scenarioContext;
         this.waits = waits;
+        this.random = new SecureRandom();
+        random.setSeed(System.currentTimeMillis());
     }
 
     /**
@@ -157,7 +160,6 @@ public class FileSteps {
         if (Files.exists(filePath)) {
             throw new IllegalStateException("The file " + filePath + " already exists");
         }
-        Random random = new Random();
         try (BufferedWriter writer = Files.newBufferedWriter(filePath, StandardCharsets.UTF_8)) {
             random.ints(0, 127).limit(notation.apply(length)).forEach(singleByte -> {
                 try {

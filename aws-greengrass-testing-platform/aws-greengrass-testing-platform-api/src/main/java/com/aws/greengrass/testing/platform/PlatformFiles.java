@@ -34,26 +34,4 @@ public interface PlatformFiles {
     boolean exists(Path filePath) throws CommandExecutionException;
 
     String format(Path filePath);
-
-    /**
-     * Perform a recursive copy from remote source to local destination.
-     *
-     * @param source Remote {@link Path} to copy from the device
-     * @param destination Local {@link Path} to copy to the host
-     * @throws CopyException Any propagated local nio utility IOException
-     * @throws CommandExecutionException Any remote execution failing as a command exception
-     */
-    default void copyFrom(Path source, Path destination) throws CopyException, CommandExecutionException {
-        final Path destinationRoot = destination.resolve(source.getFileName());
-        try {
-            Files.createDirectories(destinationRoot);
-            for (Path file : listContents(source)) {
-                final Path destinationFile = destination.resolve(file);
-                Files.createDirectories(destinationFile.getParent());
-                Files.write(destinationFile, readBytes(file));
-            }
-        } catch (IOException ie) {
-            throw new CopyException(ie, source, destination);
-        }
-    }
 }
