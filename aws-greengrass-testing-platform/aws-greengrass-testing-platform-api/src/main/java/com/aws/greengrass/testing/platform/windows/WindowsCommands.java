@@ -32,12 +32,6 @@ public class WindowsCommands implements Commands {
     public byte[] execute(CommandInput input) throws CommandExecutionException {
         final StringJoiner joiner = new StringJoiner(" ").add(input.line());
         Optional.ofNullable(input.args()).ifPresent(args -> args.forEach(joiner::add));
-        System.out.println("windows input: " + CommandInput.builder()
-                .line("cmd.exe")
-                .addArgs("/c", joiner.toString())
-                .input(input.input())
-                .timeout(input.timeout())
-                .build());
         return device.execute(CommandInput.builder()
                 .line("cmd.exe")
                 .addArgs("/c", joiner.toString())
