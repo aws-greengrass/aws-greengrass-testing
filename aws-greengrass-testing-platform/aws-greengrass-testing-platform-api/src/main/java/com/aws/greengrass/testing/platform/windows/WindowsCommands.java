@@ -10,13 +10,19 @@ import com.aws.greengrass.testing.api.device.exception.CommandExecutionException
 import com.aws.greengrass.testing.api.device.model.CommandInput;
 import com.aws.greengrass.testing.platform.Commands;
 
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.StringJoiner;
+import java.util.stream.Collectors;
 
 public class WindowsCommands implements Commands {
     private final Device device;
+    private static final long TIMEOUT_IN_SECONDS = 30L;
 
     WindowsCommands(final Device device) {
         this.device = device;
@@ -35,22 +41,61 @@ public class WindowsCommands implements Commands {
     }
 
     @Override
-    public int executeInBackground(CommandInput input) throws CommandExecutionException {
-        throw new UnsupportedOperationException("No Windows yet");
-    }
-
-    @Override
     public List<Integer> findDescendants(int pid) throws CommandExecutionException {
-        throw new UnsupportedOperationException("No Windows yet");
+        List<Integer> pidList = new ArrayList<>();
+        pidList.add(pid);
+        return pidList;
     }
 
     @Override
     public void kill(List<Integer> processIds) throws CommandExecutionException {
-        throw new UnsupportedOperationException("No Windows yet");
+        // Command to kill the Greengrass process
+        execute(CommandInput.builder()
+                .line("taskkill /F /PID " + processIds.stream()
+                        .map(i -> Integer.toString(i))
+                        .collect(Collectors.joining(" ")))
+                .build());
+        // Command to remove it as System service
+        execute(CommandInput.of("sc delete greengrass"));
     }
 
     @Override
-    public void makeExecutable(Path file) throws CommandExecutionException {
-        throw new UnsupportedOperationException("No Windows yet");
+    public void installNucleus(Path rootDirectory, Map<String, String> args) throws CommandExecutionException {
+        /* In Windows Greengrass needs to be setup as System service
+           to let it deploy components on device with user other than default user */
+        execute(CommandInput.builder()
+                .line("java")
+                .addArgs("-Droot=" + rootDirectory,
+                        "-Dlog.store=" + args.get("-Dlog.store="),
+                        "-Dlog.level=" + args.get("-Dlog.level="),
+                        "-jar " + rootDirectory.resolve("greengrass/lib/Greengrass.jar").toString(),
+                        "--aws-region " + args.get("--aws-region"),
+                        "--env-stage " + args.get("--env-stage"),
+                        "--start", "true",
+                        "--setup-system-service", "true",
+                        "--component-default-user", args.get("--component-default-user"))
+                .timeout(TIMEOUT_IN_SECONDS)
+                .build());
+    }
+
+    @Override
+    public int startNucleus(Path rootDirectory) throws CommandExecutionException {
+        return greengrassPID();
+    }
+
+    private int greengrassPID() throws CommandExecutionException {
+        // This command is simply getting the pid of Greengrass process.
+        String pid = executeToString(CommandInput.of("tasklist /FO csv /FI \"Imagename eq greengrass.exe\""));
+        /* OUTPUT:
+         * "Image Name","PID","Session Name","Session#","Mem Usage"
+         * "<Process Name>","<PID>","<Session Name>","<Session Number>","<Memory Usage>"
+         */
+        List<String> processes = Arrays.stream(pid.split("\\r?\\n")).map(String::trim)
+                .collect(Collectors.toList());
+        //removing quotes around the pid
+        return Integer.parseInt(processes
+                .get(1)
+                .split(",") [1]
+                .replace("\"", ""));
     }
 }

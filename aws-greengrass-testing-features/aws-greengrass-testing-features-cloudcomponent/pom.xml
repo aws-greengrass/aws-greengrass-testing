@@ -93,6 +93,7 @@
                         <configuration>
                             <target>
                                 <!-- download file -->
+                                <!-- Nucleus 2.5.0: https://d20etehnlyeqqf.cloudfront.net/artifacts/aws.greengrass.nucleus.zip-->
                                 <get src="https://d2s8p88vqu9w66.cloudfront.net/releases/greengrass-nucleus-latest.zip"
                                      dest="${project.basedir}/"
                                      verbose="false"
@@ -115,7 +116,10 @@
                                       failonerror="true"
                                       newenvironment="true"
                                       classpathref="maven.test.classpath">
+                                    <!--sysproperty key="ggc.archive" value="aws.greengrass.nucleus.zip"/>-->
                                     <sysproperty key="ggc.archive" value="greengrass-nucleus-latest.zip"/>
+                                    <!--uncomment it if the install root directory is pointing to User directory instead of C drive-->
+                                    <!--<sysproperty key="ggc.install.root" value="C:\"/>-->
                                 </java>
                             </target>
                         </configuration>
