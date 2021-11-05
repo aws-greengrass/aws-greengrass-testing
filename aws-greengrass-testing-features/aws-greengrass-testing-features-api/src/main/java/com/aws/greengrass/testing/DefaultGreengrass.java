@@ -70,12 +70,7 @@ public class DefaultGreengrass implements Greengrass {
     @Override
     public void install() {
         if (!isRegistered()) {
-<<<<<<< HEAD
-            System.out.println("install greengrass");
-            System.out.println(platform.files().getClass());
-=======
             Map<String, String> args = new HashMap<>();
->>>>>>> 410f0fd5871bd25cd7545f056fe48bcced6b77c9
             platform.files().copyTo(
                     greengrassContext.greengrassPath(),
                     testContext.installRoot().resolve("greengrass"));
@@ -92,27 +87,8 @@ public class DefaultGreengrass implements Greengrass {
 
     @Override
     public void start() {
-        System.out.println("start greengrass");
         if (!isRunning()) {
-<<<<<<< HEAD
-            Path loaderPath = null;
-            if (PlatformOS.currentPlatform().isWindows()) {
-                loaderPath = testContext.installRoot().resolve("alts/current/distro/bin/loader");
-                System.out.println("loaderPath: " + loaderPath);
-            } else {
-                loaderPath = testContext.installRoot().resolve("alts/current/distro/bin/loader");
-                System.out.println("loaderPath: " + loaderPath);
-            }
-            platform.commands().makeExecutable(testContext.installRoot().resolve(loaderPath));
-            System.out.println("after makeExecutable");
-            greengrassProcess = platform.commands().executeInBackground(CommandInput.builder()
-                    .workingDirectory(testContext.installRoot())
-                    .line(loaderPath.toString())
-                    .timeout(TIMEOUT_IN_SECONDS)
-                    .build());
-=======
             greengrassProcess = platform.commands().startNucleus(testContext.installRoot());
->>>>>>> 410f0fd5871bd25cd7545f056fe48bcced6b77c9
             LOGGER.info("Starting Greengrass on pid {}", greengrassProcess);
         }
     }
