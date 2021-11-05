@@ -47,27 +47,10 @@ public class WindowsCommands implements Commands {
     }
 
     @Override
-<<<<<<< HEAD:aws-greengrass-testing-platform/aws-greengrass-testing-platform-api/src/main/java/com/aws/greengrass/testing/platform/windows/WindowsCommands.java
-    public int executeInBackground(CommandInput input) throws CommandExecutionException {
-        //        String output = "output.log";
-        //        if (Objects.nonNull(input.workingDirectory())) {
-        //            output = input.workingDirectory().resolve(output).toString();
-        //        }
-        byte[] rawBytes = execute(CommandInput.builder()
-                .from(input)
-                // .addArgs("--setup-system-service", "true")
-                .build());
-        return Integer.parseInt(new String(rawBytes, StandardCharsets.UTF_8).trim());
-        //        execute(CommandInput.builder().from(input)
-        //                .addArgs(" 1> | tasklist /v /fo csv /FI "
-        //                        + "\"STATUS eq RUNNING\" | findstr /i \"loader.cmd\"").build());
-        //        return 100;
-=======
     public List<Integer> findDescendants(int pid) throws CommandExecutionException {
         List<Integer> pidList = new ArrayList<>();
         pidList.add(pid);
         return pidList;
->>>>>>> 410f0fd5871bd25cd7545f056fe48bcced6b77c9:aws-greengrass-testing-platform/src/main/java/com/aws/greengrass/testing/platform/windows/WindowsCommands.java
     }
 
     @Override
@@ -102,10 +85,6 @@ public class WindowsCommands implements Commands {
     }
 
     @Override
-<<<<<<< HEAD:aws-greengrass-testing-platform/aws-greengrass-testing-platform-api/src/main/java/com/aws/greengrass/testing/platform/windows/WindowsCommands.java
-    public void makeExecutable(Path file) throws CommandExecutionException {
-
-=======
     public int startNucleus(Path rootDirectory) throws CommandExecutionException {
         return greengrassPID();
     }
@@ -124,6 +103,5 @@ public class WindowsCommands implements Commands {
                 .get(1)
                 .split(",") [1]
                 .replace("\"", ""));
->>>>>>> 410f0fd5871bd25cd7545f056fe48bcced6b77c9:aws-greengrass-testing-platform/src/main/java/com/aws/greengrass/testing/platform/windows/WindowsCommands.java
     }
 }
