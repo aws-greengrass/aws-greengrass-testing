@@ -6,26 +6,17 @@
 package com.aws.greengrass.testing.platform.windows;
 
 import com.aws.greengrass.testing.api.device.Device;
-import com.aws.greengrass.testing.platform.DevicePredicatePlatformFiles;
-import com.aws.greengrass.testing.platform.Platform;
-import com.aws.greengrass.testing.platform.PlatformFiles;
-import com.google.auto.service.AutoService;
+import com.aws.greengrass.testing.api.model.PillboxContext;
+import com.aws.greengrass.testing.platform.AbstractPlatform;
 
-@AutoService(Platform.class)
-public class WindowsPlatform implements Platform {
-    private final Device device;
+public class WindowsPlatform extends AbstractPlatform {
 
-    public WindowsPlatform(final Device device) {
-        this.device = device;
+    public WindowsPlatform(final Device device, final PillboxContext pillboxContext) {
+        super(device, pillboxContext);
     }
 
     @Override
     public WindowsCommands commands() {
         return new WindowsCommands(device);
-    }
-
-    @Override
-    public PlatformFiles files() {
-        return DevicePredicatePlatformFiles.localOrRemote(device, new WindowsFiles(commands(), device));
     }
 }

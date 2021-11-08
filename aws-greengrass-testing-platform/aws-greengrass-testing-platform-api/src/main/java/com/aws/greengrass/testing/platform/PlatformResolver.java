@@ -7,6 +7,7 @@ package com.aws.greengrass.testing.platform;
 
 import com.aws.greengrass.testing.api.device.Device;
 import com.aws.greengrass.testing.api.device.model.CommandInput;
+import com.aws.greengrass.testing.api.model.PillboxContext;
 import com.aws.greengrass.testing.platform.exception.PlatformResolutionException;
 import com.aws.greengrass.testing.platform.linux.LinuxPlatform;
 import com.aws.greengrass.testing.platform.macos.MacosPlatform;
@@ -25,9 +26,11 @@ public class PlatformResolver {
             "raspbian", "qnx", "cygwin", "freebsd", "solaris", "sunos").collect(Collectors.toSet()));
 
     private final Device device;
+    private final PillboxContext pillboxContext;
 
-    public PlatformResolver(final Device device) {
+    public PlatformResolver(final Device device, final PillboxContext pillboxContext) {
         this.device = device;
+        this.pillboxContext = pillboxContext;
     }
 
     /**
@@ -38,11 +41,11 @@ public class PlatformResolver {
     public Platform resolve() {
         final Map<String, Integer> ranks = createRanks();
         if (ranks.containsKey("linux")) {
-            return new LinuxPlatform(device);
+            return new LinuxPlatform(device, pillboxContext);
         } else if (ranks.containsKey("macos")) {
-            return new MacosPlatform(device);
+            return new MacosPlatform(device, pillboxContext);
         } else if (ranks.containsKey("windows")) {
-            return new WindowsPlatform(device);
+            return new WindowsPlatform(device, pillboxContext);
         }
         throw new PlatformResolutionException("Could not find a platform support for device: " + device.platform());
     }

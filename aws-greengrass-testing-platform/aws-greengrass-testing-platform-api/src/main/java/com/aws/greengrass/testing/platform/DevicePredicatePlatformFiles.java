@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-public class DevicePredicatePlatformFiles implements PlatformFiles {
+class DevicePredicatePlatformFiles implements PlatformFiles {
     private static final Logger LOGGER = LogManager.getLogger(DevicePredicatePlatformFiles.class);
     private final Device device;
     private final PlatformFiles left;
@@ -97,13 +97,5 @@ public class DevicePredicatePlatformFiles implements PlatformFiles {
     @Override
     public List<Path> listContents(Path filePath) throws CommandExecutionException {
         return delegate(files -> files.listContents(filePath));
-    }
-
-    @Override
-    public void writeBytes(Path filepath, byte[] bytes) {
-        delegate(files -> {
-            files.writeBytes(filepath, bytes);
-            return null;
-        });
     }
 }

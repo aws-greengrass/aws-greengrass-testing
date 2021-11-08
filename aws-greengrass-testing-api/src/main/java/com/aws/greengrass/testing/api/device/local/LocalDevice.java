@@ -34,9 +34,10 @@ import java.util.stream.Stream;
 @AutoService(Device.class)
 public class LocalDevice implements Device {
     private static final Logger LOGGER = LogManager.getLogger(LocalDevice.class);
-    private static final String TYPE = "LOCAL";
+    public static final String TYPE = "LOCAL";
     private static final int BUFFER = 100_000;
     private final TimeoutMultiplier multiplier;
+    private final String id = UUID.randomUUID().toString();
 
     public LocalDevice(final TimeoutMultiplier multiplier) {
         this.multiplier = multiplier;
@@ -48,7 +49,7 @@ public class LocalDevice implements Device {
 
     @Override
     public String id() {
-        return UUID.randomUUID().toString();
+        return id;
     }
 
     @Override

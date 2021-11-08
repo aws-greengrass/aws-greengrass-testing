@@ -6,26 +6,16 @@
 package com.aws.greengrass.testing.platform.linux;
 
 import com.aws.greengrass.testing.api.device.Device;
-import com.aws.greengrass.testing.platform.DevicePredicatePlatformFiles;
-import com.aws.greengrass.testing.platform.Platform;
-import com.aws.greengrass.testing.platform.PlatformFiles;
-import com.google.auto.service.AutoService;
+import com.aws.greengrass.testing.api.model.PillboxContext;
+import com.aws.greengrass.testing.platform.AbstractPlatform;
 
-@AutoService(Platform.class)
-public class LinuxPlatform implements Platform {
-    private final Device device;
-
-    public LinuxPlatform(final Device device) {
-        this.device = device;
+public class LinuxPlatform extends AbstractPlatform {
+    public LinuxPlatform(final Device device, final PillboxContext pillboxContext) {
+        super(device, pillboxContext);
     }
 
     @Override
     public LinuxCommands commands() {
-        return new LinuxCommands(device);
-    }
-
-    @Override
-    public PlatformFiles files() {
-        return DevicePredicatePlatformFiles.localOrRemote(device, new LinuxFiles(commands(), device));
+        return new LinuxCommands(device, pillboxContext);
     }
 }

@@ -11,6 +11,42 @@
 
     <artifactId>aws-greengrass-testing-features-api</artifactId>
 
+    <properties>
+        <platform>aws-greengrass-testing-platform</platform>
+        <pillbox>aws-greengrass-testing-platform-pillbox</pillbox>
+    </properties>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.2.4</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <artifactSet>
+                                <includes>
+                                    <include>${project.parent.groupId}:${project.artifactId}</include>
+                                </includes>
+                            </artifactSet>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.IncludeResourceTransformer">
+                                    <resource>greengrass/platform/artifacts/pillbox.jar</resource>
+                                    <file>${project.basedir}/../../${platform}/${pillbox}/target/${pillbox}-${project.parent.version}.jar</file>
+                                </transformer>
+                            </transformers>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
     <dependencies>
         <dependency>
             <groupId>com.aws.greengrass</groupId>
@@ -72,6 +108,12 @@
             <groupId>org.immutables</groupId>
             <artifactId>value</artifactId>
             <version>${immutables.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>${project.parent.groupId}</groupId>
+            <artifactId>${pillbox}</artifactId>
+            <version>${project.parent.version}</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>
