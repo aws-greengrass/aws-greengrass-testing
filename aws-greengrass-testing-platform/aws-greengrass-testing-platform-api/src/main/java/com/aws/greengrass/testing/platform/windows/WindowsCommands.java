@@ -33,8 +33,8 @@ public class WindowsCommands implements Commands {
         final StringJoiner joiner = new StringJoiner(" ").add(input.line());
         Optional.ofNullable(input.args()).ifPresent(args -> args.forEach(joiner::add));
         return device.execute(CommandInput.builder()
-                .line("cmd.exe")
-                .addArgs("/c", joiner.toString())
+                .line("cmd.exe /c")
+                .addArgs(joiner.toString())
                 .input(input.input())
                 .timeout(input.timeout())
                 .build());
