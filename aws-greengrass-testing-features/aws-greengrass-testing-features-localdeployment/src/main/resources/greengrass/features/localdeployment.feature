@@ -7,7 +7,7 @@ Feature: Testing local deployment using CLI in Greengrass
   @LocalDeployment @IDT
   Scenario: A component is deployed locally using CLI
     When I create a Greengrass deployment with components
-      | aws.greengrass.Cli | 2.4.0 |
+      | aws.greengrass.Cli | LATEST |
     And I deploy the Greengrass deployment configuration
     Then the Greengrass deployment is COMPLETED on the device after 180 seconds
     Then I verify greengrass-cli is available in greengrass root
