@@ -27,8 +27,8 @@ public abstract class AbstractRemoteDevice implements Device {
         try {
             execute(CommandInput.builder()
                     .line("java")
-                    .addArgs("-jar", pillboxContext.onDevice().toString())
-                    .addArgs("files", "exists", path)
+                    .addArgs("-jar", pillboxContext.onDevice().toString(),
+                            "files", "exists", path)
                     .build());  
             return true;
         } catch (CommandExecutionException e) {
@@ -42,8 +42,8 @@ public abstract class AbstractRemoteDevice implements Device {
         // Eject the binary on the device upon closure
         execute(CommandInput.builder()
                 .line("java")
-                .addArgs("-jar", pillboxContext.onDevice().toString())
-                .addArgs("files", "rm", pillboxContext.onDevice().toString())
+                .addArgs("-jar", pillboxContext.onDevice().toString(),
+                        "files", "rm", pillboxContext.onDevice().toString())
                 .build());
     }
 }
