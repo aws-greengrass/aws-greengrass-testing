@@ -109,6 +109,7 @@ public class TestContextModule extends AbstractModule {
                 .coreThingName(coreThingName)
                 .coreVersion(coreVersion)
                 .initializationContext(initializationContext)
+                .tesRoleName(parameterValues.getString(FeatureParameters.TES_ROLE_NAME).orElse(""))
                 .build();
     }
 }
