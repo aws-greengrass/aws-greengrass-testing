@@ -11,6 +11,8 @@ import com.aws.greengrass.testing.model.TestContext;
 import com.aws.greengrass.testing.modules.model.AWSResourcesContext;
 import com.aws.greengrass.testing.platform.Platform;
 import com.aws.greengrass.testing.resources.AWSResources;
+import com.aws.greengrass.testing.resources.iam.IamLifecycle;
+import com.aws.greengrass.testing.resources.iam.IamRole;
 import com.aws.greengrass.testing.resources.iam.IamRoleSpec;
 import com.aws.greengrass.testing.resources.iot.IotLifecycle;
 import com.aws.greengrass.testing.resources.iot.IotPolicySpec;
@@ -46,6 +48,7 @@ public class RegistrationSteps {
     private final IamSteps iamSteps;
     private final IotSteps iotSteps;
     private final Platform platform;
+    private final IamLifecycle iamLifecycle;
 
     @Inject
     RegistrationSteps(
@@ -55,7 +58,8 @@ public class RegistrationSteps {
             IotSteps iotSteps,
             TestContext testContext,
             RegistrationContext registrationContext,
-            AWSResourcesContext resourcesContext) {
+            AWSResourcesContext resourcesContext,
+            IamLifecycle iamLifecycle) {
         this.platform = platform;
         this.resources = resources;
         this.iamSteps = iamSteps;
@@ -63,6 +67,7 @@ public class RegistrationSteps {
         this.registrationContext = registrationContext;
         this.resourcesContext = resourcesContext;
         this.iotSteps = iotSteps;
+        this.iamLifecycle = iamLifecycle;
     }
 
     /**
@@ -87,6 +92,17 @@ public class RegistrationSteps {
     private void registerAsThing(String configName, String thingGroupName) throws IOException {
         final String configFile = Optional.ofNullable(configName).orElse(DEFAULT_CONFIG);
 
+        String tesRoleNameName = testContext.tesRoleName();
+        Optional<IamRole> optionalIamRole = Optional.empty();
+        if (!tesRoleNameName.isEmpty()) {
+            optionalIamRole = iamLifecycle.getIamRole(tesRoleNameName);
+            if (!optionalIamRole.isPresent()) {
+                String errorString = String.format("Iam role name %s, passed as configuration, does not exist",
+                        tesRoleNameName);
+                throw new IllegalArgumentException(errorString);
+            }
+        }
+
         // TODO: move this into iot steps.
         IotThingSpec thingSpec = resources.create(IotThingSpec.builder()
                 .thingName(testContext.coreThingName())
@@ -98,11 +114,12 @@ public class RegistrationSteps {
                         .orElseGet(iotSteps::createDefaultPolicy))
                 .roleAliasSpec(IotRoleAliasSpec.builder()
                         .name(testContext.testId().idFor("ggc-role-alias"))
-                        .iamRole(resources.trackingSpecs(IamRoleSpec.class)
+                        .iamRole(optionalIamRole.orElseGet(() ->
+                                resources.trackingSpecs(IamRoleSpec.class)
                                 .filter(s -> s.roleName().equals(testContext.testId().idFor("ggc-role")))
                                 .findFirst()
                                 .orElseGet(iamSteps::createDefaultIamRole)
-                                .resource())
+                                .resource()))
                         .build())
                 .build());
 
