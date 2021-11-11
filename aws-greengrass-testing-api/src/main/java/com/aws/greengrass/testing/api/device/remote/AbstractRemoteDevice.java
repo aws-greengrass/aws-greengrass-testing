@@ -40,10 +40,18 @@ public abstract class AbstractRemoteDevice implements Device {
     @Override
     public void close() throws IOException {
         // Eject the binary on the device upon closure
-        execute(CommandInput.builder()
-                .line("java")
-                .addArgs("-jar", pillboxContext.onDevice().toString(),
-                        "files", "rm", pillboxContext.onDevice().toString())
-                .build());
+        // Window OS doesn't support deleting file using itself. Thus window command "del" is used for cleanup.
+        if (platform().isWindows()) {
+            execute(CommandInput.builder()
+                    .line("cmd.exe /c")
+                    .addArgs("del " +  pillboxContext.onDevice().toString())
+                    .build());
+        } else {
+            execute(CommandInput.builder()
+                    .line("java")
+                    .addArgs("-jar", pillboxContext.onDevice().toString(),
+                            "files", "rm", pillboxContext.onDevice().toString())
+                    .build());
+        }
     }
 }

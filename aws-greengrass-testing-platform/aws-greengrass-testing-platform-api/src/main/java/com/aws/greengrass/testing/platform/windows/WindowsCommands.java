@@ -12,11 +12,13 @@ import com.aws.greengrass.testing.platform.Commands;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Queue;
 import java.util.StringJoiner;
 import java.util.stream.Collectors;
 
@@ -43,7 +45,22 @@ public class WindowsCommands implements Commands {
     @Override
     public List<Integer> findDescendants(int pid) throws CommandExecutionException {
         List<Integer> pidList = new ArrayList<>();
-        pidList.add(pid);
+        Queue<Integer> queue = new ArrayDeque<>();
+        queue.add(pid);
+        while (!queue.isEmpty()) {
+            pid = queue.poll();
+            pidList.add(pid);
+            String childPids = executeToString(
+                    CommandInput.of("wmic process where (ParentProcessId=" + pid + ") get ProcessId"));
+            String[] cids = childPids.split("\\r?\\n");
+            if (cids != null && cids.length > 0) {
+                for (String cid : cids) {
+                    if (cid.trim().matches("\\d+")) {
+                        queue.add(Integer.valueOf(cid.trim()));
+                    }
+                }
+            }
+        }
         return pidList;
     }
 
@@ -53,7 +70,7 @@ public class WindowsCommands implements Commands {
         execute(CommandInput.builder()
                 .line("taskkill /F /PID " + processIds.stream()
                         .map(i -> Integer.toString(i))
-                        .collect(Collectors.joining(" ")))
+                        .collect(Collectors.joining(" /PID ")))
                 .build());
         // Command to remove it as System service
         execute(CommandInput.of("sc delete greengrass"));
