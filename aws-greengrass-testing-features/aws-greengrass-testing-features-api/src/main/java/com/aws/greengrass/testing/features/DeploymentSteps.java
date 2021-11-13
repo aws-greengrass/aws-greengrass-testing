@@ -137,6 +137,7 @@ public class DeploymentSteps {
                 .line(testContext.installRoot().resolve("bin").resolve("greengrass-cli").toString())
                 .addAllArgs(commandArgs)
                 .build());
+        LOGGER.debug(String.format("The response from executing gg-cli command is %s", response));
         String[] responseArray = response.split(":");
         String deploymentId = responseArray[responseArray.length - 1];
         LOGGER.info("The local deployment response is " + deploymentId);
