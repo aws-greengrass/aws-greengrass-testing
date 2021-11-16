@@ -146,7 +146,7 @@ public class LocalComponentPreparationService implements ComponentPreparationSer
 
     private void copyRecipeToLocalStore(String recipe, String componentName, String componentVersion)
             throws IOException {
-        Path localStoreRecipePath = testContext.installRoot().resolve(LOCAL_STORE).resolve(RECIPE_DIR);
+        Path localStoreRecipePath = testContext.testDirectory().resolve(LOCAL_STORE).resolve(RECIPE_DIR);
         Files.createDirectories(localStoreRecipePath);
         // TODO: Add conditional for json as well
         Path componentRecipePath = localStoreRecipePath.resolve(componentName + "-" + componentVersion + ".yaml");

@@ -125,8 +125,8 @@ public class DeploymentSteps {
         List<String> commandArgs = new ArrayList<>();
 
         commandArgs.addAll(Arrays.asList("deployment", "create",
-                "--artifactDir "  + artifactPath.toString(),
-                "--recipeDir " + recipePath.toString()));
+                "--artifactDir "  + platform.commands().escapeSpaces(artifactPath.toString()),
+                "--recipeDir " + platform.commands().escapeSpaces(recipePath.toString())));
 
         for (Map.Entry<String, ComponentDeploymentSpecification> entry : components.entrySet()) {
             commandArgs.add(" --merge ");

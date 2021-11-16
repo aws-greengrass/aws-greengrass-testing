@@ -138,4 +138,9 @@ public abstract class UnixCommands implements Commands, UnixPathsMixin {
                 .timeout(TIMEOUT_IN_SECONDS)
                 .build());
     }
+
+    @Override
+    public String escapeSpaces(String input) {
+        return input.replaceAll(" ", "\\ ");
+    }
 }

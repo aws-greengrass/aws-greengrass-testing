@@ -100,6 +100,11 @@ public class WindowsCommands implements Commands {
         return greengrassPID();
     }
 
+    @Override
+    public String escapeSpaces(String input) {
+        return input.replaceAll(" ", "^ ");
+    }
+
     private int greengrassPID() throws CommandExecutionException {
         // This command is simply getting the pid of Greengrass process.
         String pid = executeToString(CommandInput.of("tasklist /FO csv /FI \"Imagename eq greengrass.exe\""));

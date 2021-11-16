@@ -31,4 +31,6 @@ public interface Commands {
     void installNucleus(Path rootDirectory, Map<String, String> args) throws CommandExecutionException;
 
     int startNucleus(Path rootDirectory) throws CommandExecutionException;
+
+    String escapeSpaces(String input);
 }
