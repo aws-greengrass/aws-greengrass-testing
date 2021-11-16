@@ -137,7 +137,7 @@ public class LocalComponentPreparationService implements ComponentPreparationSer
     }
 
     private void copyArtifactToLocalStore(Path artifactFilePath, String componentName, String componentVersion) {
-        Path localStoreArtifactPath = testContext.testDirectory().resolve(LOCAL_STORE).resolve(ARTIFACTS_DIR);
+        Path localStoreArtifactPath = testContext.installRoot().resolve(LOCAL_STORE).resolve(ARTIFACTS_DIR);
         Path componentArtifactPath = localStoreArtifactPath.resolve(componentName).resolve(componentVersion);
 
         platform.files().makeDirectories(componentArtifactPath);
@@ -146,7 +146,7 @@ public class LocalComponentPreparationService implements ComponentPreparationSer
 
     private void copyRecipeToLocalStore(String recipe, String componentName, String componentVersion)
             throws IOException {
-        Path localStoreRecipePath = testContext.testDirectory().resolve(LOCAL_STORE).resolve(RECIPE_DIR);
+        Path localStoreRecipePath = testContext.installRoot().resolve(LOCAL_STORE).resolve(RECIPE_DIR);
         Files.createDirectories(localStoreRecipePath);
         // TODO: Add conditional for json as well
         Path componentRecipePath = localStoreRecipePath.resolve(componentName + "-" + componentVersion + ".yaml");

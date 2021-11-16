@@ -82,8 +82,8 @@ public class DeploymentSteps {
         this.waits = waits;
         this.mapper = mapper;
         this.platform = platform;
-        this.artifactPath = testContext.testDirectory().resolve(LOCAL_STORE).resolve(ARTIFACTS_DIR);;
-        this.recipePath = testContext.testDirectory().resolve(LOCAL_STORE).resolve(RECIPE_DIR);
+        this.artifactPath = testContext.installRoot().resolve(LOCAL_STORE).resolve(ARTIFACTS_DIR);;
+        this.recipePath = testContext.installRoot().resolve(LOCAL_STORE).resolve(RECIPE_DIR);
     }
 
     /**
@@ -137,6 +137,7 @@ public class DeploymentSteps {
                 .line(testContext.installRoot().resolve("bin").resolve("greengrass-cli").toString())
                 .addAllArgs(commandArgs)
                 .build());
+        LOGGER.debug(String.format("The response from executing gg-cli command is %s", response));
         String[] responseArray = response.split(":");
         String deploymentId = responseArray[responseArray.length - 1];
         LOGGER.info("The local deployment response is " + deploymentId);

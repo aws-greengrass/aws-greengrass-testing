@@ -86,6 +86,10 @@ public class GreengrassCliSteps {
                 .line(testContext.installRoot().resolve("bin").resolve("greengrass-cli").toString())
                 .addAllArgs(Arrays.asList("deployment", "status", "--deploymentId", deploymentId))
                 .build());
-        return response.split(":")[1].trim();
+        LOGGER.debug(String.format("deployment status response received for deployment ID %s is %s",
+                deploymentId, response));
+
+        String[] responseArray = response.split(":");
+        return responseArray[responseArray.length - 1].trim();
     }
 }
