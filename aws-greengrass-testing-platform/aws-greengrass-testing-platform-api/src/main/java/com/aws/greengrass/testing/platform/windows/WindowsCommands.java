@@ -107,6 +107,7 @@ public class WindowsCommands implements Commands {
          * "Image Name","PID","Session Name","Session#","Mem Usage"
          * "<Process Name>","<PID>","<Session Name>","<Session Number>","<Memory Usage>"
          */
+        System.out.println("Getting greengrass PID, response from tasklist command is " + pid);
         List<String> processes = Arrays.stream(pid.split("\\r?\\n")).map(String::trim)
                 .collect(Collectors.toList());
         //removing quotes around the pid
