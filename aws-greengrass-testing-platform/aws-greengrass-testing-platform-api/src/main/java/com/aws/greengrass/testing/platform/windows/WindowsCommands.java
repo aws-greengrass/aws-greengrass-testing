@@ -10,7 +10,6 @@ import com.aws.greengrass.testing.api.device.exception.CommandExecutionException
 import com.aws.greengrass.testing.api.device.model.CommandInput;
 import com.aws.greengrass.testing.platform.Commands;
 
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -97,6 +96,12 @@ public class WindowsCommands implements Commands {
 
     @Override
     public int startNucleus(Path rootDirectory) throws CommandExecutionException {
+        try {
+            System.out.println("Sleeping for 30 seconds");
+            Thread.sleep(30000);
+        } catch (InterruptedException e) {
+            System.out.println("Interrupted. Ignoring");
+        }
         return greengrassPID();
     }
 
