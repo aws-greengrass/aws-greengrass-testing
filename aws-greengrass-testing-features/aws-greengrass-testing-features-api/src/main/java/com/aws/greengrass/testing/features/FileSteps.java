@@ -34,6 +34,7 @@ import javax.inject.Inject;
 public class FileSteps {
     private static final Logger LOGGER = LogManager.getLogger(FileSteps.class);
     private static final int DEFAULT_TIMEOUT = 30;
+    private static final String DUT_PATH_PREFIX = "dut:";
     private final Platform platform;
     private final TestContext testContext;
     private final ScenarioContext scenarioContext;
@@ -215,5 +216,34 @@ public class FileSteps {
                 platform.files().delete(testContext.installRoot());
             }
         }
+    }
+
+    /**
+     * If filepath starts with DUT_PATH_PREFIX, this method returns the path as it is. Otherwise, it copies file
+     * at the given path to the appropriate place and returns the path on DUT, where the file can be found. If
+     * copyToDut is true, then the file is copied to DUT. Otherwise, the file is copied to the testDirectory at this
+     * point and later the test directory is expected to be copied to DUT.
+     * @param pathString File path to be examined
+     * @param copyToDut Flag to indicate if file needs to be copied to the DUT.
+     * @return Path that should be used to access this file in DUT.
+     * @throws IOException when copying of file fails.
+     */
+    public Path getDutPath(String pathString, boolean copyToDut) throws IOException {
+        Path dutPath = null;
+        if (pathString.startsWith(DUT_PATH_PREFIX)) {
+            // The path is as it is for dut
+            dutPath = Paths.get(pathString.substring(DUT_PATH_PREFIX.length()).trim());
+        } else {
+            Path path = Paths.get(pathString);
+            if (copyToDut) {
+                platform.files().copyTo(path, testContext.installRoot().resolve(path.getFileName()));
+            } else {
+                Files.copy(path, testContext.testDirectory().resolve(path.getFileName()));
+            }
+            // testDirectory is copied to gg root on dut, hence this should be the path on dut even in case when file is
+            // not copied to the DUT at this point
+            dutPath = testContext.installRoot().resolve(path.getFileName());
+        }
+        return dutPath;
     }
 }

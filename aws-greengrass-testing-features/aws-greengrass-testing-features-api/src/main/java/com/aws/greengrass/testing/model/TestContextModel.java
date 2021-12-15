@@ -43,6 +43,10 @@ interface TestContextModel extends Closeable {
 
     String tesRoleName();
 
+    boolean hsmConfigured();
+
+    String trustedPluginsPaths();
+
     @Override
     default void close() throws IOException {
         if (!cleanupContext().persistGeneratedFiles()) {

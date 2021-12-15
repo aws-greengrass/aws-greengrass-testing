@@ -110,6 +110,9 @@ public class TestContextModule extends AbstractModule {
                 .coreVersion(coreVersion)
                 .initializationContext(initializationContext)
                 .tesRoleName(parameterValues.getString(FeatureParameters.TES_ROLE_NAME).orElse(""))
+                .hsmConfigured(Boolean.valueOf(parameterValues.getString(HsmParameters.HSM_CONFIGURED).orElse(
+                        "false")))
+                .trustedPluginsPaths(parameterValues.getString(FeatureParameters.TRUSTED_PLUGINS_PATHS).orElse(""))
                 .build();
     }
 }

@@ -61,6 +61,20 @@ mvn clean -DskipTests=false -pl aws-greengrass-testing-features/aws-greengrass-t
 mvn clean -DskipTests=false -pl aws-greengrass-testing-features/aws-greengrass-testing-features-cloudcomponent/ -am integration-test
 ```
 
+__Runnign tests with HSM configuration__
+
+Any test can be run with HSM configuration. HSM configuration parameters are defined [here](src/main/java/com/aws/greengrass/testing/modules/HsmParameters.java)
+If *ggc.hsm.configured* is set to true, then the framework expects the other HSM parameters to be configured. When 
+hsm is configured, [this](src/main/resources/nucleus/configs/basic_hsm_config.yaml) initial config file is used to start
+the greengrass with. Before you run the tests with HSM, following steps are pre-requisite:
+1. DUT has the HSM installed.
+2. A device certificate is created and added to the HSM along with private key. You specify the certificate ARN and 
+hsm labels for key and cert as parameters.
+3. PKCS library is present either on the host or on the DUT. If the library is already on the DUT, specify the library 
+path with a prefix *"dut:"*
+4. Similarly, the pkcs plugin jar can be on the host agent or on the DUT. If it is already on DUT, specify the path 
+  with the prefix *"dut:"*
+
 __Debugging test failures__
 
 The test logs path is set using the "test.log.path" property in the project. The default value for this will be

@@ -7,6 +7,7 @@ package com.aws.greengrass.testing.modules;
 
 import com.aws.greengrass.testing.DefaultGreengrass;
 import com.aws.greengrass.testing.api.Greengrass;
+import com.aws.greengrass.testing.features.FileSteps;
 import com.aws.greengrass.testing.features.WaitSteps;
 import com.aws.greengrass.testing.model.GreengrassContext;
 import com.aws.greengrass.testing.model.TestContext;
@@ -27,10 +28,11 @@ public class GreengrassModule extends AbstractModule {
             final TestContext testContext,
             final GreengrassContext greengrassContext,
             final AWSResourcesContext resourcesContext,
-            final WaitSteps waits) {
+            final WaitSteps waits,
+            final FileSteps fileSteps) {
         return new DefaultGreengrass(platform,
                 resourcesContext,
                 greengrassContext,
-                testContext, waits);
+                testContext, waits, fileSteps);
     }
 }

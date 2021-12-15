@@ -11,6 +11,7 @@ import com.aws.greengrass.testing.resources.ResourceSpec;
 import org.immutables.value.Value;
 import software.amazon.awssdk.services.iot.IotClient;
 import software.amazon.awssdk.services.iot.model.AttachPolicyRequest;
+import software.amazon.awssdk.services.iot.model.AttachThingPrincipalRequest;
 import software.amazon.awssdk.services.iot.model.CreateThingRequest;
 import software.amazon.awssdk.services.iot.model.CreateThingResponse;
 
@@ -34,16 +35,11 @@ interface IotThingSpecModel extends ResourceSpec<IotClient, IotThing>, IotTaggin
     @Nullable
     IotPolicySpec policySpec();
 
+    @Nullable
+    IotCertificateSpec certificateSpec();
+
     @Override
     default IotThingSpec create(IotClient client, AWSResources resources) {
-        Set<IotThingGroupSpec> createdGroups = Optional.ofNullable(thingGroups())
-                .map(groupSpecs -> groupSpecs.stream().map(resources::create).collect(Collectors.toSet()))
-                .orElseGet(Collections::emptySet);
-
-        CreateThingResponse createdThing = client.createThing(CreateThingRequest.builder()
-                .thingName(thingName())
-                .build());
-
         IotRoleAliasSpec updatedRoleAlias = null;
         IotPolicySpec assumeRolePolicy = null;
         IotCertificate certificate = null;
@@ -59,18 +55,36 @@ interface IotThingSpecModel extends ResourceSpec<IotClient, IotThing>, IotTaggin
                     .build());
         }
 
+        Set<IotThingGroupSpec> createdGroups = Optional.ofNullable(thingGroups())
+                .map(groupSpecs -> groupSpecs.stream().map(resources::create).collect(Collectors.toSet()))
+                .orElseGet(Collections::emptySet);
+
+        CreateThingResponse createdThing = client.createThing(CreateThingRequest.builder()
+                .thingName(thingName())
+                .build());
+
+        String certificateArn = null;
         if (createCertificate()) {
             certificate = resources.create(IotCertificateSpec.builder()
                     .thingName(thingName())
                     .policy(resources.create(policySpec()))
+                    .csr(certificateSpec().csr())
                     .build())
                     .resource();
-            if (assumeRolePolicy != null) {
-                client.attachPolicy(AttachPolicyRequest.builder()
-                        .policyName(assumeRolePolicy.policyName())
-                        .target(certificate.certificateArn())
-                        .build());
-            }
+           certificateArn = certificate.certificateArn();
+        } else if (certificateSpec() != null && certificateSpec().existingArn() != null) {
+            client.attachThingPrincipal(AttachThingPrincipalRequest.builder()
+                    .thingName(thingName())
+                    .principal(certificateSpec().existingArn())
+                    .build());
+            certificateArn = certificateSpec().existingArn();
+        }
+
+        if (assumeRolePolicy != null) {
+            client.attachPolicy(AttachPolicyRequest.builder()
+                    .policyName(assumeRolePolicy.policyName())
+                    .target(certificateArn)
+                    .build());
         }
 
         return IotThingSpec.builder()

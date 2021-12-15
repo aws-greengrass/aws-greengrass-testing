@@ -7,8 +7,7 @@ package com.aws.greengrass.testing;
 
 import com.aws.greengrass.testing.api.Greengrass;
 import com.aws.greengrass.testing.api.device.exception.CommandExecutionException;
-import com.aws.greengrass.testing.api.device.model.CommandInput;
-import com.aws.greengrass.testing.api.device.model.PlatformOS;
+import com.aws.greengrass.testing.features.FileSteps;
 import com.aws.greengrass.testing.features.WaitSteps;
 import com.aws.greengrass.testing.model.GreengrassContext;
 import com.aws.greengrass.testing.model.TestContext;
@@ -17,8 +16,10 @@ import com.aws.greengrass.testing.platform.Platform;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.IOException;
 import java.nio.file.Path;
-import java.util.HashMap;
+import java.nio.file.Paths;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -31,6 +32,7 @@ public class DefaultGreengrass implements Greengrass {
     private int greengrassProcess;
     private final TestContext testContext;
     private final WaitSteps waits;
+    private FileSteps fileSteps;
 
     /**
      * Creates a {@link Greengrass} software instance.
@@ -40,18 +42,21 @@ public class DefaultGreengrass implements Greengrass {
      * @param greengrassContext the global {@link GreengrassContext} for the test suite
      * @param testContext The underlying {@link TestContext}
      * @param waits The underlying {@link WaitSteps}
+     * @param fileSteps The underlying {@link FileSteps}
      */
     public DefaultGreengrass(
             final Platform platform,
             AWSResourcesContext resourcesContext,
             GreengrassContext greengrassContext,
             TestContext testContext,
-            WaitSteps waits) {
+            WaitSteps waits,
+            FileSteps fileSteps) {
         this.platform = platform;
         this.resourcesContext = resourcesContext;
         this.greengrassContext = greengrassContext;
         this.testContext = testContext;
         this.waits = waits;
+        this.fileSteps = fileSteps;
     }
 
     private boolean isRunning() {
@@ -70,7 +75,7 @@ public class DefaultGreengrass implements Greengrass {
     @Override
     public void install() {
         if (!isRegistered()) {
-            Map<String, String> args = new HashMap<>();
+            Map<String, String> args = new LinkedHashMap<>(); // order of arguments matter
             platform.files().copyTo(
                     greengrassContext.greengrassPath(),
                     testContext.installRoot().resolve("greengrass"));
@@ -78,9 +83,25 @@ public class DefaultGreengrass implements Greengrass {
             args.put("-Dlog.store=", "FILE");
             args.put("-Dlog.level=", testContext.logLevel());
             args.put("-jar", testContext.installRoot().resolve("greengrass/lib/Greengrass.jar").toString());
+
             args.put("--aws-region", resourcesContext.region().metadata().id());
             args.put("--env-stage", resourcesContext.envStage());
-            args.put("--component-default-user", testContext.currentUser());
+            if (!testContext.currentUser().isEmpty()) {
+                args.put("--component-default-user", testContext.currentUser());
+            }
+            if (!testContext.trustedPluginsPaths().isEmpty()) {
+                String[] trustedPluginsPaths = testContext.trustedPluginsPaths().split(",");
+                for (String trustedPluginsPath : trustedPluginsPaths) {
+                    Path dutPath = Paths.get(trustedPluginsPath);
+                    try {
+                        dutPath = fileSteps.getDutPath(trustedPluginsPath, true);
+                    } catch (IOException e) {
+                        LOGGER.error("Caught exception while copying file to DUT");
+                        throw new RuntimeException(e);
+                    }
+                    args.put("--trusted-plugin", dutPath.toString());
+                }
+            }
             platform.commands().installNucleus(testContext.installRoot(), args);
         }
     }

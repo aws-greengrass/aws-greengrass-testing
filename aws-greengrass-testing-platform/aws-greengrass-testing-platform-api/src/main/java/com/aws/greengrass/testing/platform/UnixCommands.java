@@ -30,6 +30,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.StringJoiner;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 public abstract class UnixCommands implements Commands, UnixPathsMixin {
@@ -115,15 +116,23 @@ public abstract class UnixCommands implements Commands, UnixPathsMixin {
 
     @Override
     public void installNucleus(Path rootDirectory, Map<String, String> args) throws CommandExecutionException {
+        // This is specific to how nucleus starts on linux machines.
+        args.put("--start", "false");
+        List<String> arguments = new ArrayList<>();
+        args.forEach((k,v) -> {
+            StringBuilder argString = new StringBuilder(k);
+            if (k.endsWith("=")) {
+                argString.append(v);
+                arguments.add(argString.toString());
+            } else {
+                arguments.add(argString.toString());
+                arguments.add(v);
+            }
+        });
+
         execute(CommandInput.builder()
                 .line("java")
-                .addArgs("-Droot=" + rootDirectory,
-                        "-Dlog.store=" + args.get("-Dlog.store="),
-                        "-Dlog.level=" + args.get("-Dlog.level="),
-                        "-jar", rootDirectory.resolve("greengrass/lib/Greengrass.jar").toString(),
-                        "--aws-region", args.get("--aws-region"),
-                        "--env-stage", args.get("--env-stage"),
-                        "--start", "false")
+                .addArgs(arguments.toArray(new String[0]))
                 .timeout(TIMEOUT_IN_SECONDS)
                 .build());
     }

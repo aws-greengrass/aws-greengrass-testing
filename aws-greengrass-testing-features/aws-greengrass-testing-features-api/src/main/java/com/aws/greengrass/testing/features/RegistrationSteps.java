@@ -5,15 +5,19 @@
 
 package com.aws.greengrass.testing.features;
 
+import com.aws.greengrass.testing.api.ParameterValues;
 import com.aws.greengrass.testing.api.model.ProxyConfig;
 import com.aws.greengrass.testing.model.RegistrationContext;
 import com.aws.greengrass.testing.model.TestContext;
+import com.aws.greengrass.testing.modules.FeatureParameters;
+import com.aws.greengrass.testing.modules.HsmParameters;
 import com.aws.greengrass.testing.modules.model.AWSResourcesContext;
 import com.aws.greengrass.testing.platform.Platform;
 import com.aws.greengrass.testing.resources.AWSResources;
 import com.aws.greengrass.testing.resources.iam.IamLifecycle;
 import com.aws.greengrass.testing.resources.iam.IamRole;
 import com.aws.greengrass.testing.resources.iam.IamRoleSpec;
+import com.aws.greengrass.testing.resources.iot.IotCertificateSpec;
 import com.aws.greengrass.testing.resources.iot.IotLifecycle;
 import com.aws.greengrass.testing.resources.iot.IotPolicySpec;
 import com.aws.greengrass.testing.resources.iot.IotRoleAliasSpec;
@@ -31,6 +35,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -41,6 +46,7 @@ import javax.inject.Inject;
 public class RegistrationSteps {
     private static final Logger LOGGER = LogManager.getLogger(RegistrationSteps.class);
     private static final String DEFAULT_CONFIG = "/nucleus/configs/basic_config.yaml";
+    private static final String DEFAULT_HSM_CONFIG = "/nucleus/configs/basic_hsm_config.yaml";
     private final TestContext testContext;
     private final RegistrationContext registrationContext;
     private final AWSResourcesContext resourcesContext;
@@ -49,6 +55,8 @@ public class RegistrationSteps {
     private final IotSteps iotSteps;
     private final Platform platform;
     private final IamLifecycle iamLifecycle;
+    private final ParameterValues parameterValues;
+    private final FileSteps fileSteps;
 
     @Inject
     RegistrationSteps(
@@ -59,7 +67,9 @@ public class RegistrationSteps {
             TestContext testContext,
             RegistrationContext registrationContext,
             AWSResourcesContext resourcesContext,
-            IamLifecycle iamLifecycle) {
+            IamLifecycle iamLifecycle,
+            ParameterValues parameterValues,
+            FileSteps fileSteps) {
         this.platform = platform;
         this.resources = resources;
         this.iamSteps = iamSteps;
@@ -68,6 +78,8 @@ public class RegistrationSteps {
         this.resourcesContext = resourcesContext;
         this.iotSteps = iotSteps;
         this.iamLifecycle = iamLifecycle;
+        this.parameterValues = parameterValues;
+        this.fileSteps = fileSteps;
     }
 
     /**
@@ -90,7 +102,7 @@ public class RegistrationSteps {
     }
 
     private void registerAsThing(String configName, String thingGroupName) throws IOException {
-        final String configFile = Optional.ofNullable(configName).orElse(DEFAULT_CONFIG);
+        final String configFile = Optional.ofNullable(configName).orElse(getDefaultConfigName());
 
         String tesRoleNameName = testContext.tesRoleName();
         Optional<IamRole> optionalIamRole = Optional.empty();
@@ -103,11 +115,21 @@ public class RegistrationSteps {
             }
         }
 
+        String csrPath = parameterValues.getString(FeatureParameters.CSR_PATH).orElse("");
+
+
         // TODO: move this into iot steps.
         IotThingSpec thingSpec = resources.create(IotThingSpec.builder()
                 .thingName(testContext.coreThingName())
                 .addThingGroups(IotThingGroupSpec.of(thingGroupName))
-                .createCertificate(true)
+                // Currently in case of hsm certificate is expected to be already created and in hsm.
+                .createCertificate(!testContext.hsmConfigured())
+                .certificateSpec(IotCertificateSpec.builder()
+                        .thingName(testContext.coreThingName())
+                        .csr(!csrPath.isEmpty() ? Files.readAllBytes(Paths.get(csrPath)).toString() : "")
+                        .existingArn(parameterValues.getString(FeatureParameters.EXISTING_DEVICE_CERTIFICATE_ARN)
+                                .orElse(""))
+                        .build())
                 .policySpec(resources.trackingSpecs(IotPolicySpec.class)
                         .filter(p -> p.policyName().equals(testContext.testId().idFor("ggc-iot-policy")))
                         .findFirst()
@@ -132,6 +154,13 @@ public class RegistrationSteps {
         }
     }
 
+    private String getDefaultConfigName() {
+        if (testContext.hsmConfigured()) {
+            return DEFAULT_HSM_CONFIG;
+        }
+        return DEFAULT_CONFIG;
+    }
+
     private void setupConfig(
             IotThing thing,
             IotRoleAliasSpec roleAliasSpec,
@@ -144,10 +173,12 @@ public class RegistrationSteps {
             config = config.replace("{thing_name}", thing.thingName());
             config = config.replace("{iot_data_endpoint}", iot.dataEndpoint());
             config = config.replace("{iot_cred_endpoint}", iot.credentialsEndpoint());
-            Files.write(testContext.testDirectory().resolve("privKey.key"),
-                    thing.certificate().keyPair().privateKey().getBytes(StandardCharsets.UTF_8));
-            Files.write(testContext.testDirectory().resolve("thingCert.crt"),
-                    thing.certificate().certificatePem().getBytes(StandardCharsets.UTF_8));
+            if (!testContext.hsmConfigured()) {
+                Files.write(testContext.testDirectory().resolve("privKey.key"), thing.certificate().keyPair()
+                        .privateKey().getBytes(StandardCharsets.UTF_8));
+                Files.write(testContext.testDirectory().resolve("thingCert.crt"), thing.certificate()
+                        .certificatePem().getBytes(StandardCharsets.UTF_8));
+            }
         } else {
             additionalUpdatableFields.putIfAbsent("{thing_name}", "null");
             additionalUpdatableFields.putIfAbsent("{iot_data_endpoint}", "null");
@@ -160,6 +191,19 @@ public class RegistrationSteps {
             additionalUpdatableFields.putIfAbsent("{role_alias}", "null");
         }
 
+        if (testContext.hsmConfigured()) {
+            config = config.replace("{ggc_hsm_slotLabel}", parameterValues.getString(HsmParameters.SLOT_LABEL)
+                    .get());
+            String pkcsLibPath = parameterValues.getString(HsmParameters.PKCS_LIBRARY_PATH).get();
+            Path dutPath = fileSteps.getDutPath(pkcsLibPath, false);
+            config = config.replace("{ggc_hsm_pkcs11ProviderPath}", dutPath.toString());
+            config = config.replace("{ggc_hsm_slotId}", parameterValues.getString(HsmParameters.SLOT_ID).get());
+            config = config.replace("{ggc_hsm_slotUserPin}",
+                    parameterValues.getString(HsmParameters.SLOT_USER_PIN).get());
+            config = config.replace("{ggc.hsm.certandkey.label}", parameterValues
+                    .getString(HsmParameters.HSM_CERT_AND_KEY_LABEL).orElse("greengrass-core"));
+        }
+
         config = config.replace("{proxy_url}",
                 resourcesContext.proxyConfig().map(ProxyConfig::proxyUrl).orElse(""));
         config = config.replace("{aws_region}", resourcesContext.region().metadata().id());
@@ -167,7 +211,6 @@ public class RegistrationSteps {
         config = config.replace("{env_stage}", resourcesContext.envStage());
         config = config.replace("{posix_user}", testContext.currentUser());
         config = config.replace("{data_plane_port}", Integer.toString(registrationContext.connectionPort()));
-
         Files.write(testContext.testDirectory().resolve("rootCA.pem"),
                 registrationContext.rootCA().getBytes(StandardCharsets.UTF_8));
         Files.write(configFilePath.resolve("config.yaml"), config.getBytes(StandardCharsets.UTF_8));
@@ -175,4 +218,5 @@ public class RegistrationSteps {
         platform.files().makeDirectories(testContext.installRoot().getParent());
         platform.files().copyTo(testContext.testDirectory(), testContext.installRoot());
     }
+
 }

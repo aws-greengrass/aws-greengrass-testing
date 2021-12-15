@@ -89,6 +89,15 @@
                                       newenvironment="true"
                                       classpathref="maven.test.classpath">
                                     <sysproperty key="ggc.archive" value="greengrass-nucleus-latest.zip"/>
+<!--                                    Uncomment below lines to set the parameters for hsm -->
+<!--                                    <sysproperty key="ggc.trusted.plugins" value="/Users/abanthiy/IDT_hsm_latest/aws.greengrass.crypto.Pkcs11Provider.jar"/>-->
+<!--                                    <sysproperty key="ggc.hsm.configured" value="true"/>-->
+<!--                                    <sysproperty key="ggc.hsm.pkcs11ProviderPath" value="dut: /User/abanthiy/pkcslib.so"/>-->
+<!--                                    <sysproperty key="ggc.hsm.slotId" value="1"/>-->
+<!--                                    <sysproperty key="ggc.hsm.slotUserPin" value="123456"/>-->
+<!--                                    <sysproperty key="ggc.hsm.slotLabel" value="TestSlot"/>-->
+<!--                                    <sysproperty key="existing.device.cert.arn" value="arn:aws:iot:us-east-1:057232711721:cert/c95e45146adac95c684a1bab11b25fea51b14aac91b6bd6a52d0c289ca7c732d"/>-->
+<!--                                    <sysproperty key="aws.region" value="us-east-1"/>-->
                                 </java>
                             </target>
                         </configuration>

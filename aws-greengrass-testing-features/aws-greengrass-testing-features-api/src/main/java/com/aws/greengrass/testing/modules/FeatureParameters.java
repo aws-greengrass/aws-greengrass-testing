@@ -26,6 +26,10 @@ public class FeatureParameters implements Parameters {
     static final String TEST_RESULTS_PATH = "test.log.path";
     static final String TEST_ID_PREFIX = "test.id.prefix";
     static final String TES_ROLE_NAME = "ggc.tes.rolename";
+    static final String TRUSTED_PLUGINS_PATHS = "ggc.trusted.plugins";
+    public static final String CSR_PATH = "csr.path";
+    public static final String EXISTING_DEVICE_CERTIFICATE_ARN = "existing.device.cert.arn";
+
 
     @Override
     public List<Parameter> available() {
@@ -52,7 +56,14 @@ public class FeatureParameters implements Parameters {
                         + "including AWS resource names and tags. Default is a \"gg\" prefix."),
                 Parameter.of(TES_ROLE_NAME, "The Iam Role that ggc will assume to access AWS services"
                         + "If a role with given name does not exist then one will be created and default access "
-                        + "policy")
+                        + "policy"),
+                Parameter.of(CSR_PATH, "The path for the CSR using which the device certificate will be "
+                        + "generated."),
+                Parameter.of(TRUSTED_PLUGINS_PATHS, "The comma separate list of the paths (on host) of "
+                        + "the trusted plugins that need to added to greengrass. To provide the path on the DUT "
+                        + "itself, prefix the path with 'dut:'"),
+                Parameter.of(EXISTING_DEVICE_CERTIFICATE_ARN, "The arn of an already created certificate that"
+                        + "you want to use as device certificate for greengrass.")
         );
     }
 }
