@@ -9,8 +9,8 @@ import com.aws.greengrass.testing.api.device.Device;
 import com.aws.greengrass.testing.api.device.exception.CommandExecutionException;
 import com.aws.greengrass.testing.api.device.model.CommandInput;
 import com.aws.greengrass.testing.platform.Commands;
+import com.aws.greengrass.testing.platform.NucleusInstallationParameters;
 
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -25,6 +25,13 @@ import java.util.stream.Collectors;
 public class WindowsCommands implements Commands {
     private final Device device;
     private static final long TIMEOUT_IN_SECONDS = 30L;
+    private static final String GG_START_ARGUMENT = "--start";
+    private static final String TRUE = "true";
+    private static final String JAVA = "java";
+    private static final String JAR = "-jar";
+    private static final String GG_JAR_PATH_RELATIVE_TO_ROOT = "greengrass/lib/Greengrass.jar";
+    private static final String GG_SETUP_SYSTEM_SERVICE_PARAMETER = "--setup-system-service";
+
 
     WindowsCommands(final Device device) {
         this.device = device;
@@ -77,20 +84,34 @@ public class WindowsCommands implements Commands {
     }
 
     @Override
-    public void installNucleus(Path rootDirectory, Map<String, String> args) throws CommandExecutionException {
-        /* In Windows Greengrass needs to be setup as System service
-           to let it deploy components on device with user other than default user */
+    public void installNucleus(NucleusInstallationParameters installationParameters) throws CommandExecutionException {
+        List<String> arguments = new ArrayList<>();
+
+        arguments.addAll(installationParameters.getJvmArguments());
+
+        installationParameters.getSystemProperties().forEach((k,v) -> {
+            StringBuilder sb = new StringBuilder("-D");
+            sb.append(k).append("=").append(v);
+            arguments.add(sb.toString());
+        });
+
+        arguments.add(JAR);
+        arguments.add(installationParameters.getGreengrassRootDirectoryPath()
+                .resolve(GG_JAR_PATH_RELATIVE_TO_ROOT).toString());
+
+        installationParameters.getGreengrassParameters().forEach((k, v) -> {
+            arguments.add(k);
+            arguments.add(v);
+        });
+
+        arguments.add(GG_START_ARGUMENT);
+        arguments.add(TRUE);
+        arguments.add(GG_SETUP_SYSTEM_SERVICE_PARAMETER);
+        arguments.add(TRUE);
+
         execute(CommandInput.builder()
-                .line("java")
-                .addArgs("-Droot=" + rootDirectory,
-                        "-Dlog.store=" + args.get("-Dlog.store="),
-                        "-Dlog.level=" + args.get("-Dlog.level="),
-                        "-jar " + rootDirectory.resolve("greengrass/lib/Greengrass.jar").toString(),
-                        "--aws-region " + args.get("--aws-region"),
-                        "--env-stage " + args.get("--env-stage"),
-                        "--start", "true",
-                        "--setup-system-service", "true",
-                        "--component-default-user", args.get("--component-default-user"))
+                .line(JAVA)
+                .addArgs(arguments.toArray(new String[0]))
                 .timeout(TIMEOUT_IN_SECONDS)
                 .build());
     }

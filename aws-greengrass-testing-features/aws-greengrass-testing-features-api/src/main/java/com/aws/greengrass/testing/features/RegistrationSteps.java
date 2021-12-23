@@ -195,8 +195,7 @@ public class RegistrationSteps {
             config = config.replace("{ggc_hsm_slotLabel}", parameterValues.getString(HsmParameters.SLOT_LABEL)
                     .get());
             String pkcsLibPath = parameterValues.getString(HsmParameters.PKCS_LIBRARY_PATH).get();
-            Path dutPath = fileSteps.getDutPath(pkcsLibPath, false);
-            config = config.replace("{ggc_hsm_pkcs11ProviderPath}", dutPath.toString());
+            config = config.replace("{ggc_hsm_pkcs11ProviderPath}", pkcsLibPath);
             config = config.replace("{ggc_hsm_slotId}", parameterValues.getString(HsmParameters.SLOT_ID).get());
             config = config.replace("{ggc_hsm_slotUserPin}",
                     parameterValues.getString(HsmParameters.SLOT_USER_PIN).get());

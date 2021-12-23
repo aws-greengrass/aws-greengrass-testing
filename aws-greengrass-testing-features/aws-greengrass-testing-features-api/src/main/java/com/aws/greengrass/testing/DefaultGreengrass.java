@@ -7,11 +7,13 @@ package com.aws.greengrass.testing;
 
 import com.aws.greengrass.testing.api.Greengrass;
 import com.aws.greengrass.testing.api.device.exception.CommandExecutionException;
+import com.aws.greengrass.testing.api.device.exception.CopyException;
 import com.aws.greengrass.testing.features.FileSteps;
 import com.aws.greengrass.testing.features.WaitSteps;
 import com.aws.greengrass.testing.model.GreengrassContext;
 import com.aws.greengrass.testing.model.TestContext;
 import com.aws.greengrass.testing.modules.model.AWSResourcesContext;
+import com.aws.greengrass.testing.platform.NucleusInstallationParameters;
 import com.aws.greengrass.testing.platform.Platform;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -19,7 +21,7 @@ import org.apache.logging.log4j.Logger;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -75,34 +77,40 @@ public class DefaultGreengrass implements Greengrass {
     @Override
     public void install() {
         if (!isRegistered()) {
-            Map<String, String> args = new LinkedHashMap<>(); // order of arguments matter
             platform.files().copyTo(
                     greengrassContext.greengrassPath(),
                     testContext.installRoot().resolve("greengrass"));
-            args.put("-Droot=", testContext.installRoot().toString());
-            args.put("-Dlog.store=", "FILE");
-            args.put("-Dlog.level=", testContext.logLevel());
-            args.put("-jar", testContext.installRoot().resolve("greengrass/lib/Greengrass.jar").toString());
 
-            args.put("--aws-region", resourcesContext.region().metadata().id());
-            args.put("--env-stage", resourcesContext.envStage());
+            Map<String, String> systemProperties = new HashMap<>();
+            systemProperties.put("root", testContext.installRoot().toString());
+            systemProperties.put("log.store", "FILE");
+            systemProperties.put("log.level", testContext.logLevel());
+
+            Map<String, String> ggParameters = new HashMap<>();
+            ggParameters.put("--aws-region", resourcesContext.region().metadata().id());
+            ggParameters.put("--env-stage", resourcesContext.envStage());
             if (!testContext.currentUser().isEmpty()) {
-                args.put("--component-default-user", testContext.currentUser());
+                ggParameters.put("--component-default-user", testContext.currentUser());
             }
             if (!testContext.trustedPluginsPaths().isEmpty()) {
-                String[] trustedPluginsPaths = testContext.trustedPluginsPaths().split(",");
-                for (String trustedPluginsPath : trustedPluginsPaths) {
-                    Path dutPath = Paths.get(trustedPluginsPath);
+                for (String trustedPluginsPath : testContext.trustedPluginsPaths()) {
+                    Path hostPath = Paths.get(trustedPluginsPath);
+                    Path dutPath = testContext.installRoot().resolve(hostPath.getFileName());
                     try {
-                        dutPath = fileSteps.getDutPath(trustedPluginsPath, true);
-                    } catch (IOException e) {
+                        platform.files().copyTo(hostPath, dutPath);
+                    } catch (CopyException e) {
                         LOGGER.error("Caught exception while copying file to DUT");
                         throw new RuntimeException(e);
                     }
-                    args.put("--trusted-plugin", dutPath.toString());
+                    ggParameters.put("--trusted-plugin", dutPath.toString());
                 }
             }
-            platform.commands().installNucleus(testContext.installRoot(), args);
+            NucleusInstallationParameters nucleusInstallationParameters = NucleusInstallationParameters.builder()
+                    .systemProperties(systemProperties)
+                    .greengrassParameters(ggParameters)
+                    .greengrassRootDirectoryPath(testContext.installRoot())
+                    .build();
+            platform.commands().installNucleus(nucleusInstallationParameters);
         }
     }
 

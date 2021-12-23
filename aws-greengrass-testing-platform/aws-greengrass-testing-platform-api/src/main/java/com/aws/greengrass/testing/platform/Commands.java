@@ -7,6 +7,7 @@ package com.aws.greengrass.testing.platform;
 
 import com.aws.greengrass.testing.api.device.exception.CommandExecutionException;
 import com.aws.greengrass.testing.api.device.model.CommandInput;
+import com.aws.greengrass.testing.platform.NucleusInstallationParameters;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -28,7 +29,7 @@ public interface Commands {
         kill(findDescendants(pid));
     }
 
-    void installNucleus(Path rootDirectory, Map<String, String> args) throws CommandExecutionException;
+    void installNucleus(NucleusInstallationParameters installationParameters) throws CommandExecutionException;
 
     int startNucleus(Path rootDirectory) throws CommandExecutionException;
 }
