@@ -15,8 +15,7 @@ import org.immutables.value.Value;
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Objects;
+import java.util.List;
 
 @TestingModel
 @Value.Immutable
@@ -42,6 +41,10 @@ interface TestContextModel extends Closeable {
     String coreVersion();
 
     String tesRoleName();
+
+    boolean hsmConfigured();
+
+    List<String> trustedPluginsPaths();
 
     @Override
     default void close() throws IOException {

@@ -34,6 +34,7 @@ import javax.inject.Inject;
 public class FileSteps {
     private static final Logger LOGGER = LogManager.getLogger(FileSteps.class);
     private static final int DEFAULT_TIMEOUT = 30;
+    private static final String DUT_PATH_PREFIX = "dut:";
     private final Platform platform;
     private final TestContext testContext;
     private final ScenarioContext scenarioContext;

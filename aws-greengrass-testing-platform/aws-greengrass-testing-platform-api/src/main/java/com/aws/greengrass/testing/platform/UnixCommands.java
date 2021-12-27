@@ -11,6 +11,7 @@ import com.aws.greengrass.testing.api.device.local.LocalDevice;
 import com.aws.greengrass.testing.api.device.model.CommandInput;
 import com.aws.greengrass.testing.api.device.model.PlatformOS;
 import com.aws.greengrass.testing.api.model.PillboxContext;
+import com.aws.greengrass.testing.platform.NucleusInstallationParameters;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -20,20 +21,22 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Queue;
 import java.util.StringJoiner;
 import java.util.stream.Collectors;
 
 public abstract class UnixCommands implements Commands, UnixPathsMixin {
     private static final Logger LOGGER = LogManager.getLogger(UnixCommands.class);
+    private static final String GG_START_ARGUMENT = "--start";
+    private static final String FALSE = "false";
+    private static final String JAVA = "java";
+    private static final String JAR = "-jar";
+    private static final String GG_JAR_PATH_RELATIVE_TO_ROOT = "greengrass/lib/Greengrass.jar";
+
     protected final Device device;
     protected final PillboxContext pillboxContext;
     private final PlatformOS host;
@@ -114,16 +117,38 @@ public abstract class UnixCommands implements Commands, UnixPathsMixin {
     }
 
     @Override
-    public void installNucleus(Path rootDirectory, Map<String, String> args) throws CommandExecutionException {
+    public void installNucleus(NucleusInstallationParameters installationParameters) throws CommandExecutionException {
+        List<String> arguments = new ArrayList<>();
+
+        if (installationParameters.getJvmArguments() != null) {
+            arguments.addAll(installationParameters.getJvmArguments());
+        }
+
+
+        if (installationParameters.getSystemProperties() != null) {
+            installationParameters.getSystemProperties().forEach((k, v) -> {
+                StringBuilder sb = new StringBuilder("-D");
+                sb.append(k).append("=").append(v);
+                arguments.add(sb.toString());
+            });
+        }
+
+        arguments.add(JAR);
+        arguments.add(installationParameters.getGreengrassRootDirectoryPath()
+                .resolve(GG_JAR_PATH_RELATIVE_TO_ROOT).toString());
+
+        if (installationParameters.getGreengrassParameters() != null) {
+            installationParameters.getGreengrassParameters().forEach((k, v) -> {
+                arguments.add(k);
+                arguments.add(v);
+            });
+        }
+
+        arguments.add(GG_START_ARGUMENT);
+        arguments.add(FALSE);
         execute(CommandInput.builder()
-                .line("java")
-                .addArgs("-Droot=" + rootDirectory,
-                        "-Dlog.store=" + args.get("-Dlog.store="),
-                        "-Dlog.level=" + args.get("-Dlog.level="),
-                        "-jar", rootDirectory.resolve("greengrass/lib/Greengrass.jar").toString(),
-                        "--aws-region", args.get("--aws-region"),
-                        "--env-stage", args.get("--env-stage"),
-                        "--start", "false")
+                .line(JAVA)
+                .addArgs(arguments.toArray(new String[0]))
                 .timeout(TIMEOUT_IN_SECONDS)
                 .build());
     }

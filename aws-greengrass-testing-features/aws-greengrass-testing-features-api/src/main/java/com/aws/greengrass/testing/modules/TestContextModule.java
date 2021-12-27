@@ -28,6 +28,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.SecureRandom;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import javax.inject.Named;
 import javax.inject.Singleton;
 
@@ -97,6 +100,11 @@ public class TestContextModule extends AbstractModule {
                 throw new ModuleProvisionException(e);
             }
         }
+        List<String> trustedPluginsPaths = new ArrayList<>();
+        if (parameterValues.get(FeatureParameters.TRUSTED_PLUGINS_PATHS).isPresent()) {
+            trustedPluginsPaths = new ArrayList<>(Arrays.asList(
+                            parameterValues.getString(FeatureParameters.TRUSTED_PLUGINS_PATHS).get().split(",")));
+        }
         return TestContext.builder()
                 .logLevel(parameterValues.getString(FeatureParameters.NUCLEUS_LOG_LEVEL).orElse("INFO"))
                 .currentUser(parameterValues.getString(FeatureParameters.NUCLEUS_USER)
@@ -110,6 +118,9 @@ public class TestContextModule extends AbstractModule {
                 .coreVersion(coreVersion)
                 .initializationContext(initializationContext)
                 .tesRoleName(parameterValues.getString(FeatureParameters.TES_ROLE_NAME).orElse(""))
+                .hsmConfigured(Boolean.valueOf(parameterValues.getString(HsmParameters.HSM_CONFIGURED).orElse(
+                        "false")))
+                .trustedPluginsPaths(trustedPluginsPaths)
                 .build();
     }
 }

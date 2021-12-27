@@ -7,17 +7,20 @@ package com.aws.greengrass.testing;
 
 import com.aws.greengrass.testing.api.Greengrass;
 import com.aws.greengrass.testing.api.device.exception.CommandExecutionException;
-import com.aws.greengrass.testing.api.device.model.CommandInput;
-import com.aws.greengrass.testing.api.device.model.PlatformOS;
+import com.aws.greengrass.testing.api.device.exception.CopyException;
+import com.aws.greengrass.testing.features.FileSteps;
 import com.aws.greengrass.testing.features.WaitSteps;
 import com.aws.greengrass.testing.model.GreengrassContext;
 import com.aws.greengrass.testing.model.TestContext;
 import com.aws.greengrass.testing.modules.model.AWSResourcesContext;
+import com.aws.greengrass.testing.platform.NucleusInstallationParameters;
 import com.aws.greengrass.testing.platform.Platform;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.IOException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -31,6 +34,7 @@ public class DefaultGreengrass implements Greengrass {
     private int greengrassProcess;
     private final TestContext testContext;
     private final WaitSteps waits;
+    private FileSteps fileSteps;
 
     /**
      * Creates a {@link Greengrass} software instance.
@@ -40,18 +44,21 @@ public class DefaultGreengrass implements Greengrass {
      * @param greengrassContext the global {@link GreengrassContext} for the test suite
      * @param testContext The underlying {@link TestContext}
      * @param waits The underlying {@link WaitSteps}
+     * @param fileSteps The underlying {@link FileSteps}
      */
     public DefaultGreengrass(
             final Platform platform,
             AWSResourcesContext resourcesContext,
             GreengrassContext greengrassContext,
             TestContext testContext,
-            WaitSteps waits) {
+            WaitSteps waits,
+            FileSteps fileSteps) {
         this.platform = platform;
         this.resourcesContext = resourcesContext;
         this.greengrassContext = greengrassContext;
         this.testContext = testContext;
         this.waits = waits;
+        this.fileSteps = fileSteps;
     }
 
     private boolean isRunning() {
@@ -70,18 +77,40 @@ public class DefaultGreengrass implements Greengrass {
     @Override
     public void install() {
         if (!isRegistered()) {
-            Map<String, String> args = new HashMap<>();
             platform.files().copyTo(
                     greengrassContext.greengrassPath(),
                     testContext.installRoot().resolve("greengrass"));
-            args.put("-Droot=", testContext.installRoot().toString());
-            args.put("-Dlog.store=", "FILE");
-            args.put("-Dlog.level=", testContext.logLevel());
-            args.put("-jar", testContext.installRoot().resolve("greengrass/lib/Greengrass.jar").toString());
-            args.put("--aws-region", resourcesContext.region().metadata().id());
-            args.put("--env-stage", resourcesContext.envStage());
-            args.put("--component-default-user", testContext.currentUser());
-            platform.commands().installNucleus(testContext.installRoot(), args);
+
+            Map<String, String> systemProperties = new HashMap<>();
+            systemProperties.put("root", testContext.installRoot().toString());
+            systemProperties.put("log.store", "FILE");
+            systemProperties.put("log.level", testContext.logLevel());
+
+            Map<String, String> ggParameters = new HashMap<>();
+            ggParameters.put("--aws-region", resourcesContext.region().metadata().id());
+            ggParameters.put("--env-stage", resourcesContext.envStage());
+            if (!testContext.currentUser().isEmpty()) {
+                ggParameters.put("--component-default-user", testContext.currentUser());
+            }
+            if (!testContext.trustedPluginsPaths().isEmpty()) {
+                for (String trustedPluginsPath : testContext.trustedPluginsPaths()) {
+                    Path hostPath = Paths.get(trustedPluginsPath);
+                    Path dutPath = testContext.installRoot().resolve(hostPath.getFileName());
+                    try {
+                        platform.files().copyTo(hostPath, dutPath);
+                    } catch (CopyException e) {
+                        LOGGER.error("Caught exception while copying file to DUT");
+                        throw new RuntimeException(e);
+                    }
+                    ggParameters.put("--trusted-plugin", dutPath.toString());
+                }
+            }
+            NucleusInstallationParameters nucleusInstallationParameters = NucleusInstallationParameters.builder()
+                    .systemProperties(systemProperties)
+                    .greengrassParameters(ggParameters)
+                    .greengrassRootDirectoryPath(testContext.installRoot())
+                    .build();
+            platform.commands().installNucleus(nucleusInstallationParameters);
         }
     }
 
