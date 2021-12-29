@@ -24,6 +24,7 @@ import javax.annotation.Nullable;
 @TestingModel
 @Value.Immutable
 interface IotThingSpecModel extends ResourceSpec<IotClient, IotThing>, IotTaggingMixin {
+
     @Nullable
     Set<IotThingGroupSpec> thingGroups();
 
@@ -78,6 +79,12 @@ interface IotThingSpecModel extends ResourceSpec<IotClient, IotThing>, IotTaggin
                     .principal(certificateSpec().existingArn())
                     .build());
             certificateArn = certificateSpec().existingArn();
+            if (policySpec() != null) {
+                client.attachPolicy(AttachPolicyRequest.builder()
+                        .policyName(policySpec().policyName())
+                        .target(certificateArn)
+                        .build());
+            }
         }
 
         if (assumeRolePolicy != null) {
