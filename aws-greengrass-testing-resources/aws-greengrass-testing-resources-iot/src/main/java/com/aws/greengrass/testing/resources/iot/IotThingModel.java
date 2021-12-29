@@ -39,6 +39,7 @@ interface IotThingModel extends AWSResource<IotClient> {
                             .principal(p)
                             .build());
                 });
+
         client.deleteThing(DeleteThingRequest.builder()
                 .thingName(thingName())
                 .build());
