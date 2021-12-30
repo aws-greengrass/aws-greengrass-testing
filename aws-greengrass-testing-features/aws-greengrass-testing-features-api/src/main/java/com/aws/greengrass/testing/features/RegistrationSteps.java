@@ -42,9 +42,10 @@ import java.util.Objects;
 import java.util.Optional;
 import javax.inject.Inject;
 
+import static com.aws.greengrass.testing.modules.HsmParameters.ROOT_CA_PATH;
+
 @ScenarioScoped
 public class RegistrationSteps {
-    private static final Logger LOGGER = LogManager.getLogger(RegistrationSteps.class);
     private static final String DEFAULT_CONFIG = "/nucleus/configs/basic_config.yaml";
     private static final String DEFAULT_HSM_CONFIG = "/nucleus/configs/basic_hsm_config.yaml";
     private final TestContext testContext;
@@ -210,8 +211,14 @@ public class RegistrationSteps {
         config = config.replace("{env_stage}", resourcesContext.envStage());
         config = config.replace("{posix_user}", testContext.currentUser());
         config = config.replace("{data_plane_port}", Integer.toString(registrationContext.connectionPort()));
-        Files.write(testContext.testDirectory().resolve("rootCA.pem"),
-                registrationContext.rootCA().getBytes(StandardCharsets.UTF_8));
+        if (parameterValues.get(ROOT_CA_PATH).isPresent()) {
+            byte[] customRootCa = Files.readAllBytes(Paths.get(parameterValues.getString(ROOT_CA_PATH).get()));
+            Files.write(testContext.testDirectory().resolve("rootCA.pem"), customRootCa);
+        } else {
+            Files.write(testContext.testDirectory().resolve("rootCA.pem"),
+                    registrationContext.rootCA().getBytes(StandardCharsets.UTF_8));
+        }
+
         Files.write(configFilePath.resolve("config.yaml"), config.getBytes(StandardCharsets.UTF_8));
         // Copy to where the nucleus will read it
         platform.files().makeDirectories(testContext.installRoot().getParent());
