@@ -19,7 +19,7 @@ public class HsmParameters implements Parameters {
     public static final String SLOT_USER_PIN = "ggc.hsm.slotUserPin";
     public static final String SLOT_LABEL = "ggc.hsm.slotLabel";
     public static final String HSM_CERT_AND_KEY_LABEL = "ggc.hsm.certandkey.label";
-
+    public static final String ROOT_CA_PATH = "ggc.rootCA.path";
 
     @Override
     public List<Parameter> available() {
@@ -31,7 +31,9 @@ public class HsmParameters implements Parameters {
                 Parameter.of(SLOT_ID, "HSM slot Id"),
                 Parameter.of(SLOT_USER_PIN, "HSM slot user pin"),
                 Parameter.of(SLOT_LABEL, "HSM Slot label"),
-                Parameter.of(HSM_CERT_AND_KEY_LABEL, "The label for the private key and certificate in hsm")
+                Parameter.of(HSM_CERT_AND_KEY_LABEL, "The label for the private key and certificate in hsm"),
+                Parameter.of(ROOT_CA_PATH, "The path of the root CA that should be used with the device"
+                        + "certificate. By default AmazonRootCA will be used")
         );
     }
 }
