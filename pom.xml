@@ -35,7 +35,7 @@
         <!-- Dependency versions -->
         <cucumber.version>5.7.0</cucumber.version>
         <immutables.version>2.8.2</immutables.version>
-        <log4j.version>2.16.0</log4j.version>
+        <log4j.version>2.17.1</log4j.version>
         <aws.sdk.version>2.16.52</aws.sdk.version>
         <auto.service.version>1.0</auto.service.version>
         <findbugs.version>3.0.2</findbugs.version>
