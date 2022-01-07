@@ -87,22 +87,28 @@ public class WindowsCommands implements Commands {
     public void installNucleus(NucleusInstallationParameters installationParameters) throws CommandExecutionException {
         List<String> arguments = new ArrayList<>();
 
-        arguments.addAll(installationParameters.getJvmArguments());
+        if (installationParameters.getJvmArguments() != null) {
+            arguments.addAll(installationParameters.getJvmArguments());
+        }
 
-        installationParameters.getSystemProperties().forEach((k,v) -> {
-            StringBuilder sb = new StringBuilder("-D");
-            sb.append(k).append("=").append(v);
-            arguments.add(sb.toString());
-        });
+        if (installationParameters.getSystemProperties() != null) {
+            installationParameters.getSystemProperties().forEach((k, v) -> {
+                StringBuilder sb = new StringBuilder("-D");
+                sb.append(k).append("=").append(v);
+                arguments.add(sb.toString());
+            });
+        }
 
         arguments.add(JAR);
         arguments.add(installationParameters.getGreengrassRootDirectoryPath()
                 .resolve(GG_JAR_PATH_RELATIVE_TO_ROOT).toString());
 
-        installationParameters.getGreengrassParameters().forEach((k, v) -> {
-            arguments.add(k);
-            arguments.add(v);
-        });
+        if (installationParameters.getGreengrassParameters() != null) {
+            installationParameters.getGreengrassParameters().forEach((k, v) -> {
+                arguments.add(k);
+                arguments.add(v);
+            });
+        }
 
         arguments.add(GG_START_ARGUMENT);
         arguments.add(TRUE);
