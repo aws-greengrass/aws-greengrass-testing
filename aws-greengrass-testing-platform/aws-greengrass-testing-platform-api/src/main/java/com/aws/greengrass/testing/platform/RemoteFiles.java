@@ -63,9 +63,9 @@ public class RemoteFiles implements PlatformFiles, UnixPathsMixin {
 
     @Override
     public List<Path> listContents(Path filePath) throws CommandExecutionException {
-        final byte[] output = files("find", "-type", "f", format(filePath));
+        final byte[] output = files("find", "-type", "f", filePath.toString());
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(output)))) {
-            return reader.lines().map(Paths::get).collect(Collectors.toList());
+            return reader.lines().map(path -> formatToUnixPath(path)).map(Paths::get).collect(Collectors.toList());
         } catch (IOException e) {
             throw new CommandExecutionException(e, CommandInput.builder()
                     .line("files").addArgs("find", "-type", "f", format(filePath))
@@ -96,5 +96,10 @@ public class RemoteFiles implements PlatformFiles, UnixPathsMixin {
     @Override
     public PlatformOS host() {
         return host;
+    }
+
+    @Override
+    public PlatformOS device() {
+        return device.platform();
     }
 }

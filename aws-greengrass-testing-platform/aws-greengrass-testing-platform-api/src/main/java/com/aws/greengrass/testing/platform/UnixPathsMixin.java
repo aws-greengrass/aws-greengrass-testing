@@ -10,8 +10,11 @@ import com.aws.greengrass.testing.api.device.model.PlatformOS;
 interface UnixPathsMixin {
     PlatformOS host();
 
+    PlatformOS device();
+
     default String formatToUnixPath(String incoming) {
-        if (host().isWindows()) {
+        System.out.println("unformated path in UnixPathsMixin " + incoming);
+        if (host().isWindows() || device().isWindows()) {
             return incoming
                     .replaceAll("^[A-Za-z]:", "")
                     .replace("\\", "/");

@@ -60,6 +60,11 @@ public abstract class UnixCommands implements Commands, UnixPathsMixin {
     }
 
     @Override
+    public PlatformOS device() {
+        return device.platform();
+    }
+
+    @Override
     public byte[] execute(CommandInput input) throws CommandExecutionException {
         final StringJoiner joiner = new StringJoiner(" ").add(input.line());
         Optional.ofNullable(input.args()).ifPresent(args -> args.forEach(joiner::add));
