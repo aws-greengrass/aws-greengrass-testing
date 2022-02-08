@@ -13,6 +13,8 @@ import org.immutables.value.Value;
 import software.amazon.awssdk.services.iot.IotClient;
 import software.amazon.awssdk.services.iot.model.CreateRoleAliasRequest;
 import software.amazon.awssdk.services.iot.model.CreateRoleAliasResponse;
+import software.amazon.awssdk.services.iot.model.DescribeRoleAliasRequest;
+import software.amazon.awssdk.services.iot.model.ResourceNotFoundException;
 
 import javax.annotation.Nullable;
 
@@ -38,6 +40,18 @@ interface IotRoleAliasSpecModel extends ResourceSpec<IotClient, IotRoleAlias>, I
                         .roleAliasArn(createdAlias.roleAliasArn())
                         .build())
                 .build();
+    }
+
+    @Override
+    default boolean availableInCloud(IotClient client) {
+        try {
+            client.describeRoleAlias(DescribeRoleAliasRequest.builder()
+                    .roleAlias(name())
+                    .build());
+        } catch (ResourceNotFoundException e) {
+            return false;
+        }
+        return true;
     }
 
     @Nullable
