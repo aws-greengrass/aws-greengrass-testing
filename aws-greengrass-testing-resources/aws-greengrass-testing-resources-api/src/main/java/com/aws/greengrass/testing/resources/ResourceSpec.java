@@ -12,6 +12,10 @@ import javax.annotation.Nullable;
 public interface ResourceSpec<C, T extends AWSResource<C>> {
     ResourceSpec<C, T> create(C client, AWSResources resources);
 
+    default boolean availableInCloud(C client) {
+        return created();
+    }
+
     @Nullable
     T resource();
 
