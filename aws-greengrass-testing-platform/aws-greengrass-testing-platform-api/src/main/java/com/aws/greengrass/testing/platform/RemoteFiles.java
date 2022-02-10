@@ -90,6 +90,9 @@ public class RemoteFiles implements PlatformFiles, UnixPathsMixin {
 
     @Override
     public String format(Path filePath) {
-        return formatToUnixPath(filePath.toString());
+        if (host.isWindows() || device.platform().isWindows()) {
+            return formatToUnixPath(filePath.toString());
+        }
+        return filePath.toString();
     }
 }
