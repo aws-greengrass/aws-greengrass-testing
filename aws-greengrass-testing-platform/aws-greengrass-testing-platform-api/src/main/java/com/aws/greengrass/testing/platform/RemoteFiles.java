@@ -63,7 +63,7 @@ public class RemoteFiles implements PlatformFiles, UnixPathsMixin {
 
     @Override
     public List<Path> listContents(Path filePath) throws CommandExecutionException {
-        final byte[] output = files("find", "-type", "f", filePath.toString());
+        final byte[] output = files("find", "-type", "f", format(filePath));
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(output)))) {
             return reader.lines().map(Paths::get).map(path -> Paths.get(format(path))).collect(Collectors.toList());
         } catch (IOException e) {
@@ -90,6 +90,9 @@ public class RemoteFiles implements PlatformFiles, UnixPathsMixin {
 
     @Override
     public String format(Path filePath) {
-        return formatToUnixPath(filePath.toString());
+        if (host.isWindows() || device.platform().isWindows()) {
+            return formatToUnixPath(filePath.toString());
+        }
+        return filePath.toString();
     }
 }
