@@ -32,7 +32,7 @@ public abstract class AbstractRemoteDevice implements Device {
                     .build());  
             return true;
         } catch (CommandExecutionException e) {
-            LOGGER.debug("Failed to check if path {} exists, assuming false", path, e);
+            LOGGER.warn("Failed to check if path {} exists, assuming false", path, e);
             return false;
         }
     }

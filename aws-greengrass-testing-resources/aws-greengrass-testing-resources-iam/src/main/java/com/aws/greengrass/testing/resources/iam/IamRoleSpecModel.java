@@ -7,13 +7,19 @@ package com.aws.greengrass.testing.resources.iam;
 
 import com.aws.greengrass.testing.api.model.TestingModel;
 import com.aws.greengrass.testing.resources.AWSResources;
+import com.aws.greengrass.testing.resources.AbstractAWSResourceLifecycle;
 import com.aws.greengrass.testing.resources.ResourceSpec;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.immutables.value.Value;
 import software.amazon.awssdk.services.iam.IamClient;
 import software.amazon.awssdk.services.iam.model.AttachRolePolicyRequest;
 import software.amazon.awssdk.services.iam.model.CreateRoleRequest;
 import software.amazon.awssdk.services.iam.model.CreateRoleResponse;
+import software.amazon.awssdk.services.iam.model.GetRoleRequest;
+import software.amazon.awssdk.services.iam.model.GetRoleResponse;
+import software.amazon.awssdk.services.iam.model.NoSuchEntityException;
 
 import javax.annotation.Nullable;
 
@@ -60,4 +66,14 @@ interface IamRoleSpecModel extends ResourceSpec<IamClient, IamRole>, IamTaggingM
 
     @Nullable
     IamRole resource();
+
+    @Override
+    default boolean availableInCloud(IamClient client) {
+        try {
+            client.getRole(GetRoleRequest.builder().roleName(roleName()).build());
+        } catch (NoSuchEntityException e) {
+            return false;
+        }
+        return true;
+    }
 }

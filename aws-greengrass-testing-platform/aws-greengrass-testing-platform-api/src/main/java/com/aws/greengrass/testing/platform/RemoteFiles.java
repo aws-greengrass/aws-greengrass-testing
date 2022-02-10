@@ -65,7 +65,7 @@ public class RemoteFiles implements PlatformFiles, UnixPathsMixin {
     public List<Path> listContents(Path filePath) throws CommandExecutionException {
         final byte[] output = files("find", "-type", "f", format(filePath));
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(output)))) {
-            return reader.lines().map(Paths::get).map(path -> Paths.get(format(path))).collect(Collectors.toList());
+            return reader.lines().map(path -> Paths.get(format(Paths.get(path)))).collect(Collectors.toList());
         } catch (IOException e) {
             throw new CommandExecutionException(e, CommandInput.builder()
                     .line("files").addArgs("find", "-type", "f", format(filePath))
@@ -90,6 +90,18 @@ public class RemoteFiles implements PlatformFiles, UnixPathsMixin {
 
     @Override
     public String format(Path filePath) {
+        /*
+        Java is able to convert backslashes to forward but not vice-versa.
+        Thus, path conversion from Windows to Linux is required when either host
+        agent or DUT platform is Windows.
+        Testing:
+        HOST AGENT    DUT
+        Windows       Windows    No conversion required
+        Windows       Linux      host platform is checked
+        Linux         Windows    DUT platform is checked
+        Linux         Linux      No conversion required
+        Reference: https://www.ibm.com/docs/en/zvse/6.2?topic=SSB27H_6.2.0/fa2ad_use_forward_or_backward_slashes_under_windows.html
+        */
         if (host.isWindows() || device.platform().isWindows()) {
             return formatToUnixPath(filePath.toString());
         }
