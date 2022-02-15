@@ -91,20 +91,10 @@ public class RemoteFiles implements PlatformFiles, UnixPathsMixin {
     @Override
     public String format(Path filePath) {
         /*
-        Java is able to convert backslashes to forward but not vice-versa.
-        Thus, path conversion from Windows to Linux is required when either host
-        agent or DUT platform is Windows.
-        Testing:
-        HOST AGENT    DUT
-        Windows       Windows    No conversion required
-        Windows       Linux      host platform is checked
-        Linux         Windows    DUT platform is checked
-        Linux         Linux      No conversion required
+        Java is able to convert forward slashes to backslashes but not vice-versa.
+        Thus, need to replace the backward slashes with forward in order to Java read the filenames.
         Reference: https://www.ibm.com/docs/en/zvse/6.2?topic=SSB27H_6.2.0/fa2ad_use_forward_or_backward_slashes_under_windows.html
         */
-        if (host.isWindows() || device.platform().isWindows()) {
-            return formatToUnixPath(filePath.toString());
-        }
-        return filePath.toString();
+        return formatToUnixPath(filePath.toString());
     }
 }
