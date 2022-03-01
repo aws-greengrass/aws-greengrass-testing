@@ -80,10 +80,15 @@ public class RemoteFiles implements PlatformFiles, UnixPathsMixin {
 
     @Override
     public boolean exists(Path filePath) throws CommandExecutionException {
+        boolean existFlag = false;
         try {
-            files("exists", format(filePath));
-            return true;
+            byte[] output = files("exists", format(filePath));
+            if (new String(output).isEmpty()) {
+                existFlag = true;
+            }
+            return existFlag;
         } catch (CommandExecutionException executionException) {
+            System.err.println("File path " + filePath + " does not exist");
             return false;
         }
     }
