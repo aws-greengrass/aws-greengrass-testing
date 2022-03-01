@@ -31,8 +31,8 @@ public class Cat implements Callable<Integer> {
             return exitCode;
         }
         if (!Files.isRegularFile(filePath)) {
-            System.err.println("File '" + filePath + "' is not a file.");
-            return 1;
+            System.out.println("File '" + filePath + "' is not a file.");
+            return 0;
         }
         final byte[] buffer = new byte[BUFFER];
         try (InputStream input = new BufferedInputStream(Files.newInputStream(filePath))) {

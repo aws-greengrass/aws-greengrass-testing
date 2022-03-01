@@ -41,8 +41,7 @@ public class Remove implements Callable<Integer> {
                 files.sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
             }
         } else {
-            System.err.println("cannot remove '" + filePath + "': Is a directory");
-            return 1;
+            System.out.println("cannot remove '" + filePath + "': Is a directory");
         }
         return 0;
     }
