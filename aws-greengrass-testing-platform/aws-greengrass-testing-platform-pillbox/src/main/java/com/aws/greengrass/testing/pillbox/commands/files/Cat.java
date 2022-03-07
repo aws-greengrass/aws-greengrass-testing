@@ -26,13 +26,13 @@ public class Cat implements Callable<Integer> {
     @Override
     public Integer call() throws Exception {
         Path filePath = Paths.get(file);
-        int exitCode = Exists.call(filePath);
-        if (exitCode > 0) {
-            return exitCode;
+        if (Files.notExists(filePath)) {
+            System.out.println("File " + filePath + " does not exists");
+            return 0;
         }
         if (!Files.isRegularFile(filePath)) {
-            System.out.println("File '" + filePath + "' is not a file.");
-            return 0;
+            System.err.println("File '" + filePath + "' is not a file.");
+            return 1;
         }
         final byte[] buffer = new byte[BUFFER];
         try (InputStream input = new BufferedInputStream(Files.newInputStream(filePath))) {

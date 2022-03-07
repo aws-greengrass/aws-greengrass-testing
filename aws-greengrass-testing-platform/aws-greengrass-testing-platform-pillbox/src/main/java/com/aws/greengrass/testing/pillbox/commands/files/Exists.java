@@ -23,6 +23,7 @@ public class Exists implements Callable<Integer> {
         if (Files.notExists(filePath)) {
             System.out.println("false");
         }
+        System.out.println("true");
         return 0;
     }
 

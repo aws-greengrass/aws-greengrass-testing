@@ -83,7 +83,7 @@ public class RemoteFiles implements PlatformFiles, UnixPathsMixin {
         boolean existFlag = false;
         try {
             byte[] output = files("exists", format(filePath));
-            if (new String(output).isEmpty()) {
+            if (new String(output).trim().equals("true")) {
                 existFlag = true;
             }
             return existFlag;

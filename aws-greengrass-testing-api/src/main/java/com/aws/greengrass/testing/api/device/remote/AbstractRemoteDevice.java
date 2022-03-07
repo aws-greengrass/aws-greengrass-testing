@@ -33,7 +33,7 @@ public abstract class AbstractRemoteDevice implements Device {
                     .build());
             if (output.trim().equals("false")) {
                 LOGGER.info("File {} does not exists", path);
-            } else if (output.isEmpty()) {
+            } else if (output.trim().equals("true")) {
                 LOGGER.info("File {} exists", path);
                 existFlag = true;
             }
