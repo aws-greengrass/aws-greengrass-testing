@@ -97,9 +97,9 @@ public class Find implements Callable<Integer> {
     @Override
     public Integer call() throws Exception {
         Path filePath = Paths.get(file);
-        int exitCode = Exists.call(filePath);
-        if (exitCode > 0) {
-            return exitCode;
+        if (Files.notExists(filePath)) {
+            System.out.println("File " + filePath + " does not exists");
+            return 0;
         }
         printFilePath(filePath, 0);
         return 0;

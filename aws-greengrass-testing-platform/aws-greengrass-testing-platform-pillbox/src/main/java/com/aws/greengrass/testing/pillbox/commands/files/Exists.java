@@ -21,9 +21,9 @@ public class Exists implements Callable<Integer> {
 
     static int call(Path filePath) {
         if (Files.notExists(filePath)) {
-            System.err.println("File '" + filePath + "' does not exists.");
-            return 1;
+            System.out.println("false");
         }
+        System.out.println("true");
         return 0;
     }
 

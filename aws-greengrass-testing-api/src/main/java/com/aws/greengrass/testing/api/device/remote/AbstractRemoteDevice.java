@@ -24,13 +24,20 @@ public abstract class AbstractRemoteDevice implements Device {
 
     @Override
     public boolean exists(final String path) {
+        boolean existFlag = false;
         try {
-            execute(CommandInput.builder()
+            String output = executeToString(CommandInput.builder()
                     .line("java")
                     .addArgs("-jar", pillboxContext.onDevice().toString(),
                             "files", "exists", path)
-                    .build());  
-            return true;
+                    .build());
+            if (output.trim().equals("false")) {
+                LOGGER.info("File {} does not exists", path);
+            } else if (output.trim().equals("true")) {
+                LOGGER.info("File {} exists", path);
+                existFlag = true;
+            }
+            return existFlag;
         } catch (CommandExecutionException e) {
             LOGGER.warn("Failed to check if path {} exists, assuming false", path, e);
             return false;
