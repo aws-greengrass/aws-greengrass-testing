@@ -9,4 +9,4 @@ Manifests:
   - Platform:
       os: all
     Artifacts:
-      - URI: "docker:amazon/amazon-ec2-metadata-mock:v1.9.0"
+      - URI: "docker:public.ecr.aws/aws-ec2/amazon-ec2-metadata-mock:v1.10.1"
