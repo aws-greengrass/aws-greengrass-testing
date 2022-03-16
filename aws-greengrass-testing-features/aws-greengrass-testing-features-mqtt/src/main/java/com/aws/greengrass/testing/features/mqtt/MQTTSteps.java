@@ -11,6 +11,7 @@ import com.aws.greengrass.testing.model.RegistrationContext;
 import com.aws.greengrass.testing.model.ScenarioContext;
 import com.aws.greengrass.testing.model.TestContext;
 import com.aws.greengrass.testing.resources.AWSResources;
+import com.aws.greengrass.testing.resources.iot.IotCertificateSpec;
 import com.aws.greengrass.testing.resources.iot.IotLifecycle;
 import com.aws.greengrass.testing.resources.iot.IotThingSpec;
 import io.cucumber.guice.ScenarioScoped;
@@ -87,6 +88,9 @@ public class MQTTSteps {
                     .createCertificate(true)
                     .thingName(testContext.testId().idFor("host-mqtt"))
                     .policySpec(iotSteps.createDefaultPolicy("host-mqtt-policy"))
+                    .certificateSpec(IotCertificateSpec.builder()
+                            .thingName(testContext.testId().idFor("host-mqtt"))
+                            .build())
                     .build());
             try (EventLoopGroup loopGroup = new EventLoopGroup(1);
                  HostResolver resolver = new HostResolver(loopGroup);
