@@ -22,6 +22,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import software.amazon.awssdk.utils.IoUtils;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -39,6 +40,9 @@ import javax.inject.Named;
 public class GreengrassContextModule extends AbstractModule {
     private static final Logger LOGGER = LogManager.getLogger(GreengrassContextModule.class);
     static String DEFAULT_NUCLEUS_VERSION;
+    private static final String GREENGRASS_RECIPE_FILE_LOCATION = "conf/recipe.yaml";
+    private static final String COMPONENT_VERSION_KEY = "ComponentVersion";
+    private static final String TARGET_DIRECTORY = "greengrass";
 
     static void extractZip(ObjectMapper mapper, Path archivePath, Path stagingPath) throws IOException {
         LOGGER.info("Extracting {} into {}", archivePath, stagingPath);
@@ -80,10 +84,12 @@ public class GreengrassContextModule extends AbstractModule {
             final ParameterValues parameterValues,
             @Named(JacksonModule.YAML) ObjectMapper mapper,
             final InitializationContext initializationContext,
-            final CleanupContext cleanupContext) {
+            final CleanupContext cleanupContext) throws IOException {
+        FileInputStream nucleusRecipeInStream = null;
         try {
             Path tempDirectory;
             Optional<String> tempDirectoryName = parameterValues.getString(FeatureParameters.TEST_TEMP_PATH);
+            Optional<String> nucleusVersion = parameterValues.getString(FeatureParameters.NUCLEUS_VERSION);
             if (tempDirectoryName.isPresent()) {
                 tempDirectory = Paths.get(tempDirectoryName.get());
                 Files.createDirectories(tempDirectory);
@@ -96,17 +102,30 @@ public class GreengrassContextModule extends AbstractModule {
                         .orElseThrow(() -> new IllegalArgumentException("Parameter "
                                 + FeatureParameters.NUCLEUS_ARCHIVE_PATH + " is required if not testing against "
                                 + "pre-installed versions of Greengrass on the device."));
-                extractZip(mapper, archivePath, tempDirectory.resolve("greengrass"));
+                extractZip(mapper, archivePath, tempDirectory.resolve(TARGET_DIRECTORY));
+
+                if (!nucleusVersion.isPresent()) {
+                    File nucleusRecipeFile = tempDirectory.resolve(TARGET_DIRECTORY)
+                            .resolve(GREENGRASS_RECIPE_FILE_LOCATION).toFile();
+                    nucleusRecipeInStream = new FileInputStream(nucleusRecipeFile);
+                    Map<String, Object> recipeObject =
+                            mapper.readValue(nucleusRecipeInStream, new TypeReference<Map<String, Object>>() {});
+                    nucleusVersion = Optional.ofNullable(String.valueOf(recipeObject.get(COMPONENT_VERSION_KEY)));
+                }
             }
+
             return GreengrassContext.builder()
-                    .version(parameterValues.getString(FeatureParameters.NUCLEUS_VERSION)
-                            .orElse(DEFAULT_NUCLEUS_VERSION))
+                    .version(nucleusVersion.orElse(DEFAULT_NUCLEUS_VERSION))
                     .tempDirectory(tempDirectory)
                     .cleanupContext(cleanupContext)
                     .build();
         } catch (NullPointerException | IOException ie) {
             LOGGER.error("Failed to provision Greengrass testing context", ie);
             throw new ModuleProvisionException(ie);
+        } finally {
+            if (nucleusRecipeInStream != null) {
+                nucleusRecipeInStream.close();
+            }
         }
     }
 }
