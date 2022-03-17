@@ -39,11 +39,13 @@ public class DockerSteps {
      *
      * @param image fully qualified image name in <code>name:tag</code> representation
      */
-    @Given("the docker image {word} does not exist on the device")
+    @Given("deleted the docker image {word} if exists on the device")
     public void checkDockerImageIsMissing(String image) {
         Predicate<Set<String>> predicate = Set::isEmpty;
-        checkDockerImagePresence(image, predicate.negate(),
-                "The image " + image + " is already on the device. Please remove the image and try again.");
+        if (isDockerImagePresence(image, predicate.negate())) {
+            removeDockerImage(image);
+        }
+
     }
 
     @Then("I can check that the docker image {word} exists on the device")
@@ -65,18 +67,30 @@ public class DockerSteps {
         LOGGER.debug("Removed docker image {}: {}", image, result);
     }
 
-    private void checkDockerImagePresence(String image, Predicate<Set<String>> validity, String message) {
+    private boolean isDockerImagePresence(String image, Predicate<Set<String>> validity) {
         // This could be improved by using the API on a local host.
+
         Set<String> parts = new HashSet<>(Arrays.stream(image.split(":")).collect(Collectors.toSet()));
         String[] result = platform.commands().executeToString(CommandInput.builder()
                 .line("docker").addArgs("images")
                 .build())
                 .split("\\r?\\n");
+
         Arrays.stream(result)
                 .map(String::trim)
                 .flatMap(line -> Arrays.stream(line.split("\\s+")))
                 .forEach(parts::remove);
+
         if (!validity.test(parts)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private void checkDockerImagePresence(String image, Predicate<Set<String>> validity, String message) {
+
+        if (!isDockerImagePresence(image, validity)) {
             throw new IllegalStateException(message);
         }
     }
