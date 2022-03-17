@@ -8,6 +8,7 @@ package com.aws.greengrass.testing.component;
 import com.aws.greengrass.testing.api.ComponentPreparationService;
 import com.aws.greengrass.testing.api.model.ComponentOverrideNameVersion;
 import com.aws.greengrass.testing.api.model.ComponentOverrideVersion;
+import com.aws.greengrass.testing.model.GreengrassContext;
 import com.aws.greengrass.testing.resources.greengrass.GreengrassV2Lifecycle;
 import com.vdurmont.semver4j.Requirement;
 import com.vdurmont.semver4j.Semver;
@@ -23,13 +24,23 @@ import javax.inject.Inject;
 
 public class CloudComponentPreparationService implements ComponentPreparationService {
     private static final String LATEST = "LATEST";
+    private static final String NUCLEUS_VERSION = "NUCLEUS_VERSION";
     private final GreengrassV2Lifecycle ggv2;
     private final Region currentRegion;
+    private final GreengrassContext ggContext;
 
+    /**
+     * Constructor.
+     * @param ggv2 {@link GreengrassV2Lifecycle}
+     * @param currentRegion {@link Region}
+     * @param ggContext Greengrass context
+     */
     @Inject
-    public CloudComponentPreparationService(final GreengrassV2Lifecycle ggv2, final Region currentRegion) {
+    public CloudComponentPreparationService(final GreengrassV2Lifecycle ggv2, final Region currentRegion,
+                                            final GreengrassContext ggContext) {
         this.currentRegion = currentRegion;
         this.ggv2 = ggv2;
+        this.ggContext = ggContext;
     }
 
     private Optional<Component> pinpointComponent(ComponentOverrideNameVersion nameVersion) {
@@ -93,6 +104,8 @@ public class CloudComponentPreparationService implements ComponentPreparationSer
                 .map(component -> {
                     if (nameVersion.version().value().equals(LATEST)) {
                         return convert(nameVersion, component.latestVersion().componentVersion());
+                    } else if (nameVersion.version().value().equals(NUCLEUS_VERSION)) {
+                        return convert(nameVersion, ggContext.version());
                     } else {
                         return convert(nameVersion, pinpointViableVersion(nameVersion, component));
                     }
