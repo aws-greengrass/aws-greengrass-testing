@@ -6,9 +6,9 @@ Feature: Greengrass V2 Docker Component
 
   @Docker @IDT
   Scenario: I can deploy Docker containers as Greengrass Components
-    Given the docker image amazon/amazon-ec2-metadata-mock:v1.9.0 does not exist on the device
+    Given the docker image public.ecr.aws/aws-ec2/amazon-ec2-metadata-mock:v1.10.1 does not exist on the device
     And I create a Greengrass deployment with components
       | DockerHubAmazonContainer | classpath:/greengrass/component/recipes/DockerHubAmazonContainer.yaml |
     When I deploy the Greengrass deployment configuration
     Then the Greengrass deployment is COMPLETED on the device after 2 minutes
-    And I can check that the docker image amazon/amazon-ec2-metadata-mock:v1.9.0 exists on the device
+    And I can check that the docker image public.ecr.aws/aws-ec2/amazon-ec2-metadata-mock:v1.10.1 exists on the device
