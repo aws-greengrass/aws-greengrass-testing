@@ -1,9 +1,15 @@
 name: CI with Maven
 on:
   push:
-    branches: [ main ]
+    branches:
+      - 'main'
+      - 'external_pr_*'
   pull_request:
     branches: '*'
+env:
+  AWS_REGION : "us-east-1"
+  CODE_BUILD_PROJECT_LINUX: "RunUATUsingOTF"
+
 jobs:
   build:
     runs-on: ${{ matrix.os }}
@@ -24,3 +30,25 @@ jobs:
         run: mvn -U -ntp process-resources
       - name: Build with Maven
         run: mvn -U -ntp clean verify
+
+  uat-linux:
+    permissions:
+      id-token: write
+      contents: read
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ ubuntu-latest ]
+    steps:
+      - name: configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: arn:aws:iam::057232711721:role/abanthiyGithubOtfRepo
+          role-session-name: otfCI
+          aws-region: ${{ env.AWS_REGION }}
+      - name: Run UAT
+        uses: aws-actions/aws-codebuild-run-build@v1
+        with:
+          project-name: ${{ env.CODE_BUILD_PROJECT_LINUX }}
+
+
