@@ -1,4 +1,4 @@
-name: CI with Maven
+name: CI from forked repo
 on:
   push:
     branches:
