@@ -1,4 +1,4 @@
-name: CI with Maven
+name: CI from forked repo
 on:
   push:
     branches:
@@ -50,5 +50,6 @@ jobs:
         uses: aws-actions/aws-codebuild-run-build@v1
         with:
           project-name: ${{ env.CODE_BUILD_PROJECT_LINUX }}
+          buildspec-override: codebuild/uat_linux_buildspec.yaml
 
 
