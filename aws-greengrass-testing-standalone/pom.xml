@@ -19,6 +19,7 @@
                 <version>3.2.4</version>
                 <executions>
                     <execution>
+                        <id>otfStandalone</id>
                         <phase>package</phase>
                         <goals>
                             <goal>shade</goal>
@@ -33,6 +34,29 @@
                             </artifactSet>
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ApacheLicenseResourceTransformer"/>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>com.aws.greengrass.testing.launcher.TestLauncher</mainClass>
+                                </transformer>
+                            </transformers>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>otfStandaloneWithoutAwsSdk</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <finalName>aws-greengrass-testing-without-awssdk</finalName>
+                            <artifactSet>
+                                <excludes>
+                                    <exclude>io.netty:*</exclude>
+                                    <exclude>com.typesafe.netty:*</exclude>
+                                    <exclude>software.amazon.awssdk:*</exclude>
+                                </excludes>
+                            </artifactSet>
+                            <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <mainClass>com.aws.greengrass.testing.launcher.TestLauncher</mainClass>
@@ -87,5 +111,4 @@
             <version>${project.parent.version}</version>
         </dependency>
     </dependencies>
-
 </project>
