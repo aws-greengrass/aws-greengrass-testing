@@ -44,6 +44,8 @@ interface TestContextModel extends Closeable {
 
     boolean hsmConfigured();
 
+    String multipartSize();
+
     List<String> trustedPluginsPaths();
 
     @Override
