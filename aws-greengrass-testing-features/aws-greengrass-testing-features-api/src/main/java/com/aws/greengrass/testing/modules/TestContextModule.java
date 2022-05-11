@@ -121,6 +121,7 @@ public class TestContextModule extends AbstractModule {
                 .hsmConfigured(Boolean.valueOf(parameterValues.getString(HsmParameters.HSM_CONFIGURED).orElse(
                         "false")))
                 .trustedPluginsPaths(trustedPluginsPaths)
+                .multipartSize(parameterValues.getString(FeatureParameters.MULTIPART_SIZE).orElse("5242880"))
                 .build();
     }
 }
