@@ -10,6 +10,7 @@ import com.aws.greengrass.testing.resources.AWSResources;
 import com.aws.greengrass.testing.resources.ResourceSpec;
 import org.immutables.value.Value;
 import software.amazon.awssdk.services.iot.IotClient;
+import software.amazon.awssdk.services.iot.model.AddThingToThingGroupRequest;
 import software.amazon.awssdk.services.iot.model.AttachPolicyRequest;
 import software.amazon.awssdk.services.iot.model.AttachThingPrincipalRequest;
 import software.amazon.awssdk.services.iot.model.CreateThingRequest;
@@ -63,6 +64,14 @@ interface IotThingSpecModel extends ResourceSpec<IotClient, IotThing>, IotTaggin
         CreateThingResponse createdThing = client.createThing(CreateThingRequest.builder()
                 .thingName(thingName())
                 .build());
+
+        createdGroups.stream().forEach(g -> {
+            client.addThingToThingGroup(AddThingToThingGroupRequest.builder()
+                    .thingArn(createdThing.thingArn())
+                    .thingGroupName(g.groupName())
+                    .build());
+        });
+
 
         String certificateArn = null;
         if (createCertificate()) {

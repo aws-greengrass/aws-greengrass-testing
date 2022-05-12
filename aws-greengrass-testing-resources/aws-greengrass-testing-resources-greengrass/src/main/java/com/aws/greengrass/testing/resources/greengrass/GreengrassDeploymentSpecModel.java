@@ -73,6 +73,7 @@ interface GreengrassDeploymentSpecModel extends ResourceSpec<GreengrassV2Client,
                         lc.listThingsForGroup(group.groupName()).things().stream().forEach(thingNames::add);
                     });
         });
+
         CreateDeploymentResponse created = client.createDeployment(CreateDeploymentRequest.builder()
                 .targetArn(targetArn.get())
                 .deploymentName(deploymentName())

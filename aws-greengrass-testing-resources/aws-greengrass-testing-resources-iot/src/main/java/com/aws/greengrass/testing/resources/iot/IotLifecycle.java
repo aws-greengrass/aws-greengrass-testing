@@ -13,7 +13,9 @@ import software.amazon.awssdk.services.iot.IotClient;
 import software.amazon.awssdk.services.iot.model.DescribeEndpointRequest;
 import software.amazon.awssdk.services.iot.model.DescribeThingRequest;
 import software.amazon.awssdk.services.iot.model.DescribeThingResponse;
+import software.amazon.awssdk.services.iot.model.ListThingGroupsForThingRequest;
 import software.amazon.awssdk.services.iot.model.ListThingsInThingGroupRequest;
+import software.amazon.awssdk.services.iot.paginators.ListThingGroupsForThingIterable;
 import software.amazon.awssdk.services.iot.paginators.ListThingsInThingGroupIterable;
 
 import javax.inject.Inject;
@@ -80,6 +82,17 @@ public class IotLifecycle extends AbstractAWSResourceLifecycle<IotClient> {
         return client.listThingsInThingGroupPaginator(ListThingsInThingGroupRequest.builder()
                 .recursive(true)
                 .thingGroupName(thingGroupName)
+                .build());
+    }
+
+    /**
+     * List the thing groups for a thing.
+     * @param thingName name of the thing
+     * @return
+     */
+    public ListThingGroupsForThingIterable listThingGroupsForAThing(String thingName) {
+        return client.listThingGroupsForThingPaginator(ListThingGroupsForThingRequest.builder()
+                .thingName(thingName)
                 .build());
     }
 
