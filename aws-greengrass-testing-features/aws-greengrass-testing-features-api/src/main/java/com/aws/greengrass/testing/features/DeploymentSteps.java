@@ -27,10 +27,11 @@ import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import software.amazon.awssdk.core.pagination.sync.SdkIterable;
 import software.amazon.awssdk.services.greengrassv2.model.ComponentConfigurationUpdate;
 import software.amazon.awssdk.services.greengrassv2.model.ComponentDeploymentSpecification;
-import software.amazon.awssdk.services.greengrassv2.model.EffectiveDeployment;
 import software.amazon.awssdk.services.greengrassv2.model.EffectiveDeploymentExecutionStatus;
+import software.amazon.awssdk.services.iot.model.GroupNameAndArn;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -52,6 +53,7 @@ import static com.aws.greengrass.testing.features.GreengrassCliSteps.LOCAL_DEPLO
 @ScenarioScoped
 public class DeploymentSteps {
     private static final Logger LOGGER = LogManager.getLogger(DeploymentSteps.class);
+    private static final String IOT_JOB_EXECUTION_STATUS_SUCCEEDED = "SUCCEEDED";
     private final AWSResources resources;
     private final ComponentPreparationService componentPreparation;
     private final ComponentOverrides overrides;
@@ -199,6 +201,35 @@ public class DeploymentSteps {
         LOGGER.info("Created Greengrass deployment: {}", deployment.resource().deploymentId());
     }
 
+    @When("I deploy the Greengrass deployment configuration to thing group")
+    public void startDeploymentForThingGroup() {
+        startDeploymentForThingGroup(testContext.testId().idFor("ggc-group"));
+    }
+
+    /**
+     * Deploying to a thing group with the given name.
+     * @param thingGroupName name of the thing group
+     */
+    @When("I deploy the Greengrass deployment configuration to thing group {}")
+    public void startDeploymentForThingGroup(String thingGroupName) {
+
+        IotLifecycle lifecycle = resources.lifecycle(IotLifecycle.class);
+        SdkIterable<GroupNameAndArn> thingGroupIterable =
+                lifecycle.listThingGroupsForAThing(testContext.coreThingName()).thingGroups();
+        Optional<GroupNameAndArn> thingGroupOptional = thingGroupIterable.stream()
+                        .filter(g -> g.groupName().equals(thingGroupName))
+                        .findFirst();
+        if (!thingGroupOptional.isPresent()) {
+            throw new IllegalStateException(String.format("The thing group %s not found for the thing name %s",
+                    thingGroupName, testContext.coreThingName()));
+        }
+        deployment = deployment.withThingArn(null) // setting it to null will trigger group deployment
+                   .withThingGroupArn(thingGroupOptional.get().groupArn());
+
+        deployment = resources.create(deployment);
+        LOGGER.info("Created Greengrass deployment: {}", deployment.resource().deploymentId());
+    }
+
     /**
      * Checks the current deployment is in a terminal status after a time.
      *
@@ -245,6 +276,9 @@ public class DeploymentSteps {
                 .peek(deployment -> LOGGER.debug("Greengrass Deployment {} is in {}",
                         deployment.deploymentId(), deployment.coreDeviceExecutionStatusAsString()))
                 .findFirst()
-                .map(EffectiveDeployment::coreDeviceExecutionStatus);
+                // SUCCEEDED is not a valid EffectiveDeploymentExecutionStatus enum. Possibly a bug in SDK.
+                .map(d -> d.coreDeviceExecutionStatusAsString().equals(IOT_JOB_EXECUTION_STATUS_SUCCEEDED)
+                        ? EffectiveDeploymentExecutionStatus.COMPLETED
+                        : d.coreDeviceExecutionStatus());
     }
 }
