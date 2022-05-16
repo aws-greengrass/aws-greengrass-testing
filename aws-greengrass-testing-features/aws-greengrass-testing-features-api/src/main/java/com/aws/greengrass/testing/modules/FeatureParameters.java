@@ -29,8 +29,6 @@ public class FeatureParameters implements Parameters {
     static final String TRUSTED_PLUGINS_PATHS = "ggc.trusted.plugins";
     public static final String CSR_PATH = "csr.path";
     public static final String EXISTING_DEVICE_CERTIFICATE_ARN = "existing.device.cert.arn";
-    static final String MULTIPART_SIZE = "multipart.size";
-
 
     @Override
     public List<Parameter> available() {
@@ -64,9 +62,7 @@ public class FeatureParameters implements Parameters {
                         + "the trusted plugins that need to added to greengrass. To provide the path on the DUT "
                         + "itself, prefix the path with 'dut:'"),
                 Parameter.of(EXISTING_DEVICE_CERTIFICATE_ARN, "The arn of an already created certificate that"
-                        + "you want to use as device certificate for greengrass."),
-                Parameter.of(MULTIPART_SIZE, "Size of each part of S3 Object to be uploaded to S3 Bucket"
-                        + "Default value is set to 5 MB")
+                        + "you want to use as device certificate for greengrass.")
         );
     }
 }

@@ -41,7 +41,8 @@ interface S3ObjectSpecModel extends ResourceSpec<S3Client, S3Object>, S3TaggingM
     @Override
     S3Object resource();
 
-    String multipartSize();
+    //Default size in bytes (5MB)
+    int DEFAULT_MULTIPART_SIZE = 1024 * 1024 * 5;
 
     @Override
     default S3ObjectSpec create(S3Client client, AWSResources resources) {
@@ -60,16 +61,17 @@ interface S3ObjectSpecModel extends ResourceSpec<S3Client, S3Object>, S3TaggingM
         InputStream inputDataStream = content().contentStreamProvider().newStream();
         ByteArrayOutputStream outputDataStream = new ByteArrayOutputStream();
         try {
-            byte[] buffer = new byte[Integer.parseInt(multipartSize())];
+            byte[] buffer = new byte[DEFAULT_MULTIPART_SIZE];
             int len = 0;
+            int partNumber = 1;
             while ((len = inputDataStream.read(buffer)) != -1) {
                 outputDataStream.write(buffer, 0, len);
-                int partNumber = parts.size() + 1;
                 UploadPartRequest uploadPartRequest = UploadPartRequest.builder()
                         .bucket(bucket())
                         .key(key())
                         .uploadId(multipartUploadResponse.uploadId())
                         .partNumber(partNumber)
+                        .contentLength((long)outputDataStream.size())
                         .build();
 
                 UploadPartResponse uploadPartResponse = client.uploadPart(uploadPartRequest,
@@ -81,6 +83,7 @@ interface S3ObjectSpecModel extends ResourceSpec<S3Client, S3Object>, S3TaggingM
                         .build());
 
                 outputDataStream.reset();
+                partNumber++;
             }
         } catch (IOException e) {
             System.out.println("IOException occurred while uploading artifacts to S3 bucket" + e);
