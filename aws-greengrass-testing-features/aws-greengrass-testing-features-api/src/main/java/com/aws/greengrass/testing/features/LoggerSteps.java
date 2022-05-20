@@ -25,7 +25,7 @@ public class LoggerSteps {
     private final TestContext testContext;
 
     @Inject
-    LoggerSteps(final TestContext testContext) {
+    public LoggerSteps(final TestContext testContext) {
         this.testContext = testContext;
     }
 

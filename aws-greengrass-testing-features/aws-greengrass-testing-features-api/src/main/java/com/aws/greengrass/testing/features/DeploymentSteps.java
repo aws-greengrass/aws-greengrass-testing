@@ -67,7 +67,8 @@ public class DeploymentSteps {
     private Path recipePath;
 
     @Inject
-    DeploymentSteps(
+    @SuppressWarnings("MissingJavadocMethod")
+    public DeploymentSteps(
             final AWSResources resources,
             final ComponentOverrides overrides,
             final TestContext testContext,

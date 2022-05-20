@@ -28,7 +28,8 @@ public class IamSteps {
     private final AWSResourcesContext context;
 
     @Inject
-    IamSteps(
+    @SuppressWarnings("MissingJavadocMethod")
+    public IamSteps(
             TestId testId,
             @Named(JacksonModule.YAML) ObjectMapper mapper,
             AWSResourcesContext context,
