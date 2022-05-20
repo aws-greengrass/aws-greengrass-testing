@@ -1,9 +1,16 @@
-name: CI with Maven
+name: Build then UAT
 on:
+  workflow_dispatch:
   push:
-    branches: [ main ]
+    branches:
+      - 'main'
+      - 'external_pr_*'
   pull_request:
     branches: '*'
+env:
+  AWS_REGION : "us-west-2"
+  CODE_BUILD_PROJECT_LINUX: "OtfUatCodeBuildLinux"
+
 jobs:
   build:
     runs-on: ${{ matrix.os }}
@@ -24,3 +31,26 @@ jobs:
         run: mvn -U -ntp process-resources
       - name: Build with Maven
         run: mvn -U -ntp clean verify
+
+  uat-linux:
+    permissions:
+      id-token: write
+      contents: read
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ ubuntu-latest ]
+    steps:
+      - name: configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: arn:aws:iam::686385081908:role/aws-greengrass-testing-codebuild-uat-role-amazonlinux
+          role-session-name: otfCI
+          aws-region: ${{ env.AWS_REGION }}
+      - name: Run UAT on linux
+        uses: aws-actions/aws-codebuild-run-build@v1
+        with:
+          project-name: ${{ env.CODE_BUILD_PROJECT_LINUX }}
+          buildspec-override: codebuild/uat_linux_buildspec.yaml
+
+
