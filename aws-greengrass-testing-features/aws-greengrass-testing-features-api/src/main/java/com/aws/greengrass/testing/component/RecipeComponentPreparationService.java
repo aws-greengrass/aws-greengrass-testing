@@ -103,7 +103,7 @@ public class RecipeComponentPreparationService implements ComponentPreparationSe
         if (parts[1].indexOf('/') == 0) {
             s3Key = parts[1].substring(1);
         }
-        resources.create(S3ObjectSpec.of(s3Key, bucketName, RequestBody.fromFile(componentArtifact)));
+        resources.create(S3ObjectSpec.of(s3Key, bucketName, componentArtifact));
         LOGGER.info("Uploading {} to s3://{}/{}", componentArtifact, bucketName, s3Key);
         return "s3://" + (bucketName + "/" + s3Key);
     }

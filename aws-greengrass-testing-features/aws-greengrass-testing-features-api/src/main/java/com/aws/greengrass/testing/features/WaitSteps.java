@@ -20,7 +20,7 @@ public class WaitSteps {
     private final TimeoutMultiplier multiplier;
 
     @Inject
-    WaitSteps(TimeoutMultiplier multiplier) {
+    public WaitSteps(TimeoutMultiplier multiplier) {
         this.multiplier = multiplier;
     }
 

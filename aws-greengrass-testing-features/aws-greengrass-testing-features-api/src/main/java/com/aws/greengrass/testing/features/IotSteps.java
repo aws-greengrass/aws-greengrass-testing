@@ -28,7 +28,8 @@ public class IotSteps {
     private final TestId testId;
 
     @Inject
-    IotSteps(
+    @SuppressWarnings("MissingJavadocMethod")
+    public IotSteps(
             final TestId testId,
             final AWSResources resources,
             @Named(JacksonModule.YAML) final ObjectMapper mapper) {

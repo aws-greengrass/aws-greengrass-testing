@@ -60,7 +60,8 @@ public class FileSteps {
     }
 
     @Inject
-    FileSteps(
+    @SuppressWarnings("MissingJavadocMethod")
+    public FileSteps(
             Platform platform,
             TestContext testContext,
             ScenarioContext scenarioContext,

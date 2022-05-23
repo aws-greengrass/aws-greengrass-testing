@@ -42,7 +42,8 @@ public class GreengrassCliSteps {
     private static Logger LOGGER = LogManager.getLogger(GreengrassCliSteps.class);
 
     @Inject
-    GreengrassCliSteps(Platform platform, TestContext testContext,
+    @SuppressWarnings("MissingJavadocMethod")
+    public GreengrassCliSteps(Platform platform, TestContext testContext,
                        ComponentPreparationService componentPreparation,
                        ScenarioContext scenarioContext, WaitSteps waitSteps) {
         this.platform = platform;

@@ -25,7 +25,8 @@ public class S3Steps {
     private final WaitSteps waits;
 
     @Inject
-    S3Steps(
+    @SuppressWarnings("MissingJavadocMethod")
+    public S3Steps(
             final AWSResources resources,
             final TestId testId,
             final WaitSteps waits) {
