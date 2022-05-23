@@ -23,7 +23,7 @@ public class AWSResourcesSteps implements Closeable {
     private final TestContext testContext;
 
     @Inject
-    AWSResourcesSteps(
+    public AWSResourcesSteps(
             final AWSResources resources,
             final TestContext testContext) {
         this.resources = resources;

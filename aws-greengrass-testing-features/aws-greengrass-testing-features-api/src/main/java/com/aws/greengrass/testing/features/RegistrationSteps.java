@@ -60,7 +60,8 @@ public class RegistrationSteps {
     private final FileSteps fileSteps;
 
     @Inject
-    RegistrationSteps(
+    @SuppressWarnings("MissingJavadocMethod")
+    public RegistrationSteps(
             Platform platform,
             AWSResources resources,
             IamSteps iamSteps,

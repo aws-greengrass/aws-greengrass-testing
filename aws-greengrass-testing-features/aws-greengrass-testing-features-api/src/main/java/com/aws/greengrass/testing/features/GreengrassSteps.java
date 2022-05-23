@@ -20,7 +20,7 @@ public class GreengrassSteps implements Closeable {
     private final FileSteps files;
 
     @Inject
-    GreengrassSteps(
+    public GreengrassSteps(
             final Greengrass greengrass,
             final FileSteps files) {
         this.greengrass = greengrass;
