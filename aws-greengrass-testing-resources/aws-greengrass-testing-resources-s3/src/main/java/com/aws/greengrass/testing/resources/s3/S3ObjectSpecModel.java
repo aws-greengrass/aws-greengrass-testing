@@ -7,7 +7,10 @@ package com.aws.greengrass.testing.resources.s3;
 
 import com.aws.greengrass.testing.api.model.TestingModel;
 import com.aws.greengrass.testing.resources.AWSResources;
+import com.aws.greengrass.testing.resources.AbstractAWSResourceLifecycle;
 import com.aws.greengrass.testing.resources.ResourceSpec;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.immutables.value.Value;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -44,6 +47,8 @@ interface S3ObjectSpecModel extends ResourceSpec<S3Client, S3Object>, S3TaggingM
     //Default size in bytes (5MB)
     int DEFAULT_MULTIPART_SIZE = 1024 * 1024 * 5;
 
+    static final Logger LOGGER = LogManager.getLogger(AbstractAWSResourceLifecycle.class);
+
     @Override
     default S3ObjectSpec create(S3Client client, AWSResources resources) {
         final CreateMultipartUploadRequest multipartUploadRequest = CreateMultipartUploadRequest.builder()
@@ -75,7 +80,7 @@ interface S3ObjectSpecModel extends ResourceSpec<S3Client, S3Object>, S3TaggingM
                         .build();
 
                 UploadPartResponse uploadPartResponse = client.uploadPart(uploadPartRequest,
-                        RequestBody.fromBytes(outputDataStream.toByteArray()));
+                        RequestBody.fromBytes(buffer));
 
                 parts.add(CompletedPart.builder()
                         .partNumber(partNumber)
@@ -86,7 +91,7 @@ interface S3ObjectSpecModel extends ResourceSpec<S3Client, S3Object>, S3TaggingM
                 partNumber++;
             }
         } catch (IOException e) {
-            System.out.println("IOException occurred while uploading artifacts to S3 bucket" + e);
+            LOGGER.error("IOException occurred while uploading artifacts to S3 bucket: {}", e);
         }
 
 
