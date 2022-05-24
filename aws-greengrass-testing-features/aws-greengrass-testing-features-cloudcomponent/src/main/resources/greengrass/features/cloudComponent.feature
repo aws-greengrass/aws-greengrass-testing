@@ -23,7 +23,7 @@ Feature: Testing Cloud component in Greengrass
     When I create a Greengrass deployment with components
       | com.aws.HelloWorld | classpath:/greengrass/components/recipes/hello_world_recipe.yaml |
     And I deploy the Greengrass deployment configuration to thing group
-    Then the Greengrass deployment is COMPLETED on the device after 180 seconds
+    Then the Greengrass deployment is COMPLETED on the device after 160 seconds
     And the com.aws.HelloWorld log on the device contains the line "Hello World!!" within 20 seconds
     # Deployment with new version
     When I create a Greengrass deployment with components
