@@ -30,7 +30,6 @@ public class FeatureParameters implements Parameters {
     public static final String CSR_PATH = "csr.path";
     public static final String EXISTING_DEVICE_CERTIFICATE_ARN = "existing.device.cert.arn";
 
-
     @Override
     public List<Parameter> available() {
         return Arrays.asList(

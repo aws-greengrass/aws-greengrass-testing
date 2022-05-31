@@ -7,14 +7,29 @@ package com.aws.greengrass.testing.resources.s3;
 
 import com.aws.greengrass.testing.api.model.TestingModel;
 import com.aws.greengrass.testing.resources.AWSResources;
+import com.aws.greengrass.testing.resources.AbstractAWSResourceLifecycle;
 import com.aws.greengrass.testing.resources.ResourceSpec;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.immutables.value.Value;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.PutObjectRequest;
-import software.amazon.awssdk.services.s3.model.PutObjectResponse;
+import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadRequest;
+import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadResponse;
+import software.amazon.awssdk.services.s3.model.CompletedMultipartUpload;
+import software.amazon.awssdk.services.s3.model.CompletedPart;
+import software.amazon.awssdk.services.s3.model.CreateMultipartUploadRequest;
+import software.amazon.awssdk.services.s3.model.CreateMultipartUploadResponse;
 import software.amazon.awssdk.services.s3.model.Tagging;
+import software.amazon.awssdk.services.s3.model.UploadPartRequest;
+import software.amazon.awssdk.services.s3.model.UploadPartResponse;
 
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import javax.annotation.Nullable;
 
 @TestingModel
@@ -24,22 +39,88 @@ interface S3ObjectSpecModel extends ResourceSpec<S3Client, S3Object>, S3TaggingM
 
     String bucket();
 
-    RequestBody content();
+    Path content();
 
     @Nullable
     @Override
     S3Object resource();
 
+    //Default size in bytes (5MB)
+    int DEFAULT_MULTIPART_SIZE = 1024 * 1024 * 5;
+    Logger LOGGER = LogManager.getLogger(AbstractAWSResourceLifecycle.class);
+
     @Override
     default S3ObjectSpec create(S3Client client, AWSResources resources) {
-        final PutObjectRequest putRequest = PutObjectRequest.builder()
+        final CreateMultipartUploadRequest multipartUploadRequest = CreateMultipartUploadRequest.builder()
                 .bucket(bucket())
                 .key(key())
                 .tagging(Tagging.builder()
                         .tagSet(convertTags(resources.generateResourceTags()))
                         .build())
                 .build();
-        final PutObjectResponse putResponse = client.putObject(putRequest, content());
+
+        final CreateMultipartUploadResponse multipartUploadResponse = client
+                .createMultipartUpload(multipartUploadRequest);
+
+        List<CompletedPart> parts = new ArrayList<>();
+        FileInputStream fileInputStream = null;
+        byte[] buffer = new byte[DEFAULT_MULTIPART_SIZE];
+        int len = 0;
+        int partNumber = 1;
+        try {
+            if (Files.exists(content())) {
+                fileInputStream = new FileInputStream(content().toFile());
+            } else {
+                String errMsg = "Caught exception while uploading artifacts to S3: File does not exist on path "
+                        + content();
+                LOGGER.error(errMsg);
+                throw new RuntimeException(errMsg);
+            }
+            while ((len = fileInputStream.read(buffer)) != -1) {
+                UploadPartRequest uploadPartRequest = UploadPartRequest.builder()
+                        .bucket(bucket())
+                        .key(key())
+                        .uploadId(multipartUploadResponse.uploadId())
+                        .partNumber(partNumber)
+                        .contentLength((long) len)
+                        .build();
+
+                UploadPartResponse uploadPartResponse = client.uploadPart(uploadPartRequest,
+                        RequestBody.fromBytes(buffer));
+
+                parts.add(CompletedPart.builder()
+                        .partNumber(partNumber)
+                        .eTag(uploadPartResponse.eTag())
+                        .build());
+
+                partNumber++;
+            }
+        } catch (IOException e) {
+            LOGGER.error("IOException occurred while uploading artifacts to S3 bucket: {}", e);
+            throw new RuntimeException(e);
+        } finally {
+            try {
+                if (fileInputStream != null) {
+                    fileInputStream.close();
+                }
+            } catch (IOException e) {
+                LOGGER.error("IOException occurred while closing fileInputStream {}", e);
+                throw new RuntimeException(e);
+            }
+        }
+
+        CompleteMultipartUploadRequest completeMultipartUploadRequest = CompleteMultipartUploadRequest.builder()
+                .bucket(bucket())
+                .key(key())
+                .uploadId(multipartUploadResponse.uploadId())
+                .multipartUpload(CompletedMultipartUpload
+                        .builder()
+                        .parts(parts)
+                        .build())
+                .build();
+
+        CompleteMultipartUploadResponse completeMultipartUploadResponse = client
+                .completeMultipartUpload(completeMultipartUploadRequest);
 
         return S3ObjectSpec.builder()
                 .from(this)
@@ -47,8 +128,8 @@ interface S3ObjectSpecModel extends ResourceSpec<S3Client, S3Object>, S3TaggingM
                 .resource(S3Object.builder()
                         .bucket(bucket())
                         .key(key())
-                        .etag(putResponse.eTag())
-                        .versionId(putResponse.versionId())
+                        .etag(completeMultipartUploadResponse.eTag())
+                        .versionId(completeMultipartUploadResponse.versionId())
                         .build())
                 .build();
     }
