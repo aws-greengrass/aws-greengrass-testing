@@ -104,11 +104,12 @@ public abstract class UnixCommands implements Commands, UnixPathsMixin {
 
     @Override
     public void kill(List<Integer> processIds) throws CommandExecutionException {
-        execute(CommandInput.builder()
-            .line("kill " + processIds.stream()
+        String output = executeToString(CommandInput.builder()
+            .line("kill -9 " + processIds.stream()
                     .map(i -> Integer.toString(i))
                     .collect(Collectors.joining(" ")))
             .build());
+        LOGGER.debug("Output of kill command : " + output);
     }
 
     @Override

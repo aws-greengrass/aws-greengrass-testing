@@ -133,6 +133,8 @@ public class DefaultGreengrass implements Greengrass {
                 platform.commands().killAll(greengrassProcess);
                 if (!waits.untilTrue(() -> platform.commands().findDescendants(greengrassProcess).size() == 1,
                         30, TimeUnit.SECONDS)) {
+                    LOGGER.error("The pids of descendants of greengrass process still active are "
+                            + platform.commands().findDescendants(greengrassProcess));
                     throw new IllegalStateException("Failed to successfully remove the Greengrass process "
                             + greengrassProcess);
                 }
