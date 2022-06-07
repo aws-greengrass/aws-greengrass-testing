@@ -11,6 +11,11 @@ import com.aws.greengrass.testing.api.model.ParameterValue;
 import com.aws.greengrass.testing.launcher.reporting.StepTrackingReporting;
 import io.cucumber.core.feature.FeatureWithLines;
 import io.cucumber.core.feature.GluePath;
+import io.cucumber.core.internal.gherkin.deps.com.google.gson.Gson;
+import io.cucumber.core.internal.gherkin.deps.com.google.gson.JsonArray;
+import io.cucumber.core.internal.gherkin.deps.com.google.gson.JsonElement;
+import io.cucumber.core.internal.gherkin.deps.com.google.gson.JsonObject;
+import io.cucumber.core.internal.gherkin.deps.com.google.gson.JsonParser;
 import io.cucumber.core.options.RuntimeOptionsBuilder;
 import io.cucumber.core.runtime.Runtime;
 import org.apache.logging.log4j.Level;
@@ -24,12 +29,18 @@ import org.apache.logging.log4j.core.config.LoggerConfig;
 import org.apache.logging.log4j.core.layout.PatternLayout;
 import picocli.CommandLine;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.NotDirectoryException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -38,6 +49,11 @@ public final class TestLauncher {
     private static final String DEFAULT_GLUE_PATH = "com.aws.greengrass";
     private static final String DEFAULT_FEATURES = "classpath:greengrass/features";
     private static final String TEST_LOG_FILE = "greengrass-test-run.log";
+    private static final String CUCUMBER_REPORT = "cucumber.json";
+    private static Integer numberOfBatches;
+    private static Integer batchIndex;
+    private static List<List<String>> batchGroup = new ArrayList<>();
+    private static List<String> uriPool = new ArrayList<>();
 
     private static CommandLine.Model.CommandSpec createCommandSpec() {
         CommandLine.Model.CommandSpec commandSpec = CommandLine.Model.CommandSpec.create();
@@ -69,6 +85,22 @@ public final class TestLauncher {
         return commandSpec;
     }
 
+    private static void loadParallelizationConfig(ParameterValues values) {
+        final String parallelConfig = values.getString("parallel.config").orElse("{}");
+        JsonObject object = new JsonParser().parse(parallelConfig).getAsJsonObject();
+
+        JsonElement bi = object.get("batchIndex");
+        batchIndex = bi == null ? 0 : bi.getAsInt();
+
+        JsonElement nb = object.get("numberOfBatches");
+        numberOfBatches = nb == null ? 1 : nb.getAsInt();
+
+        // Initialize group list
+        for (int i = 0; i < numberOfBatches; i++) {
+            batchGroup.add(new ArrayList<>());
+        }
+    }
+
     /**
      * Start the {@link TestLauncher} wrapping a Cucumber platform engine.
      *
@@ -82,15 +114,40 @@ public final class TestLauncher {
             System.exit(0);
         }
         final ParameterValues values = new TestLauncherParameterValues();
+
+        // load parallel config
+        loadParallelizationConfig(values);
+
+        // dry-run
+        runTests(values, true, null);
+
+        // parse cucumber report to get tests running on each device
+        parseDryRunCucumberReport();
+
+        // actual run
+        runTests(values, false, batchGroup.get(batchIndex));
+
+    }
+
+    private static void runTests(ParameterValues values, boolean dryRun, List<String> uriPool) throws IOException {
         final Path output = Paths.get(values.getString("test.log.path").orElse(""));
         Files.createDirectories(output);
         addFileAppender(values, output);
 
         RuntimeOptionsBuilder optionsBuilder = new RuntimeOptionsBuilder()
-                .addFeature(FeatureWithLines.parse(DEFAULT_FEATURES))
                 .addGlue(GluePath.parse(DEFAULT_GLUE_PATH))
                 .setStrict(true)
+                .setDryRun(dryRun)
                 .addPluginName(StepTrackingReporting.class.getName(), true);
+
+        if (dryRun) {
+            optionsBuilder.addFeature(FeatureWithLines.parse(DEFAULT_FEATURES));
+        } else {
+            for (String uri : uriPool) {
+                optionsBuilder.addFeature(FeatureWithLines.parse(uri));
+            }
+        }
+
         values.getString(TestLauncherParameters.TAGS).ifPresent(tags -> {
             if (!tags.contains("@")) {
                 // Assuming JUnit style tags being supplied here
@@ -113,6 +170,11 @@ public final class TestLauncher {
             optionsBuilder.addPluginName("junit:" + resultsXml, true);
         }
 
+        if (values.getBoolean(TestLauncherParameters.TEST_RESULTS_JSON).orElse(true)) {
+            final Path resultsJson = output.toAbsolutePath().resolve("cucumber.json");
+            optionsBuilder.addPluginName("json:" + resultsJson, true);
+        }
+
         // Allow external feature files. This enables framework features to work with static features.
         values.getString(TestLauncherParameters.FEATURE_PATH).ifPresent(featurePath -> {
             try (DirectoryStream<Path> paths = Files.newDirectoryStream(Paths.get(featurePath), "*.feature")) {
@@ -128,7 +190,10 @@ public final class TestLauncher {
                 .withRuntimeOptions(optionsBuilder.build())
                 .build();
         runtime.run();
-        System.exit(runtime.exitStatus());
+
+        if (!dryRun) {
+            System.exit(runtime.exitStatus());
+        }
     }
 
 
@@ -156,5 +221,48 @@ public final class TestLauncher {
         }
         config.setLevel(level);
         context.updateLoggers();
+    }
+
+    private static void parseDryRunCucumberReport() throws IOException {
+        ParameterValues values = new TestLauncherParameterValues();
+        Path output = Paths.get(values.getString("test.log.path").orElse(""));
+        String cucumberReport = output.toAbsolutePath().resolve(CUCUMBER_REPORT).toString();
+        if (!new File(cucumberReport).isFile()) {
+            throw new FileNotFoundException(cucumberReport + " is not found");
+        }
+
+        Gson gson = new Gson();
+        String objectStr;
+        try (FileReader fileReader = new FileReader(cucumberReport)) {
+            objectStr = new JsonParser().parse(fileReader).toString();
+        }
+
+        JsonArray features = gson.fromJson(objectStr, JsonArray.class);
+        for (int i = 0; i < features.size(); i++) {
+            JsonObject feature = features.get(i).getAsJsonObject();
+            String uri = feature.get("uri").getAsString();
+
+            for (JsonElement json : feature.get("elements").getAsJsonArray()) {
+                JsonObject element = json.getAsJsonObject();
+                if (element.get("type").getAsString().equals("background")) {
+                    continue;
+                }
+                String line = element.get("line").getAsString();
+                // e.g. classpath:/evergreen/features/platform/platform-1.feature:6
+                uriPool.add(uri.split(":")[0] + ":" + uri.split(":")[1] + ":" + line);
+            }
+        }
+
+        // Distribute to each group as even as possible
+        int offset = 0;
+        for (int i = 0; i < uriPool.size(); i++) {
+            batchGroup.get(offset % numberOfBatches).add(uriPool.get(offset++));
+        }
+
+        LOGGER.info("Parallelization mechanism is as following:");
+        for (int i = 0; i < batchGroup.size(); i++) {
+            LOGGER.info("Batch[{}] test case group contains: {} cases in total, "
+                    + "they are: \n * {}", i, batchGroup.get(i).size(), batchGroup.get(i).toString());
+        }
     }
 }
