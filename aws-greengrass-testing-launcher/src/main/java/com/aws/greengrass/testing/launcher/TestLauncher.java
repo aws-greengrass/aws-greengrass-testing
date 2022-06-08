@@ -113,6 +113,11 @@ public final class TestLauncher {
             optionsBuilder.addPluginName("junit:" + resultsXml, true);
         }
 
+        if (values.getBoolean(TestLauncherParameters.TEST_RESULTS_JSON).orElse(true)) {
+            final Path resultsJson = output.toAbsolutePath().resolve("cucumber.json");
+            optionsBuilder.addPluginName("json:" + resultsJson, true);
+        }
+
         // Allow external feature files. This enables framework features to work with static features.
         values.getString(TestLauncherParameters.FEATURE_PATH).ifPresent(featurePath -> {
             try (DirectoryStream<Path> paths = Files.newDirectoryStream(Paths.get(featurePath), "*.feature")) {

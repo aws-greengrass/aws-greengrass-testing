@@ -19,6 +19,7 @@ public class TestLauncherParameters implements Parameters {
     static final String FEATURE_PATH = "feature.path";
     static final String TEST_RESULTS_LOG = "test.results.log";
     static final String TEST_RESULTS_XML = "test.results.xml";
+    static final String TEST_RESULTS_JSON = "test.results.json";
     static final String ADDITIONAL_PLUGINS = "additional.plugins";
 
     @Override
@@ -36,6 +37,11 @@ public class TestLauncherParameters implements Parameters {
                         .name(TEST_RESULTS_XML)
                         .description("Flag to determine if a resulting JUnit XML report is generated written to disk. "
                                 + "Defaults to true.")
+                        .build(),
+                Parameter.builder()
+                        .name(TEST_RESULTS_JSON)
+                        .description("Flag to determine if a resulting cucumber json report is generated written to "
+                                + "disk. Defaults to true.")
                         .build(),
                 Parameter.of(LOG_LEVEL, "Log level of the test run. Defaults to \"INFO\""),
                 Parameter.of(ADDITIONAL_PLUGINS, "Optional additional Cucumber plugins.")
