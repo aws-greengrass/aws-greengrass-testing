@@ -96,6 +96,7 @@ public final class TestLauncher {
                 // Assuming JUnit style tags being supplied here
                 final Matcher matcher = Pattern.compile("([A-Za-z0-9_\\.]+)").matcher(tags);
                 tags = matcher.replaceAll("@$1")
+                        .replace("!", "not ")
                         .replace("&", " and ")
                         .replace("|", " or ");
             }
