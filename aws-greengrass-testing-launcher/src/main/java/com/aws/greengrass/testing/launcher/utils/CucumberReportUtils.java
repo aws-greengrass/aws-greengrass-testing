@@ -7,9 +7,7 @@ package com.aws.greengrass.testing.launcher.utils;
 
 import com.aws.greengrass.testing.api.ParameterValues;
 import com.aws.greengrass.testing.launcher.ParallelizationConfig;
-import com.aws.greengrass.testing.modules.FeatureParameters;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.aws.greengrass.testing.launcher.TestLauncherParameters;
 import io.cucumber.core.internal.gherkin.deps.com.google.gson.Gson;
 import io.cucumber.core.internal.gherkin.deps.com.google.gson.JsonArray;
 import io.cucumber.core.internal.gherkin.deps.com.google.gson.JsonElement;
@@ -46,7 +44,7 @@ public class CucumberReportUtils {
     @SuppressWarnings("MissingJavadocMethod")
     public List<String> parseDryRunCucumberReport(ParallelizationConfig parallelConfig, ParameterValues values)
             throws IOException {
-        Path output = Paths.get(values.getString(FeatureParameters.TEST_RESULTS_PATH).orElse(""));
+        Path output = Paths.get(values.getString(TestLauncherParameters.TEST_RESULTS_PATH).orElse(""));
         Path cucumberReport = output.toAbsolutePath().resolve(CUCUMBER_REPORT);
         if (!new File(cucumberReport.toString()).isFile()) {
             throw new FileNotFoundException(cucumberReport + " is not found");

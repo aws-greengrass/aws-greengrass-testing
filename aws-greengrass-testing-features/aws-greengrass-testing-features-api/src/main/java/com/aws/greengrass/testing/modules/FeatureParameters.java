@@ -22,7 +22,7 @@ public class FeatureParameters implements Parameters {
     static final String NUCLEUS_USER = "ggc.user.name";
     static final String TIMEOUT_MULTIPLIER = "timeout.multiplier";
     static final String TEST_TEMP_PATH = "test.temp.path";
-    public static final String TEST_RESULTS_PATH = "test.log.path";
+    static final String TEST_RESULTS_PATH = "test.log.path";
     static final String TEST_ID_PREFIX = "test.id.prefix";
     static final String TES_ROLE_NAME = "ggc.tes.rolename";
     static final String TRUSTED_PLUGINS_PATHS = "ggc.trusted.plugins";

@@ -38,11 +38,6 @@
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.aws.greengrass</groupId>
-            <artifactId>aws-greengrass-testing-features-api</artifactId>
-            <version>${project.parent.version}</version>
-        </dependency>
-        <dependency>
             <groupId>info.picocli</groupId>
             <artifactId>picocli</artifactId>
             <version>${picocli.version}</version>

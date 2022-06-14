@@ -24,9 +24,4 @@ public class TestLauncherModule extends AbstractModule {
         return new TestLauncherParameterValues();
     }
 
-    @Singleton
-    @Provides
-    static CucumberReportUtils providesCucumberUtils() {
-        return new CucumberReportUtils();
-    }
 }

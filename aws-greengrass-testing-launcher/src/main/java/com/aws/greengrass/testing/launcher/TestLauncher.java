@@ -10,7 +10,6 @@ import com.aws.greengrass.testing.api.Parameters;
 import com.aws.greengrass.testing.api.model.ParameterValue;
 import com.aws.greengrass.testing.launcher.reporting.StepTrackingReporting;
 import com.aws.greengrass.testing.launcher.utils.CucumberReportUtils;
-import com.aws.greengrass.testing.modules.FeatureParameters;
 import com.aws.greengrass.testing.modules.GreengrassInjectorSource;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Injector;
@@ -113,7 +112,7 @@ public final class TestLauncher {
             runTests(values, true, uriPool);
 
             // parse cucumber report to get set of tests to run
-            final CucumberReportUtils cucumberReportUtils = TestLauncherModule.providesCucumberUtils();
+            final CucumberReportUtils cucumberReportUtils = injector.getInstance(CucumberReportUtils.class);
             uriPool = cucumberReportUtils.parseDryRunCucumberReport(parallelizationConfig, values);
         }
 
@@ -122,7 +121,7 @@ public final class TestLauncher {
     }
 
     private static void runTests(ParameterValues values, boolean dryRun, List<String> uriPool) throws IOException {
-        final Path output = Paths.get(values.getString(FeatureParameters.TEST_RESULTS_PATH).orElse(""));
+        final Path output = Paths.get(values.getString(TestLauncherParameters.TEST_RESULTS_PATH).orElse(""));
         Files.createDirectories(output);
         addFileAppender(values, output);
 
@@ -145,6 +144,7 @@ public final class TestLauncher {
                 // Assuming JUnit style tags being supplied here
                 final Matcher matcher = Pattern.compile("([A-Za-z0-9_\\.]+)").matcher(tags);
                 tags = matcher.replaceAll("@$1")
+                        .replace("!", "not ")
                         .replace("&", " and ")
                         .replace("|", " or ");
             }
