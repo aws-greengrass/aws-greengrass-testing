@@ -21,6 +21,8 @@ public class TestLauncherParameters implements Parameters {
     static final String TEST_RESULTS_XML = "test.results.xml";
     static final String TEST_RESULTS_JSON = "test.results.json";
     static final String ADDITIONAL_PLUGINS = "additional.plugins";
+    static final String PARALLEL_CONFIG = "parallel.config";
+    public static final String TEST_RESULTS_PATH = "test.log.path";
 
     @Override
     public List<Parameter> available() {
@@ -44,7 +46,11 @@ public class TestLauncherParameters implements Parameters {
                                 + "disk. Defaults to true.")
                         .build(),
                 Parameter.of(LOG_LEVEL, "Log level of the test run. Defaults to \"INFO\""),
-                Parameter.of(ADDITIONAL_PLUGINS, "Optional additional Cucumber plugins.")
+                Parameter.of(ADDITIONAL_PLUGINS, "Optional additional Cucumber plugins."),
+                Parameter.of(PARALLEL_CONFIG, "Set of batch index and number of batches as a JSON String. "
+                        + "Default value of batch index is 0 and number of batches is 1."),
+                Parameter.of(TEST_RESULTS_PATH, "Directory that will contain the results of the "
+                        + "entire test run. Defaults to \"testResults\".")
         );
     }
 }
