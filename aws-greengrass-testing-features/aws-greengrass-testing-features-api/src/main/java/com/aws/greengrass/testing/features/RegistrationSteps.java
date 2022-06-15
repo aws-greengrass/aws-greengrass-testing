@@ -5,6 +5,7 @@
 
 package com.aws.greengrass.testing.features;
 
+import com.aws.greengrass.testing.DefaultGreengrass;
 import com.aws.greengrass.testing.api.ParameterValues;
 import com.aws.greengrass.testing.api.model.ProxyConfig;
 import com.aws.greengrass.testing.model.RegistrationContext;
@@ -99,13 +100,18 @@ public class RegistrationSteps {
     }
 
     @Given("my device is registered as a Thing")
+    @SuppressWarnings("MissingJavadocMethod")
     public void registerAsThing() throws IOException {
-        registerAsThing(null);
+        if (testContext.initializationContext().persistInstalledSoftware()) {
+            registerAsThingForPreInstalled(testContext.testId().idFor("ggc-group"));
+        } else {
+            registerAsThing(null);
+        }
     }
 
     private void registerAsThing(String configName, String thingGroupName) throws IOException {
         final String configFile = Optional.ofNullable(configName).orElse(getDefaultConfigName());
-
+        System.out.println("This is the config file initially " + configFile);
         String tesRoleNameName = testContext.tesRoleName();
         Optional<IamRole> optionalIamRole = Optional.empty();
         if (!tesRoleNameName.isEmpty()) {
@@ -121,6 +127,7 @@ public class RegistrationSteps {
 
 
         // TODO: move this into iot steps.
+        //Core thing name and thing group are updated here
         IotThingSpec thingSpec = resources.create(IotThingSpec.builder()
                 .thingName(testContext.coreThingName())
                 .addThingGroups(IotThingGroupSpec.of(thingGroupName))
@@ -140,10 +147,10 @@ public class RegistrationSteps {
                         .name(testContext.testId().idFor("ggc-role-alias"))
                         .iamRole(optionalIamRole.orElseGet(() ->
                                 resources.trackingSpecs(IamRoleSpec.class)
-                                .filter(s -> s.roleName().equals(testContext.testId().idFor("ggc-role")))
-                                .findFirst()
-                                .orElseGet(iamSteps::createDefaultIamRole)
-                                .resource()))
+                                        .filter(s -> s.roleName().equals(testContext.testId().idFor("ggc-role")))
+                                        .findFirst()
+                                        .orElseGet(iamSteps::createDefaultIamRole)
+                                        .resource()))
                         .build())
                 .build());
 
@@ -153,6 +160,22 @@ public class RegistrationSteps {
                     thingSpec.roleAliasSpec(),
                     IoUtils.toUtf8String(input),
                     new HashMap<>());
+        }
+    }
+
+    private void registerAsThingForPreInstalled(String thingGroupName) throws IOException {
+        System.out.println("Updating thinggroupname for preinstalled case");
+
+        Path installPath =  testContext.installRoot();
+        final String configFile = installPath.resolve("config").resolve("effectiveConfig.yaml").toString();
+        System.out.println("Config file " + configFile);
+        IotThingSpec thingSpec = resources.create(IotThingSpec.builder()
+                .thingName(testContext.coreThingName())
+                .addThingGroups(IotThingGroupSpec.of(thingGroupName))
+                .build());
+
+        try (InputStream input = getClass().getResourceAsStream(configFile)) {
+            setupforPreInstalled(thingSpec.resource(), IoUtils.toUtf8String(input));
         }
     }
 
@@ -168,6 +191,7 @@ public class RegistrationSteps {
             IotRoleAliasSpec roleAliasSpec,
             String config,
             Map<String, String> additionalUpdatableFields) throws IOException {
+        System.out.println("This is config in setupConfig" + config);
         IotLifecycle iot = resources.lifecycle(IotLifecycle.class);
         Path configFilePath = testContext.testDirectory().resolve("config");
         Files.createDirectories(configFilePath);
@@ -219,11 +243,26 @@ public class RegistrationSteps {
             Files.write(testContext.testDirectory().resolve("rootCA.pem"),
                     registrationContext.rootCA().getBytes(StandardCharsets.UTF_8));
         }
+        System.out.println("This is updated config in setupConfig" + config);
 
         Files.write(configFilePath.resolve("config.yaml"), config.getBytes(StandardCharsets.UTF_8));
         // Copy to where the nucleus will read it
         platform.files().makeDirectories(testContext.installRoot().getParent());
         platform.files().copyTo(testContext.testDirectory(), testContext.installRoot());
+    }
+
+    private void setupforPreInstalled(IotThing thing, String config) throws IOException {
+
+        Path installPath =  testContext.installRoot();
+        Path configFilePath = installPath.resolve("config")
+                .resolve("effectiveConfig.yaml");
+
+        //byte[] bytes = platform.files().readBytes(configFilePath);
+
+        config.replace("{thing_name}", thing.thingName());
+        System.out.println("This is config file " + config);
+
+        Files.write(configFilePath, config.getBytes(StandardCharsets.UTF_8));
     }
 
 }
