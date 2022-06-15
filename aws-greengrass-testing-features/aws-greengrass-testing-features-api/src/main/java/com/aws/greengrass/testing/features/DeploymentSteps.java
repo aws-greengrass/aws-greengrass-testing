@@ -98,7 +98,6 @@ public class DeploymentSteps {
     public void createDeployment(List<List<String>> componentNames) {
         IotLifecycle lifecycle = resources.lifecycle(IotLifecycle.class);
         IotThing thing = lifecycle.thingByThingName(testContext.coreThingName());
-        System.out.println("this is the coreThing name " + testContext.coreThingName());
         final Map<String, ComponentDeploymentSpecification> components =
                 new HashMap<String, ComponentDeploymentSpecification>() {{
                     put("aws.greengrass.Nucleus", ComponentDeploymentSpecification.builder()
