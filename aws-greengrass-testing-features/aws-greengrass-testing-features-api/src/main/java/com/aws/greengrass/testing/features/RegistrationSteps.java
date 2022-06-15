@@ -5,6 +5,7 @@
 
 package com.aws.greengrass.testing.features;
 
+import com.aws.greengrass.testing.DefaultGreengrass;
 import com.aws.greengrass.testing.api.ParameterValues;
 import com.aws.greengrass.testing.api.model.ProxyConfig;
 import com.aws.greengrass.testing.model.RegistrationContext;
@@ -95,6 +96,8 @@ public class RegistrationSteps {
         // Already registered ... already installed
         if (!testContext.initializationContext().persistInstalledSoftware()) {
             registerAsThing(configName, testContext.testId().idFor("ggc-group"));
+        } else {
+            registerAsThingForPreInstalled(testContext.testId().idFor("ggc-group"));
         }
     }
 
@@ -154,6 +157,11 @@ public class RegistrationSteps {
                     IoUtils.toUtf8String(input),
                     new HashMap<>());
         }
+    }
+
+    private void registerAsThingForPreInstalled(String thingGroupName) throws IOException {
+        System.out.println("Updating thinggroupname for preinstalled case");
+
     }
 
     private String getDefaultConfigName() {
