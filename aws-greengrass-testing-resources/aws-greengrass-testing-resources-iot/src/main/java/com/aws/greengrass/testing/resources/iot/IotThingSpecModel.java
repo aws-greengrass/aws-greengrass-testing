@@ -11,10 +11,13 @@ import com.aws.greengrass.testing.resources.ResourceSpec;
 import org.immutables.value.Value;
 import software.amazon.awssdk.services.iot.IotClient;
 import software.amazon.awssdk.services.iot.model.AddThingToThingGroupRequest;
+import software.amazon.awssdk.services.iot.model.AddThingToThingGroupResponse;
 import software.amazon.awssdk.services.iot.model.AttachPolicyRequest;
 import software.amazon.awssdk.services.iot.model.AttachThingPrincipalRequest;
 import software.amazon.awssdk.services.iot.model.CreateThingRequest;
 import software.amazon.awssdk.services.iot.model.CreateThingResponse;
+import software.amazon.awssdk.services.iot.model.DescribeThingRequest;
+import software.amazon.awssdk.services.iot.model.DescribeThingResponse;
 
 import java.util.Collections;
 import java.util.Optional;
@@ -61,16 +64,40 @@ interface IotThingSpecModel extends ResourceSpec<IotClient, IotThing>, IotTaggin
                 .map(groupSpecs -> groupSpecs.stream().map(resources::create).collect(Collectors.toSet()))
                 .orElseGet(Collections::emptySet);
 
-        CreateThingResponse createdThing = client.createThing(CreateThingRequest.builder()
-                .thingName(thingName())
-                .build());
+        CreateThingResponse createdThing;
 
-        createdGroups.stream().forEach(g -> {
-            client.addThingToThingGroup(AddThingToThingGroupRequest.builder()
-                    .thingArn(createdThing.thingArn())
-                    .thingGroupName(g.groupName())
+        if (thingExists(client) == "") {
+            createdThing = client.createThing(CreateThingRequest.builder()
+                    .thingName(thingName())
                     .build());
-        });
+
+            createdGroups.stream().forEach(g -> {
+                client.addThingToThingGroup(AddThingToThingGroupRequest.builder()
+                        .thingArn(createdThing.thingArn())
+                        .thingGroupName(g.groupName())
+                        .build());
+            });
+        } else {
+            System.out.println("Adding thing to thing group!!");
+            createdGroups.stream().forEach(g -> {
+                client.addThingToThingGroup(AddThingToThingGroupRequest.builder()
+                        .thingArn(thingExists(client))
+                        .thingGroupName(g.groupName())
+                        .build());
+            });
+            return IotThingSpec.builder()
+                    .from(this)
+                    .resource(IotThing.builder()
+                            .thingName("")
+                            .thingArn("")
+                            .thingId("")
+                            .addAllThingGroups(createdGroups.stream()
+                                    .map(IotThingGroupSpec::resource)
+                                    .collect(Collectors.toSet()))
+                            .build())
+                    .created(true)
+                    .build();
+        }
 
 
         String certificateArn = null;
@@ -117,6 +144,23 @@ interface IotThingSpecModel extends ResourceSpec<IotClient, IotThing>, IotTaggin
                         .build())
                 .created(true)
                 .build();
+    }
+
+
+    @Value.Default
+    default String thingExists(IotClient client) {
+        DescribeThingResponse describeThingResponse = client.describeThing(DescribeThingRequest.builder()
+                .thingName(thingName())
+                .build());
+        System.out.println("This is the describe thing response" + describeThingResponse);
+        String thingArn = describeThingResponse.thingArn();
+        System.out.println("This is thing arn" + thingArn);
+
+        if (thingArn != "") {
+            return thingArn;
+        } else {
+            return "";
+        }
     }
 
     @Value.Default

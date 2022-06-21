@@ -32,16 +32,18 @@ interface IotThingModel extends AWSResource<IotClient> {
 
     @Override
     default void remove(IotClient client) {
-        client.listThingPrincipals(ListThingPrincipalsRequest.builder().thingName(thingName()).build()).principals()
-                .forEach(p -> {
-                    client.detachThingPrincipal(DetachThingPrincipalRequest.builder()
-                            .thingName(thingName())
-                            .principal(p)
-                            .build());
-                });
+        if ((thingName()) != "") {
+            client.listThingPrincipals(ListThingPrincipalsRequest.builder().thingName(thingName()).build()).principals()
+                    .forEach(p -> {
+                        client.detachThingPrincipal(DetachThingPrincipalRequest.builder()
+                                .thingName(thingName())
+                                .principal(p)
+                                .build());
+                    });
 
-        client.deleteThing(DeleteThingRequest.builder()
-                .thingName(thingName())
-                .build());
+            client.deleteThing(DeleteThingRequest.builder()
+                    .thingName(thingName())
+                    .build());
+        }
     }
 }

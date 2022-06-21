@@ -95,6 +95,8 @@ public class RegistrationSteps {
         // Already registered ... already installed
         if (!testContext.initializationContext().persistInstalledSoftware()) {
             registerAsThing(configName, testContext.testId().idFor("ggc-group"));
+        } else {
+            registerAsThingForPreInstalled(testContext.testId().idFor("ggc-group"));
         }
     }
 
@@ -154,6 +156,18 @@ public class RegistrationSteps {
                     IoUtils.toUtf8String(input),
                     new HashMap<>());
         }
+    }
+
+    private void registerAsThingForPreInstalled(String thingGroupName) {
+
+        //Creates thing group
+        resources.create(IotThingGroupSpec.builder().groupName(thingGroupName).build());
+
+        //Adds thing to thing group
+        resources.create(IotThingSpec.builder()
+                .thingName(testContext.coreThingName())
+                .addThingGroups(IotThingGroupSpec.of(thingGroupName)).build());
+
     }
 
     private String getDefaultConfigName() {

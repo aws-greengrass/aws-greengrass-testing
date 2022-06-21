@@ -37,6 +37,9 @@ interface GreengrassComponentSpecModel extends ResourceSpec<GreengrassV2Client, 
                 .lambdaFunction(lambdaFunction())
                 .tags(resources.generateResourceTags())
                 .build());
+        System.out.println("This is CREATED component arn" + created.arn());
+        System.out.println("This is CREATED component name" + created.componentName());
+        System.out.println("This is CREATED component version" + created.componentVersion());
         return GreengrassComponentSpec.builder()
                 .from(this)
                 .created(true)

@@ -108,6 +108,7 @@ public class DeploymentSteps {
         components.putAll(parseComponentNamesAndPrepare(componentNames));
         LOGGER.debug("Creating deployment configuration with components to {}: {}",
                 thing.thingArn(), components);
+        System.out.println("This is the thing name for deployment" + thing.thingName());
         deployment = GreengrassDeploymentSpec.builder()
                 .deploymentName(testContext.testId().idFor("gg-deployment"))
                 .thingArn(thing.thingArn())
@@ -213,7 +214,7 @@ public class DeploymentSteps {
      */
     @When("I deploy the Greengrass deployment configuration to thing group {}")
     public void startDeploymentForThingGroup(String thingGroupName) {
-
+        System.out.println("Thing group being deployed to " + thingGroupName);
         IotLifecycle lifecycle = resources.lifecycle(IotLifecycle.class);
         SdkIterable<GroupNameAndArn> thingGroupIterable =
                 lifecycle.listThingGroupsForAThing(testContext.coreThingName()).thingGroups();
@@ -224,9 +225,11 @@ public class DeploymentSteps {
             throw new IllegalStateException(String.format("The thing group %s not found for the thing name %s",
                     thingGroupName, testContext.coreThingName()));
         }
+        System.out.println("This is the thing group arn" + thingGroupOptional.get().groupArn());
+
         deployment = deployment.withThingArn(null) // setting it to null will trigger group deployment
                    .withThingGroupArn(thingGroupOptional.get().groupArn());
-
+        System.out.println("I've reached this point!!!!!!");
         deployment = resources.create(deployment);
         LOGGER.info("Created Greengrass deployment: {}", deployment.resource().deploymentId());
     }

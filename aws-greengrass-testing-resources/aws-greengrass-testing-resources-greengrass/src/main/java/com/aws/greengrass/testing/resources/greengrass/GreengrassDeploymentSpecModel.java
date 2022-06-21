@@ -55,14 +55,17 @@ interface GreengrassDeploymentSpecModel extends ResourceSpec<GreengrassV2Client,
         AtomicReference<String> targetArn = new AtomicReference<>();
         final List<String> thingNames = new ArrayList<>();
         Optional.ofNullable(thingArn()).ifPresent(arn -> {
+            System.out.println("This is thing arn that is found" + thingArn());
             targetArn.set(arn);
             resources.trackingSpecs(IotThingSpec.class)
                     .filter(thing -> thing.resource().thingArn().equals(arn))
                     .findFirst()
                     .ifPresent(thing -> {
                         thingNames.add(thing.thingName());
+                        System.out.println("This is the thing name found" + thing.thingName());
                     });
         });
+
         Optional.ofNullable(thingGroupArn()).ifPresent(arn -> {
             targetArn.set(arn);
             IotLifecycle lc = resources.lifecycle(IotLifecycle.class);
@@ -73,6 +76,7 @@ interface GreengrassDeploymentSpecModel extends ResourceSpec<GreengrassV2Client,
                         lc.listThingsForGroup(group.groupName()).things().stream().forEach(thingNames::add);
                     });
         });
+        System.out.println("These are the thing names for thinggroupdeployment" + thingNames);
 
         CreateDeploymentResponse created = client.createDeployment(CreateDeploymentRequest.builder()
                 .targetArn(targetArn.get())

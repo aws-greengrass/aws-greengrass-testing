@@ -22,6 +22,9 @@ interface GreengrassComponentModel extends AWSResource<GreengrassV2Client> {
 
     @Override
     default void remove(final GreengrassV2Client client) {
+        System.out.println("Removing component!!!!! " + componentName());
+        System.out.println("Removing component with version!!!! " + componentVersion());
+        System.out.println("Removing component with arn" + componentArn());
         client.deleteComponent(DeleteComponentRequest.builder()
                 .arn(componentArn())
                 .build());
