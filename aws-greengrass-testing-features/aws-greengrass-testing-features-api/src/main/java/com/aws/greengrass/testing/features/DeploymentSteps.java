@@ -229,7 +229,6 @@ public class DeploymentSteps {
 
         deployment = deployment.withThingArn(null) // setting it to null will trigger group deployment
                    .withThingGroupArn(thingGroupOptional.get().groupArn());
-        System.out.println("I've reached this point!!!!!!");
         deployment = resources.create(deployment);
         LOGGER.info("Created Greengrass deployment: {}", deployment.resource().deploymentId());
     }

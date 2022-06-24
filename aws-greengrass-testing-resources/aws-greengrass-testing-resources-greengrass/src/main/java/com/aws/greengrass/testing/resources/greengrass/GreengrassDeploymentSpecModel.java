@@ -18,6 +18,8 @@ import software.amazon.awssdk.services.greengrassv2.model.CreateDeploymentReques
 import software.amazon.awssdk.services.greengrassv2.model.CreateDeploymentResponse;
 import software.amazon.awssdk.services.greengrassv2.model.DeploymentIoTJobConfiguration;
 import software.amazon.awssdk.services.greengrassv2.model.DeploymentPolicies;
+import software.amazon.awssdk.services.greengrassv2.model.ListDeploymentsRequest;
+import software.amazon.awssdk.services.greengrassv2.model.ListDeploymentsResponse;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -77,6 +79,18 @@ interface GreengrassDeploymentSpecModel extends ResourceSpec<GreengrassV2Client,
                     });
         });
         System.out.println("These are the thing names for thinggroupdeployment" + thingNames);
+
+        //get the target arn and list deployments to see if it returns any deployments
+
+        ListDeploymentsResponse listDeploymentsResponse = client.listDeployments(ListDeploymentsRequest.builder()
+                        .targetArn(targetArn.get())
+                        .build());
+
+        //revise deployments
+        if (listDeploymentsResponse.hasDeployments()) {
+            System.out.println("This component has a DEPLOYMENT with status " + listDeploymentsResponse);
+        }
+
 
         CreateDeploymentResponse created = client.createDeployment(CreateDeploymentRequest.builder()
                 .targetArn(targetArn.get())

@@ -66,7 +66,13 @@ interface IotThingSpecModel extends ResourceSpec<IotClient, IotThing>, IotTaggin
 
         CreateThingResponse createdThing;
 
-        if (thingExists(client) == "") {
+        DescribeThingResponse describeThingResponse = client.describeThing(DescribeThingRequest.builder()
+                .thingName(thingName())
+                .build());
+
+        //If thing doesn't exist
+        if (describeThingResponse.sdkHttpResponse().statusCode() == 404) {
+            System.out.println("Thing not found, creating thing..");
             createdThing = client.createThing(CreateThingRequest.builder()
                     .thingName(thingName())
                     .build());
@@ -78,13 +84,16 @@ interface IotThingSpecModel extends ResourceSpec<IotClient, IotThing>, IotTaggin
                         .build());
             });
         } else {
-            System.out.println("Adding thing to thing group!!");
+            System.out.println("Thing found with thingarn " + describeThingResponse.thingArn());
+
             createdGroups.stream().forEach(g -> {
                 client.addThingToThingGroup(AddThingToThingGroupRequest.builder()
-                        .thingArn(thingExists(client))
+                        .thingArn(describeThingResponse.thingArn())
                         .thingGroupName(g.groupName())
                         .build());
+                System.out.println("Adding thing to thing group " + g.groupName());
             });
+            //Creating dummy ThingSpec to satisfy method return argument
             return IotThingSpec.builder()
                     .from(this)
                     .resource(IotThing.builder()
@@ -144,23 +153,6 @@ interface IotThingSpecModel extends ResourceSpec<IotClient, IotThing>, IotTaggin
                         .build())
                 .created(true)
                 .build();
-    }
-
-
-    @Value.Default
-    default String thingExists(IotClient client) {
-        DescribeThingResponse describeThingResponse = client.describeThing(DescribeThingRequest.builder()
-                .thingName(thingName())
-                .build());
-        System.out.println("This is the describe thing response" + describeThingResponse);
-        String thingArn = describeThingResponse.thingArn();
-        System.out.println("This is thing arn" + thingArn);
-
-        if (thingArn != "") {
-            return thingArn;
-        } else {
-            return "";
-        }
     }
 
     @Value.Default

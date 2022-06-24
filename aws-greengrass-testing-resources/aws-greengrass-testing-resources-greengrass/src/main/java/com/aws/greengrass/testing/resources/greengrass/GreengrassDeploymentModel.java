@@ -32,18 +32,26 @@ interface GreengrassDeploymentModel extends AWSResource<GreengrassV2Client> {
 
     @Override
     default void remove(GreengrassV2Client client) {
+        System.out.println("I'm in cancelling deployments, thingnames" + thingNames());
+
+        //If preinstalled then don't delete core device.
+
         Optional.ofNullable(thingNames()).ifPresent(thingNames -> {
             thingNames.forEach(thingName -> {
                 try {
+                    System.out.println("I'm trying to delete core device" + thingName);
                     client.deleteCoreDevice(DeleteCoreDeviceRequest.builder()
                             .coreDeviceThingName(thingName)
                             .build());
                 } catch (GreengrassV2Exception e) {
+                    LOGGER.warn("This is the error {}", e.toString());
+                    LOGGER.warn("This is error id {}", e.awsErrorDetails());
                     LOGGER.warn("Could not delete core device {}", thingName);
                 }
             });
         });
         try {
+            System.out.println("I'm cancelling deployment!!! " + deploymentId());
             client.cancelDeployment(CancelDeploymentRequest.builder()
                     .deploymentId(deploymentId())
                     .build());
