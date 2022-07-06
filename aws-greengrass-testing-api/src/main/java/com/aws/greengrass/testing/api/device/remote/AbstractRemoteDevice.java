@@ -54,11 +54,13 @@ public abstract class AbstractRemoteDevice implements Device {
                     .addArgs("del " +  pillboxContext.onDevice().toString())
                     .build());
         } else {
-            execute(CommandInput.builder()
-                    .line("java")
-                    .addArgs("-jar", pillboxContext.onDevice().toString(),
-                            "files", "rm", pillboxContext.onDevice().toString())
-                    .build());
+            if (exists(pillboxContext.onDevice().toString())) {
+                execute(CommandInput.builder()
+                        .line("java")
+                        .addArgs("-jar", pillboxContext.onDevice().toString(),
+                                "files", "rm", pillboxContext.onDevice().toString())
+                        .build());
+            }
         }
     }
 }
