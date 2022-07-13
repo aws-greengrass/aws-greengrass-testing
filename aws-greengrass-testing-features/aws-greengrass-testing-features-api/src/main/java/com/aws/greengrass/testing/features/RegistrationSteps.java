@@ -5,6 +5,7 @@
 
 package com.aws.greengrass.testing.features;
 
+import com.aws.greengrass.testing.DefaultGreengrass;
 import com.aws.greengrass.testing.api.ParameterValues;
 import com.aws.greengrass.testing.api.model.ProxyConfig;
 import com.aws.greengrass.testing.model.RegistrationContext;
@@ -99,13 +100,16 @@ public class RegistrationSteps {
     }
 
     @Given("my device is registered as a Thing")
+    @SuppressWarnings("MissingJavadocMethod")
     public void registerAsThing() throws IOException {
-        registerAsThing(null);
+        if (!testContext.initializationContext().persistInstalledSoftware()) {
+            registerAsThing(null);
+        }
     }
 
     private void registerAsThing(String configName, String thingGroupName) throws IOException {
         final String configFile = Optional.ofNullable(configName).orElse(getDefaultConfigName());
-
+        System.out.println("This is the config file initially " + configFile);
         String tesRoleNameName = testContext.tesRoleName();
         Optional<IamRole> optionalIamRole = Optional.empty();
         if (!tesRoleNameName.isEmpty()) {
@@ -121,6 +125,7 @@ public class RegistrationSteps {
 
 
         // TODO: move this into iot steps.
+        //Core thing name and thing group are updated here
         IotThingSpec thingSpec = resources.create(IotThingSpec.builder()
                 .thingName(testContext.coreThingName())
                 .addThingGroups(IotThingGroupSpec.of(thingGroupName))
@@ -140,10 +145,10 @@ public class RegistrationSteps {
                         .name(testContext.testId().idFor("ggc-role-alias"))
                         .iamRole(optionalIamRole.orElseGet(() ->
                                 resources.trackingSpecs(IamRoleSpec.class)
-                                .filter(s -> s.roleName().equals(testContext.testId().idFor("ggc-role")))
-                                .findFirst()
-                                .orElseGet(iamSteps::createDefaultIamRole)
-                                .resource()))
+                                        .filter(s -> s.roleName().equals(testContext.testId().idFor("ggc-role")))
+                                        .findFirst()
+                                        .orElseGet(iamSteps::createDefaultIamRole)
+                                        .resource()))
                         .build())
                 .build());
 
@@ -225,5 +230,4 @@ public class RegistrationSteps {
         platform.files().makeDirectories(testContext.installRoot().getParent());
         platform.files().copyTo(testContext.testDirectory(), testContext.installRoot());
     }
-
 }
