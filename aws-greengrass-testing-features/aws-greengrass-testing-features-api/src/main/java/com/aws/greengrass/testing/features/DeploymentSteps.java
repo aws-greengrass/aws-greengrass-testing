@@ -202,6 +202,7 @@ public class DeploymentSteps {
         LOGGER.info("Created Greengrass deployment: {}", deployment.resource().deploymentId());
     }
 
+    @SuppressWarnings("MissingJavadocMethod")
     @When("I deploy the Greengrass deployment configuration to thing group")
     public void startDeploymentForThingGroup() {
         startDeploymentForThingGroup(testContext.testId().idFor("ggc-group"));
@@ -213,20 +214,28 @@ public class DeploymentSteps {
      */
     @When("I deploy the Greengrass deployment configuration to thing group {}")
     public void startDeploymentForThingGroup(String thingGroupName) {
-
         IotLifecycle lifecycle = resources.lifecycle(IotLifecycle.class);
         SdkIterable<GroupNameAndArn> thingGroupIterable =
                 lifecycle.listThingGroupsForAThing(testContext.coreThingName()).thingGroups();
-        Optional<GroupNameAndArn> thingGroupOptional = thingGroupIterable.stream()
-                        .filter(g -> g.groupName().equals(thingGroupName))
-                        .findFirst();
-        if (!thingGroupOptional.isPresent()) {
-            throw new IllegalStateException(String.format("The thing group %s not found for the thing name %s",
-                    thingGroupName, testContext.coreThingName()));
+        Optional<GroupNameAndArn> thingGroupOptional;
+        //Get the first thing group from list and deploy to it
+        if (testContext.initializationContext().persistInstalledSoftware()) {
+            thingGroupOptional = thingGroupIterable.stream().findFirst();
+            if (!thingGroupOptional.isPresent()) {
+                throw new IllegalStateException(String.format("No thing group found for the thing name %s",
+                        testContext.coreThingName()));
+            }
+        } else {
+            thingGroupOptional = thingGroupIterable.stream()
+                    .filter(g -> g.groupName().equals(thingGroupName))
+                    .findFirst();
+            if (!thingGroupOptional.isPresent()) {
+                throw new IllegalStateException(String.format("The thing group %s not found for the thing name %s",
+                        thingGroupName, testContext.coreThingName()));
+            }
         }
         deployment = deployment.withThingArn(null) // setting it to null will trigger group deployment
-                   .withThingGroupArn(thingGroupOptional.get().groupArn());
-
+                .withThingGroupArn(thingGroupOptional.get().groupArn());
         deployment = resources.create(deployment);
         LOGGER.info("Created Greengrass deployment: {}", deployment.resource().deploymentId());
     }
