@@ -11,6 +11,7 @@ import com.aws.greengrass.testing.model.RegistrationContext;
 import com.aws.greengrass.testing.model.TestContext;
 import com.aws.greengrass.testing.modules.FeatureParameters;
 import com.aws.greengrass.testing.modules.HsmParameters;
+import com.aws.greengrass.testing.modules.exception.ModuleProvisionException;
 import com.aws.greengrass.testing.modules.model.AWSResourcesContext;
 import com.aws.greengrass.testing.platform.Platform;
 import com.aws.greengrass.testing.resources.AWSResources;
@@ -24,6 +25,9 @@ import com.aws.greengrass.testing.resources.iot.IotRoleAliasSpec;
 import com.aws.greengrass.testing.resources.iot.IotThing;
 import com.aws.greengrass.testing.resources.iot.IotThingGroupSpec;
 import com.aws.greengrass.testing.resources.iot.IotThingSpec;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import io.cucumber.guice.ScenarioScoped;
 import io.cucumber.java.en.Given;
 import org.apache.logging.log4j.LogManager;
@@ -99,13 +103,17 @@ public class RegistrationSteps {
     }
 
     @Given("my device is registered as a Thing")
+    @SuppressWarnings("MissingJavadocMethod")
     public void registerAsThing() throws IOException {
-        registerAsThing(null);
+        if (!testContext.initializationContext().persistInstalledSoftware()) {
+            registerAsThing(null);
+        } else if (testContext.hsmConfigured()) {
+            checkHSMConfigForPreInstalled();
+        }
     }
 
     private void registerAsThing(String configName, String thingGroupName) throws IOException {
         final String configFile = Optional.ofNullable(configName).orElse(getDefaultConfigName());
-
         String tesRoleNameName = testContext.tesRoleName();
         Optional<IamRole> optionalIamRole = Optional.empty();
         if (!tesRoleNameName.isEmpty()) {
@@ -161,6 +169,21 @@ public class RegistrationSteps {
             return DEFAULT_HSM_CONFIG;
         }
         return DEFAULT_CONFIG;
+    }
+
+    private void checkHSMConfigForPreInstalled() {
+        Path configPath = testContext.installRoot().resolve("config")
+                .resolve("effectiveConfig.yaml");
+        ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
+        byte[] bytes = platform.files().readBytes(configPath);
+        try {
+            JsonNode config = mapper.readTree(bytes);
+            if (!config.get("services").hasNonNull("aws.greengrass.crypto.Pkcs11Provider")) {
+                throw new IOException("Pkcs11 is not properly configured on device");
+            }
+        } catch (IOException e) {
+            throw new ModuleProvisionException(e);
+        }
     }
 
     private void setupConfig(
