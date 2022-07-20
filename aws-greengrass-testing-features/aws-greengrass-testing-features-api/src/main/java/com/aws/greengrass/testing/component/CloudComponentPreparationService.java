@@ -6,9 +6,11 @@
 package com.aws.greengrass.testing.component;
 
 import com.aws.greengrass.testing.api.ComponentPreparationService;
+import com.aws.greengrass.testing.api.ParameterValues;
 import com.aws.greengrass.testing.api.model.ComponentOverrideNameVersion;
 import com.aws.greengrass.testing.api.model.ComponentOverrideVersion;
 import com.aws.greengrass.testing.model.GreengrassContext;
+import com.aws.greengrass.testing.modules.FeatureParameters;
 import com.aws.greengrass.testing.resources.greengrass.GreengrassV2Lifecycle;
 import com.vdurmont.semver4j.Requirement;
 import com.vdurmont.semver4j.Semver;
@@ -25,22 +27,26 @@ import javax.inject.Inject;
 public class CloudComponentPreparationService implements ComponentPreparationService {
     private static final String LATEST = "LATEST";
     private static final String NUCLEUS_VERSION = "NUCLEUS_VERSION";
+    private static final String GG_CLI_VERSION = "GG_CLI_VERSION";
     private final GreengrassV2Lifecycle ggv2;
     private final Region currentRegion;
     private final GreengrassContext ggContext;
+    private final ParameterValues parameterValues;
 
     /**
      * Constructor.
      * @param ggv2 {@link GreengrassV2Lifecycle}
      * @param currentRegion {@link Region}
      * @param ggContext Greengrass context
+     * @param parameterValues ParameterValues
      */
     @Inject
     public CloudComponentPreparationService(final GreengrassV2Lifecycle ggv2, final Region currentRegion,
-                                            final GreengrassContext ggContext) {
+                                            final GreengrassContext ggContext, final ParameterValues parameterValues) {
         this.currentRegion = currentRegion;
         this.ggv2 = ggv2;
         this.ggContext = ggContext;
+        this.parameterValues = parameterValues;
     }
 
     private Optional<Component> pinpointComponent(ComponentOverrideNameVersion nameVersion) {
@@ -106,6 +112,9 @@ public class CloudComponentPreparationService implements ComponentPreparationSer
                         return convert(nameVersion, component.latestVersion().componentVersion());
                     } else if (nameVersion.version().value().equals(NUCLEUS_VERSION)) {
                         return convert(nameVersion, ggContext.version());
+                    } else if (nameVersion.version().value().equals(GG_CLI_VERSION)) {
+                        return convert(nameVersion, parameterValues.getString(FeatureParameters.GG_CLI_VERSION)
+                                .orElse(ggContext.version()));
                     } else {
                         return convert(nameVersion, pinpointViableVersion(nameVersion, component));
                     }
