@@ -28,6 +28,7 @@ public class FeatureParameters implements Parameters {
     static final String TRUSTED_PLUGINS_PATHS = "ggc.trusted.plugins";
     public static final String CSR_PATH = "csr.path";
     public static final String EXISTING_DEVICE_CERTIFICATE_ARN = "existing.device.cert.arn";
+    public static final String GG_CLI_VERSION = "gg.cli.version";
 
     @Override
     public List<Parameter> available() {
@@ -35,6 +36,8 @@ public class FeatureParameters implements Parameters {
                 Parameter.of(DEVICE_MODE, "The target device under test. Defaults to local device."),
                 Parameter.of(NUCLEUS_VERSION, "Overrides the version of the running Greengrass "
                         + "Nucleus component. Defaults to the value found in " + NUCLEUS_ARCHIVE_PATH),
+                Parameter.of(GG_CLI_VERSION, "Overrides the version of the greengrass cli. "
+                        + "Defaults to the value found in " + NUCLEUS_VERSION),
                 Parameter.builder()
                         .name(NUCLEUS_ARCHIVE_PATH)
                         .description("The path to the archived Greengrass Nucleus component.")
