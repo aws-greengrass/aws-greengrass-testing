@@ -106,6 +106,9 @@ public class CloudComponentPreparationService implements ComponentPreparationSer
 
     @Override
     public Optional<ComponentOverrideNameVersion> prepare(final ComponentOverrideNameVersion nameVersion) {
+        System.out.println("local deployment version string: " + nameVersion.version());
+        System.out.println("local deployment version: " + parameterValues.getString(FeatureParameters.GG_CLI_VERSION)
+                .orElse(ggContext.version()));
         return pinpointComponent(nameVersion)
                 .map(component -> {
                     if (nameVersion.version().value().equals(LATEST)) {
