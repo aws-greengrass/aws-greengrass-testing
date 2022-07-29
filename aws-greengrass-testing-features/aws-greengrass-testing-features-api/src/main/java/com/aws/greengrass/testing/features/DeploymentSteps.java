@@ -22,6 +22,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.cucumber.guice.ScenarioScoped;
+import io.cucumber.java.After;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
@@ -213,20 +214,28 @@ public class DeploymentSteps {
      */
     @When("I deploy the Greengrass deployment configuration to thing group {}")
     public void startDeploymentForThingGroup(String thingGroupName) {
-
         IotLifecycle lifecycle = resources.lifecycle(IotLifecycle.class);
         SdkIterable<GroupNameAndArn> thingGroupIterable =
                 lifecycle.listThingGroupsForAThing(testContext.coreThingName()).thingGroups();
-        Optional<GroupNameAndArn> thingGroupOptional = thingGroupIterable.stream()
-                        .filter(g -> g.groupName().equals(thingGroupName))
-                        .findFirst();
-        if (!thingGroupOptional.isPresent()) {
-            throw new IllegalStateException(String.format("The thing group %s not found for the thing name %s",
-                    thingGroupName, testContext.coreThingName()));
+        Optional<GroupNameAndArn> thingGroupOptional;
+        //Get the first thing group from list and deploy to it
+        if (testContext.initializationContext().persistInstalledSoftware()) {
+            thingGroupOptional = thingGroupIterable.stream().findFirst();
+            if (!thingGroupOptional.isPresent()) {
+                throw new IllegalStateException(String.format("No thing group found for the thing name %s",
+                        testContext.coreThingName()));
+            }
+        } else {
+            thingGroupOptional = thingGroupIterable.stream()
+                    .filter(g -> g.groupName().equals(thingGroupName))
+                    .findFirst();
+            if (!thingGroupOptional.isPresent()) {
+                throw new IllegalStateException(String.format("The thing group %s not found for the thing name %s",
+                        thingGroupName, testContext.coreThingName()));
+            }
         }
         deployment = deployment.withThingArn(null) // setting it to null will trigger group deployment
-                   .withThingGroupArn(thingGroupOptional.get().groupArn());
-
+                .withThingGroupArn(thingGroupOptional.get().groupArn());
         deployment = resources.create(deployment);
         LOGGER.info("Created Greengrass deployment: {}", deployment.resource().deploymentId());
     }
@@ -281,5 +290,60 @@ public class DeploymentSteps {
                 .map(d -> d.coreDeviceExecutionStatusAsString().equals(IOT_JOB_EXECUTION_STATUS_SUCCEEDED)
                         ? EffectiveDeploymentExecutionStatus.COMPLETED
                         : d.coreDeviceExecutionStatus());
+    }
+
+    /**
+     * Get the target arns for thing anf thing group and
+     * run an empty deployment.
+     */
+    @After(order = 999999)
+    public void cleanupDeployments() {
+        if (testContext.initializationContext().persistInstalledSoftware()) {
+            try {
+                IotLifecycle lifecycle = resources.lifecycle(IotLifecycle.class);
+                IotThing thing = lifecycle.thingByThingName(testContext.coreThingName());
+                emptyDeployment(thing.thingArn());
+
+                SdkIterable<GroupNameAndArn> thingGroupIterable =
+                        lifecycle.listThingGroupsForAThing(testContext.coreThingName()).thingGroups();
+                Optional<GroupNameAndArn> thingGroupOptional = thingGroupIterable.stream().findFirst();
+                emptyDeployment(thingGroupOptional.get().groupArn());
+            } catch (InterruptedException e) {
+                LOGGER.warn("Empty deployment did not reach COMPLETED");
+            }
+        }
+    }
+
+    /**
+     * Run an empty deployment given a target arn.
+     * @param targetArn target arn for the thing/thingGroup for empty deployment
+     * @throws InterruptedException when the wait is interrupted
+     */
+    private void emptyDeployment(String targetArn) throws InterruptedException {
+        Map<String, ComponentDeploymentSpecification> emptyComponent =
+                new HashMap<>();
+
+        GreengrassV2Lifecycle ggv2 = resources.lifecycle(GreengrassV2Lifecycle.class);
+
+        GreengrassDeploymentSpec deployment = GreengrassDeploymentSpec.builder()
+                .deploymentName("EmptyDeployment")
+                .components(emptyComponent)
+                .thingArn(targetArn)
+                .build();
+
+        LOGGER.info("Cleaning up component through an empty deployment");
+        deployment = resources.create(deployment);
+        String deploymentId = deployment.resource().deploymentId();
+        //TODO: use effectivelyDeploymentStatus() to check status
+        try {
+            if (!waits.untilTrue(() -> ggv2.deployment(deploymentId)
+                            .deploymentStatus().toString().equals("COMPLETED"),
+                    60, TimeUnit.SECONDS)) {
+                LOGGER.warn("Empty deployment did not reach COMPLETED");
+            }
+        } catch (InterruptedException e) {
+            LOGGER.warn("Empty deployment was interrupted");
+            Thread.currentThread().interrupt();
+        }
     }
 }

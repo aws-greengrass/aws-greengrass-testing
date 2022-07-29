@@ -98,14 +98,19 @@ public class RegistrationSteps {
         }
     }
 
+    /**
+     * Doesn't register for PreInstalled case, registers device otherwise.
+     * @throws IOException thrown when failing to read the config
+     */
     @Given("my device is registered as a Thing")
     public void registerAsThing() throws IOException {
-        registerAsThing(null);
+        if (!testContext.initializationContext().persistInstalledSoftware()) {
+            registerAsThing(null);
+        }
     }
 
     private void registerAsThing(String configName, String thingGroupName) throws IOException {
         final String configFile = Optional.ofNullable(configName).orElse(getDefaultConfigName());
-
         String tesRoleNameName = testContext.tesRoleName();
         Optional<IamRole> optionalIamRole = Optional.empty();
         if (!tesRoleNameName.isEmpty()) {
@@ -225,5 +230,4 @@ public class RegistrationSteps {
         platform.files().makeDirectories(testContext.installRoot().getParent());
         platform.files().copyTo(testContext.testDirectory(), testContext.installRoot());
     }
-
 }
