@@ -142,4 +142,14 @@ public class WindowsCommands implements Commands {
                 .split(",") [1]
                 .replace("\"", ""));
     }
+
+    @Override
+    public void startGreengrassService() throws CommandExecutionException {
+        return;
+    }
+
+    @Override
+    public void stopGreengrassService() throws CommandExecutionException {
+        return;
+    }
 }
