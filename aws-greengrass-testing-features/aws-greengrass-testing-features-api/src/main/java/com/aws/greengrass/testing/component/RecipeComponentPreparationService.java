@@ -103,9 +103,17 @@ public class RecipeComponentPreparationService implements ComponentPreparationSe
         if (parts[1].indexOf('/') == 0) {
             s3Key = parts[1].substring(1);
         }
+
+        String s3Path = "s3://" + (bucketName + "/" + s3Key);
+        S3Lifecycle s3 = resources.lifecycle(S3Lifecycle.class);
+        if (s3.objectExists(bucketName, s3Key)) {
+            LOGGER.debug("{} already exist in {}", s3Key, bucketName);
+            return s3Path;
+        }
+
         resources.create(S3ObjectSpec.of(s3Key, bucketName, componentArtifact));
-        LOGGER.info("Uploading {} to s3://{}/{}", componentArtifact, bucketName, s3Key);
-        return "s3://" + (bucketName + "/" + s3Key);
+        LOGGER.info("Uploaded {} to {}", componentArtifact, s3Path);
+        return s3Path;
     }
 
     private String getOrCreateBucket() {
