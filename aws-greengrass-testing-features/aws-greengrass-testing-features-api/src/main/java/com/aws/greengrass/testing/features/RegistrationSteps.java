@@ -107,12 +107,17 @@ public class RegistrationSteps {
         }
     }
 
+    /**
+     * Doesn't register for PreInstalled case, registers device otherwise.
+     * @throws IOException thrown when failing to read the config
+     */
     @Given("my device is registered as a Thing")
     @SuppressWarnings("MissingJavadocMethod")
     public void registerAsThing() throws IOException {
         if (!testContext.initializationContext().persistInstalledSoftware()) {
             registerAsThing(null);
         }
+
         if (testContext.initializationContext().persistInstalledSoftware()
                 && testContext.hsmConfigured()) {
             checkHSMConfigForPreInstalled();
@@ -254,4 +259,5 @@ public class RegistrationSteps {
         platform.files().makeDirectories(testContext.installRoot().getParent());
         platform.files().copyTo(testContext.testDirectory(), testContext.installRoot());
     }
+
 }
