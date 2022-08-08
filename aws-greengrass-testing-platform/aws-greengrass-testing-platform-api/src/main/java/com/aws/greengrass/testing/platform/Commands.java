@@ -32,4 +32,8 @@ public interface Commands {
     void installNucleus(NucleusInstallationParameters installationParameters) throws CommandExecutionException;
 
     int startNucleus(Path rootDirectory) throws CommandExecutionException;
+
+    void startGreengrassService() throws CommandExecutionException;
+
+    void stopGreengrassService() throws CommandExecutionException;
 }
