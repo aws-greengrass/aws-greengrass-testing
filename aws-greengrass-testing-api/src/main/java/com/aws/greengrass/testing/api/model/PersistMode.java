@@ -41,6 +41,22 @@ public enum PersistMode implements Function<PersistenceBuilder, PersistenceBuild
                 "Could not find a persist value mode for " + value + ". Use any or all: " + Arrays.toString(values()));
     }
 
+    /**
+     * Check if the mode is valid.
+     * TODO: Use a new enum PreInstalled instead of PersistSoftware
+     * @param value will be checked
+     * @return true if its a valid enum
+     */
+    public static boolean validPersistMode(String value) {
+        value = value.replace('.', '_').toUpperCase();
+        for (PersistMode mode : values()) {
+            if (mode.name().equals(value)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     @Override
     public PersistenceBuilder apply(PersistenceBuilder builder) {
         return applicator.apply(builder, true);

@@ -5,12 +5,15 @@
 
 package com.aws.greengrass.testing.features;
 
+import com.aws.greengrass.testing.DefaultGreengrass;
 import com.aws.greengrass.testing.api.ParameterValues;
 import com.aws.greengrass.testing.api.model.ProxyConfig;
 import com.aws.greengrass.testing.model.RegistrationContext;
 import com.aws.greengrass.testing.model.TestContext;
 import com.aws.greengrass.testing.modules.FeatureParameters;
 import com.aws.greengrass.testing.modules.HsmParameters;
+import com.aws.greengrass.testing.modules.JacksonModule;
+import com.aws.greengrass.testing.modules.exception.ModuleProvisionException;
 import com.aws.greengrass.testing.modules.model.AWSResourcesContext;
 import com.aws.greengrass.testing.platform.Platform;
 import com.aws.greengrass.testing.resources.AWSResources;
@@ -24,6 +27,8 @@ import com.aws.greengrass.testing.resources.iot.IotRoleAliasSpec;
 import com.aws.greengrass.testing.resources.iot.IotThing;
 import com.aws.greengrass.testing.resources.iot.IotThingGroupSpec;
 import com.aws.greengrass.testing.resources.iot.IotThingSpec;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.cucumber.guice.ScenarioScoped;
 import io.cucumber.java.en.Given;
 import org.apache.logging.log4j.LogManager;
@@ -41,6 +46,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import javax.inject.Inject;
+import javax.inject.Named;
 
 import static com.aws.greengrass.testing.modules.HsmParameters.ROOT_CA_PATH;
 
@@ -58,6 +64,7 @@ public class RegistrationSteps {
     private final IamLifecycle iamLifecycle;
     private final ParameterValues parameterValues;
     private final FileSteps fileSteps;
+    private final ObjectMapper mapper;
 
     @Inject
     @SuppressWarnings("MissingJavadocMethod")
@@ -71,7 +78,8 @@ public class RegistrationSteps {
             AWSResourcesContext resourcesContext,
             IamLifecycle iamLifecycle,
             ParameterValues parameterValues,
-            FileSteps fileSteps) {
+            FileSteps fileSteps,
+            @Named(JacksonModule.YAML) ObjectMapper objectMapper) {
         this.platform = platform;
         this.resources = resources;
         this.iamSteps = iamSteps;
@@ -82,6 +90,7 @@ public class RegistrationSteps {
         this.iamLifecycle = iamLifecycle;
         this.parameterValues = parameterValues;
         this.fileSteps = fileSteps;
+        this.mapper = objectMapper;
     }
 
     /**
@@ -103,9 +112,15 @@ public class RegistrationSteps {
      * @throws IOException thrown when failing to read the config
      */
     @Given("my device is registered as a Thing")
+    @SuppressWarnings("MissingJavadocMethod")
     public void registerAsThing() throws IOException {
         if (!testContext.initializationContext().persistInstalledSoftware()) {
             registerAsThing(null);
+        }
+
+        if (testContext.initializationContext().persistInstalledSoftware()
+                && testContext.hsmConfigured()) {
+            checkHSMConfigForPreInstalled();
         }
     }
 
@@ -166,6 +181,20 @@ public class RegistrationSteps {
             return DEFAULT_HSM_CONFIG;
         }
         return DEFAULT_CONFIG;
+    }
+
+    private void checkHSMConfigForPreInstalled() {
+        Path configPath = testContext.installRoot().resolve("config")
+                .resolve("effectiveConfig.yaml");
+        byte[] bytes = platform.files().readBytes(configPath);
+        try {
+            JsonNode config = mapper.readTree(bytes);
+            if (!config.get("services").hasNonNull("aws.greengrass.crypto.Pkcs11Provider")) {
+                throw new IOException("Pkcs11 is not properly configured on device");
+            }
+        } catch (IOException e) {
+            throw new ModuleProvisionException(e);
+        }
     }
 
     private void setupConfig(
@@ -230,4 +259,5 @@ public class RegistrationSteps {
         platform.files().makeDirectories(testContext.installRoot().getParent());
         platform.files().copyTo(testContext.testDirectory(), testContext.installRoot());
     }
+
 }

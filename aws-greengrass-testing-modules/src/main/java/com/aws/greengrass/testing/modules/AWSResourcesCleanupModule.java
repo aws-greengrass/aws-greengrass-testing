@@ -92,6 +92,19 @@ public class AWSResourcesCleanupModule extends AbstractModule {
 
     static Set<PersistMode> fromParameterValues(ParameterValues parameterValues, String key) {
         // TODO: switch to SPI so modules can specify their own persistence type and provider
+
+        //Maps the value "yes" to INSTALLED_SOFTWARE
+        //TODO: use new enum PREINSTALLED_GREENGRASS
+        if (key.equals(ModuleParameters.RUNTIME_TESTING_RESOURCES)) {
+            return parameterValues.getString(key)
+                    .map(resources -> resources.split("\\s*,\\s*"))
+                    .map(Arrays::stream)
+                    .map(stream -> stream.map(s -> s.equalsIgnoreCase("yes") ? "INSTALLED_SOFTWARE" : s))
+                    .map(stream -> stream.filter(PersistMode::validPersistMode))
+                    .map(stream -> stream.map(PersistMode::fromConfig).collect(Collectors.toSet()))
+                    .orElseGet(Collections::emptySet);
+        }
+
         return parameterValues.getString(key)
                 .map(resources -> resources.split("\\s*,\\s*"))
                 .map(Arrays::stream)
