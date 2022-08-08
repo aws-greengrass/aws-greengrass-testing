@@ -10,6 +10,7 @@ import com.aws.greengrass.testing.api.ParameterValues;
 import com.aws.greengrass.testing.api.model.ComponentOverrideNameVersion;
 import com.aws.greengrass.testing.api.model.ComponentOverrideVersion;
 import com.aws.greengrass.testing.model.GreengrassContext;
+import com.aws.greengrass.testing.model.TestContext;
 import com.aws.greengrass.testing.modules.FeatureParameters;
 import com.aws.greengrass.testing.resources.greengrass.GreengrassV2Lifecycle;
 import com.vdurmont.semver4j.Requirement;
@@ -32,6 +33,7 @@ public class CloudComponentPreparationService implements ComponentPreparationSer
     private final Region currentRegion;
     private final GreengrassContext ggContext;
     private final ParameterValues parameterValues;
+    private TestContext testContext;
 
     /**
      * Constructor.
@@ -39,14 +41,17 @@ public class CloudComponentPreparationService implements ComponentPreparationSer
      * @param currentRegion {@link Region}
      * @param ggContext Greengrass context
      * @param parameterValues ParameterValues
+     * @param testContext TestContext
      */
     @Inject
     public CloudComponentPreparationService(final GreengrassV2Lifecycle ggv2, final Region currentRegion,
-                                            final GreengrassContext ggContext, final ParameterValues parameterValues) {
+                                            final GreengrassContext ggContext, final ParameterValues parameterValues,
+                                            final TestContext testContext) {
         this.currentRegion = currentRegion;
         this.ggv2 = ggv2;
         this.ggContext = ggContext;
         this.parameterValues = parameterValues;
+        this.testContext = testContext;
     }
 
     private Optional<Component> pinpointComponent(ComponentOverrideNameVersion nameVersion) {
@@ -106,9 +111,6 @@ public class CloudComponentPreparationService implements ComponentPreparationSer
 
     @Override
     public Optional<ComponentOverrideNameVersion> prepare(final ComponentOverrideNameVersion nameVersion) {
-        System.out.println("local deployment version string: " + nameVersion.version());
-        System.out.println("local deployment version: " + parameterValues.getString(FeatureParameters.GG_CLI_VERSION)
-                .orElse(ggContext.version()));
         return pinpointComponent(nameVersion)
                 .map(component -> {
                     if (nameVersion.version().value().equals(LATEST)) {
@@ -116,8 +118,8 @@ public class CloudComponentPreparationService implements ComponentPreparationSer
                     } else if (nameVersion.version().value().equals(NUCLEUS_VERSION)) {
                         return convert(nameVersion, ggContext.version());
                     } else if (nameVersion.version().value().equals(GG_CLI_VERSION)) {
-                        return convert(nameVersion, parameterValues.getString(FeatureParameters.GG_CLI_VERSION)
-                                .orElse(ggContext.version()));
+                        return convert(nameVersion, parameterValues.getString(FeatureParameters.GG_CLI_VERSION).orElse(
+                                ggContext.version() == null ? testContext.coreVersion() : ggContext.version()));
                     } else {
                         return convert(nameVersion, pinpointViableVersion(nameVersion, component));
                     }
