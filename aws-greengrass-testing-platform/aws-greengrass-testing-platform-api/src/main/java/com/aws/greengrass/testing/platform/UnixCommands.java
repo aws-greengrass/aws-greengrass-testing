@@ -159,4 +159,18 @@ public abstract class UnixCommands implements Commands, UnixPathsMixin {
                 .timeout(TIMEOUT_IN_SECONDS)
                 .build());
     }
+
+    @Override
+    public void startGreengrassService() throws CommandExecutionException {
+        executeToString(CommandInput.builder()
+                .line("systemctl start greengrass.service")
+                .build());
+    }
+
+    @Override
+    public void stopGreengrassService() throws CommandExecutionException {
+        executeToString(CommandInput.builder()
+                .line("systemctl stop greengrass.service")
+                .build());
+    }
 }

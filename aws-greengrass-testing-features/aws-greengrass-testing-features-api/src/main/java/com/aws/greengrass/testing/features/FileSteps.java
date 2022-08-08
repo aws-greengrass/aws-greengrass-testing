@@ -26,6 +26,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.SecureRandom;
+import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import javax.inject.Inject;
@@ -40,6 +41,7 @@ public class FileSteps {
     private final ScenarioContext scenarioContext;
     private final WaitSteps waits;
     private final SecureRandom random;
+    private ArrayList<Path> logFiles = new ArrayList<>();
 
     private enum ByteNotation implements Function<Long, Long> {
         B(1),
@@ -123,7 +125,11 @@ public class FileSteps {
      */
     @Then("the {word} log on the device contains the line {string} within {int} {word}")
     public void logContains(String component, String line, int value, String unit) throws InterruptedException {
-        containsTimeout("logs/" + component + ".log", line, value, unit);
+        String componentPath = "logs/" + component + ".log";
+        containsTimeout(componentPath, line, value, unit);
+        if (testContext.initializationContext().persistInstalledSoftware()) {
+            logFiles.add(testContext.installRoot().resolve(componentPath));
+        }
     }
 
     /**
@@ -201,12 +207,22 @@ public class FileSteps {
     @After(order = 99899)
     public void copyLogs(final Scenario scenario) {
         Path logFolder = testContext.installRoot().resolve("logs");
+        if (testContext.cleanupContext().persistInstalledSoftware()) {
+            LOGGER.info("Stopping Greengrass service..");
+            platform.commands().stopGreengrassService();
+        }
         if (platform.files().exists(logFolder)) {
             platform.files().listContents(logFolder).forEach(logFile -> {
                 byte[] bytes = platform.files().readBytes(logFile);
                 scenario.attach(bytes, "text/plain", logFile.getFileName().toString());
                 try {
                     Files.write(testContext.testResultsPath().resolve(logFile.getFileName()), bytes);
+                    if (testContext.initializationContext().persistInstalledSoftware()) {
+                        if (logFiles.contains(logFile)) {
+                            platform.files().delete(logFile);
+                        }
+                    }
+
                 } catch (IOException ie) {
                     LOGGER.warn("Could not copy {} into the results path {}",
                             logFile, testContext.testResultsPath(), ie);
@@ -215,6 +231,10 @@ public class FileSteps {
             if (!testContext.cleanupContext().persistInstalledSoftware()) {
                 // Remove the rest
                 platform.files().delete(testContext.installRoot());
+            } else {
+                //Start greengrass after log cleanup
+                LOGGER.info("Starting Greengrass service..");
+                platform.commands().startGreengrassService();
             }
         }
     }
