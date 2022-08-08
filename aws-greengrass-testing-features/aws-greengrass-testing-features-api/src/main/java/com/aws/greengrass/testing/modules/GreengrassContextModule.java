@@ -112,6 +112,11 @@ public class GreengrassContextModule extends AbstractModule {
                             mapper.readValue(nucleusRecipeInStream, new TypeReference<Map<String, Object>>() {});
                     nucleusVersion = Optional.ofNullable(String.valueOf(recipeObject.get(COMPONENT_VERSION_KEY)));
                 }
+            } else {
+                if (!parameterValues.getString(FeatureParameters.NUCLEUS_ARCHIVE_PATH).get().isEmpty()) {
+                    LOGGER.warn("Testing with PreInstalled greengrass, the path to greengrass nucleus "
+                            + "zip will be ignored");
+                }
             }
 
             return GreengrassContext.builder()
