@@ -17,6 +17,7 @@
         <module>aws-greengrass-testing-features-ml</module>
         <module>aws-greengrass-testing-features-mqtt</module>
         <module>aws-greengrass-testing-features-streammanager</module>
+        <module>aws-greengrass-testing-features-logmanager</module>
         <module>aws-greengrass-testing-features-docker</module>
         <module>aws-greengrass-testing-features-cloudcomponent</module>
         <module>aws-greengrass-testing-features-localdeployment</module>
