@@ -44,14 +44,15 @@ public class GreengrassCliSteps {
     @Inject
     @SuppressWarnings("MissingJavadocMethod")
     public GreengrassCliSteps(Platform platform, TestContext testContext,
-                       ComponentPreparationService componentPreparation,
-                       ScenarioContext scenarioContext, WaitSteps waitSteps) {
+                              ComponentPreparationService componentPreparation,
+                              ScenarioContext scenarioContext, WaitSteps waitSteps) {
         this.platform = platform;
         this.testContext = testContext;
         this.componentPreparation = componentPreparation;
         this.scenarioContext = scenarioContext;
         this.waitSteps = waitSteps;
-        this.artifactPath = testContext.testDirectory().resolve(LOCAL_STORE).resolve(ARTIFACTS_DIR);;
+        this.artifactPath = testContext.testDirectory().resolve(LOCAL_STORE).resolve(ARTIFACTS_DIR);
+        ;
         this.recipePath = testContext.testDirectory().resolve(LOCAL_STORE).resolve(RECIPE_DIR);
     }
 
@@ -67,8 +68,21 @@ public class GreengrassCliSteps {
     }
 
     /**
-     * Verify status of local deployemnt.
-     * @param status desired status
+     * Verify a component status using the greengrass-cli.
+     *
+     * @param componentName name of the component
+     * @param status        {RUNNING, BROKEN, FINISHED}
+     * @throws InterruptedException {@link InterruptedException}
+     */
+    @And("I verify the {word} component is {word} using the greengrass-cli")
+    public void verifyComponentIsRunning(String componentName, String status) throws InterruptedException {
+       waitSteps.untilTrue(() -> this.getComponentStatus(componentName, status), 30, TimeUnit.SECONDS);
+    }
+
+    /**
+     * Verify status of local deployment.
+     *
+     * @param status  desired status
      * @param timeout timeout in seconds
      * @throws InterruptedException {@link InterruptedException}
      */
@@ -93,4 +107,17 @@ public class GreengrassCliSteps {
         String[] responseArray = response.split(":");
         return responseArray[responseArray.length - 1].trim();
     }
+
+    private boolean getComponentStatus(String componentName, String componentStatus) {
+        String response = platform.commands().executeToString(CommandInput.builder()
+                .line(testContext.installRoot().resolve("bin").resolve("greengrass-cli").toString())
+                .addAllArgs(Arrays.asList("component", "details", "--name", componentName))
+                .build());
+        LOGGER.debug(String.format("component status response received for component %s is %s",
+                componentName, response));
+
+        return response.contains(String.format("State: %s", componentStatus));
+    }
+
+
 }
