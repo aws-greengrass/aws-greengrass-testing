@@ -6,9 +6,11 @@ Feature: Greengrass V2 LogManager
     Background:
         Given my device is registered as a Thing
         And my device is running Greengrass
+        Given 5 temporary rotated log files for component aws.greengrass.Nucleus have been created
 
     Scenario: configure the log manager component using a componentLogsConfiguration list and logs are uploaded to
               CloudWatch
+        Then it works
         Given I create a Greengrass deployment with components
             | aws.greengrass.Cli | LATEST |
             | aws.greengrass.LogManager | LATEST |
