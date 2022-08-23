@@ -33,4 +33,5 @@ Feature: Greengrass V2 LogManager
         """
         And I deploy the Greengrass deployment configuration
         Then the Greengrass deployment is COMPLETED on the device after 5 minutes
-        And I verify the aws.greengrass.LogManager component is RUNNING using the greengrass-cli
+        And I verify the aws.greengrass.LogManager component is RUNNING using the greengrass-cli after 30 seconds
+        And I verify that it created a log group for component type GreengrassSystemComponent for component System, with streams within 120 seconds in CloudWatch

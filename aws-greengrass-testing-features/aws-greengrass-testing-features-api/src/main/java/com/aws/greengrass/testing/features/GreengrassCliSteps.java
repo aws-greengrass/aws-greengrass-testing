@@ -72,11 +72,12 @@ public class GreengrassCliSteps {
      *
      * @param componentName name of the component
      * @param status        {RUNNING, BROKEN, FINISHED}
+     * @param timeout       max seconds to wait before timing out
      * @throws InterruptedException {@link InterruptedException}
      */
-    @And("I verify the {word} component is {word} using the greengrass-cli")
-    public void verifyComponentIsRunning(String componentName, String status) throws InterruptedException {
-       waitSteps.untilTrue(() -> this.getComponentStatus(componentName, status), 30, TimeUnit.SECONDS);
+    @And("I verify the {word} component is {word} using the greengrass-cli after {int} seconds")
+    public void verifyComponentIsRunning(String componentName, String status, int timeout) throws InterruptedException {
+       waitSteps.untilTrue(() -> this.getComponentStatus(componentName, status), timeout, TimeUnit.SECONDS);
     }
 
     /**
