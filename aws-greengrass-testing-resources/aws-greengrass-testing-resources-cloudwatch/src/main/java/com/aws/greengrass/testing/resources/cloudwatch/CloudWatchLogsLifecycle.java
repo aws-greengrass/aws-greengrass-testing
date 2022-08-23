@@ -25,7 +25,7 @@ public class CloudWatchLogsLifecycle extends AbstractAWSResourceLifecycle<CloudW
 
     @Inject
     public CloudWatchLogsLifecycle(CloudWatchLogsClient client) {
-        super(client);
+        super(client, CloudWatchLogStreamSpec.class);
     }
 
     /**

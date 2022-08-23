@@ -7,6 +7,9 @@ package com.aws.greengrass.testing.features;
 
 import com.aws.greengrass.testing.model.TestContext;
 import com.aws.greengrass.testing.modules.model.AWSResourcesContext;
+import com.aws.greengrass.testing.resources.AWSResources;
+import com.aws.greengrass.testing.resources.cloudwatch.CloudWatchLogStream;
+import com.aws.greengrass.testing.resources.cloudwatch.CloudWatchLogStreamSpec;
 import com.aws.greengrass.testing.resources.cloudwatch.CloudWatchLogsLifecycle;
 import com.google.inject.Inject;
 import io.cucumber.guice.ScenarioScoped;
@@ -28,6 +31,7 @@ public class CloudWatchSteps {
     private final CloudWatchLogsLifecycle logsLifecycle;
     private final TestContext testContext;
     private final AWSResourcesContext resourceContext;
+    private final AWSResources resources;
     private final WaitSteps waitSteps;
 
     private static final Logger LOGGER = LogManager.getLogger(CloudWatchSteps.class);
@@ -35,16 +39,13 @@ public class CloudWatchSteps {
 
     @Inject
     @SuppressWarnings("MissingJavadocMethod")
-    public CloudWatchSteps(
-            CloudWatchLogsLifecycle logsLifecycle,
-            TestContext testContext,
-            AWSResourcesContext resourcesContext,
-            WaitSteps waitSteps
-    ) {
+    public CloudWatchSteps(CloudWatchLogsLifecycle logsLifecycle, TestContext testContext,
+                           AWSResourcesContext resourcesContext, AWSResources resources, WaitSteps waitSteps) {
         this.logsLifecycle = logsLifecycle;
         this.testContext = testContext;
         this.resourceContext = resourcesContext;
         this.waitSteps = waitSteps;
+        this.resources = resources;
     }
 
     /**
@@ -52,30 +53,34 @@ public class CloudWatchSteps {
      * in cloudwatch and additionally verifies if there is a stream named /[yyyy\/MM\/dd]/thing/[thingName] that
      * created within the group.
      *
-     * @param componentType           The type of the component {GreengrassSystemComponent, UserComponent}
-     * @param componentName           The name of your component e.g. ComponentA, aws.greengrass.LogManager
-     * @param timeout                 Number of seconds to wait before timing out the operation
-     * @throws InterruptedException   {@link InterruptedException}
+     * @param componentType The type of the component {GreengrassSystemComponent, UserComponent}
+     * @param componentName The name of your component e.g. ComponentA, aws.greengrass.LogManager
+     * @param timeout       Number of seconds to wait before timing out the operation
+     * @throws InterruptedException {@link InterruptedException}
      */
     @Then("I verify that it created a log group for component type {word} for component {word}, with streams within "
-            + "{int} seconds in CloudWatch")
+          + "{int} seconds in CloudWatch")
     public void verifyCloudWatchGroupWithStreams(String componentType, String componentName, int timeout) throws
             InterruptedException {
         SimpleDateFormat formatter = new SimpleDateFormat("yyyy/MM/dd", Locale.ENGLISH);
         formatter.setTimeZone(TimeZone.getTimeZone("UTC")); // All dates are UTC, not local time
-
         String thingName = testContext.coreThingName();
         String region = resourceContext.region().toString();
 
-        String logGroupName = String.format("/aws/greengrass/%s/%s/%s", componentType, region, componentName);
-        String logStreamNamePattern = String.format("/%s/thing/%s", formatter.format(new Date()), thingName);
+        CloudWatchLogStream stream = CloudWatchLogStream.builder()
+                .groupName(String.format("/aws/greengrass/%s/%s/%s", componentType, region, componentName))
+                .streamName(String.format("/%s/thing/%s", formatter.format(new Date()), thingName))
+                .build();
 
-        LOGGER.info("Verifying log group {} with stream {} was created", logGroupName, logStreamNamePattern);
+        LOGGER.info("Verifying log group {} with stream {} was created", stream.groupName(), stream.streamName());
 
         int operationTimeout = timeout / 2;
-        waitSteps.untilTrue(() -> doesLogGroupExist(logGroupName), operationTimeout, TimeUnit.SECONDS);
-        waitSteps.untilTrue(() -> doesStreamExistInGroup(logGroupName, logStreamNamePattern), operationTimeout,
+        waitSteps.untilTrue(() -> doesLogGroupExist(stream.groupName()), operationTimeout, TimeUnit.SECONDS);
+        waitSteps.untilTrue(() -> doesStreamExistInGroup(stream.groupName(), stream.streamName()), operationTimeout,
                 TimeUnit.SECONDS);
+
+        // Register the spec on the resources so that they get cleaned up during teardown.
+        resources.trackSpec(CloudWatchLogStreamSpec.builder().resource(stream).created(true).build());
     }
 
     private boolean doesLogGroupExist(String logGroupName) {

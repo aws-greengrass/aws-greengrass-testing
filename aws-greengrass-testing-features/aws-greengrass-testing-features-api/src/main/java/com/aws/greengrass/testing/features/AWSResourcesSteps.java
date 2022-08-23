@@ -33,6 +33,7 @@ public class AWSResourcesSteps implements Closeable {
     @After(order = 11000)
     @Override
     public void close() throws IOException {
+        LOGGER.info("Running resources teardown");
         resources.close();
         testContext.close();
         LOGGER.info("Successfully removed externally created resources");

@@ -34,12 +34,12 @@ public abstract class AbstractAWSResourceLifecycle<C> implements AWSResourceLife
     /**
      * Create a {@link AWSResourceLifecycle} using a collection of tracking classes and underlying client.
      *
-     * @param client A type of AWS client to handle the tracking {@link ResourceSpec}
+     * @param client    A type of AWS client to handle the tracking {@link ResourceSpec}
      * @param specClass a {@link ResourceSpec} implementation class
      */
     @SafeVarargs
     public AbstractAWSResourceLifecycle(C client,
-                                        Class<? extends ResourceSpec<C, ? extends AWSResource<C>>>...specClass) {
+                                        Class<? extends ResourceSpec<C, ? extends AWSResource<C>>>... specClass) {
         this.client = client;
         this.specClasses = Arrays.asList(specClass);
         this.specs = new ArrayList<>();
@@ -52,7 +52,7 @@ public abstract class AbstractAWSResourceLifecycle<C> implements AWSResourceLife
         if (spec.created()) {
             return spec;
         }
-        ResourceSpec<C,R> update = spec.create(client, resources);
+        ResourceSpec<C, R> update = spec.create(client, resources);
         // check if the resource is available in cloud
         ExecutorService executor = Executors.newSingleThreadExecutor();
         Future future = executor.submit(() -> {
@@ -81,6 +81,26 @@ public abstract class AbstractAWSResourceLifecycle<C> implements AWSResourceLife
         specs.add(0, update);
         LOGGER.info("Created {} in {}", update.resource().getClass().getSimpleName(), displayName());
         return (U) update;
+    }
+
+    /**
+     * Beings tracking a ResourceSpec that has already been created so that the lifecycle
+     * can delete the resources after the test runs. This is required for scenarios where
+     * components create the AWS resources, so later we want the lifecycle to delete them on teardown.
+     *
+     * @param <U>  {@link ResourceSpec} implementation type
+     * @param <R>  {@link AWSResource} implementation type
+     * @param spec a ResourceSpec
+     * @throws IllegalArgumentException {@link IllegalArgumentException}
+     */
+    public <U extends ResourceSpec<C, R>, R extends AWSResource<C>> U trackSpec(U spec)
+            throws IllegalArgumentException {
+        if (!spec.created()) {
+           throw new IllegalArgumentException("Trying to track a spect that has not be tagged as created");
+        }
+
+        specs.add(0, spec);
+        return spec;
     }
 
     @Override

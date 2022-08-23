@@ -111,6 +111,20 @@ public class AWSResources implements Closeable {
     }
 
     /**
+     * Begins tracking an existing ResourceSpec so that it can be removed during teardown.
+     * @param spec A {@link ResourceSpec} implementation that results in an AWS resource.
+     * @param <C> A generic to represent AWS client
+     * @param <U> {@link ResourceSpec} implementation type
+     * @param <R> {@link AWSResource} implementation type
+     */
+
+    public <U extends ResourceSpec<C, R>, R extends AWSResource<C>, C> void trackSpec(U spec) {
+        find((Class<U>) spec.getClass())
+                .map(lc -> lc.trackSpec(spec))
+                .orElseThrow(() -> new IllegalArgumentException("Could not find lifecycle for " + spec.getClass()));
+    }
+
+    /**
      * Get all tracked {@link ResourceSpec} specs that the concrete specClass.
      *
      * @param specClass All {@link ResourceSpec} that match specClass
