@@ -119,9 +119,14 @@ public class DeploymentSteps {
     /**
      * Create a local deployment using greengrass cli.
      * @param componentNames map of component name to source of the component
+     * @throws InterruptedException Task interrupted
      */
     @When("I create a local deployment with components")
-    public void createLocalDeployment(List<List<String>> componentNames) {
+    public void createLocalDeployment(List<List<String>> componentNames) throws InterruptedException {
+        createLocalDeployment(componentNames, 0);
+    }
+
+    private void createLocalDeployment(List<List<String>> componentNames, int retryCount) throws InterruptedException {
         // find the component artifacts and copy into a local store
         final Map<String, ComponentDeploymentSpecification> components = parseComponentNamesAndPrepare(componentNames);
 
@@ -137,15 +142,26 @@ public class DeploymentSteps {
             commandArgs.add(entry.getKey() + "=" + entry.getValue().componentVersion());
         }
 
-        String response = platform.commands().executeToString(CommandInput.builder()
-                .line(testContext.installRoot().resolve("bin").resolve("greengrass-cli").toString())
-                .addAllArgs(commandArgs)
-                .build());
-        LOGGER.debug(String.format("The response from executing gg-cli command is %s", response));
-        String[] responseArray = response.split(":");
-        String deploymentId = responseArray[responseArray.length - 1];
-        LOGGER.info("The local deployment response is " + deploymentId);
-        scenarioContext.put(LOCAL_DEPLOYMENT_ID, deploymentId);
+        try {
+            String response = platform.commands().executeToString(CommandInput.builder()
+                    .line(testContext.installRoot().resolve("bin").resolve("greengrass-cli").toString())
+                    .addAllArgs(commandArgs)
+                    .build());
+            LOGGER.debug("The response from executing gg-cli command is {}", response);
+            String[] responseArray = response.split(":");
+            String deploymentId = responseArray[responseArray.length - 1];
+            LOGGER.info("The local deployment response is " + deploymentId);
+            scenarioContext.put(LOCAL_DEPLOYMENT_ID, deploymentId);
+        } catch (Exception e) {
+            if (retryCount > 3) {
+                throw e;
+            }
+
+            waits.until(5, "SECONDS");
+            LOGGER.warn("the deployment request threw an exception, retried {} times...",
+                    retryCount);
+            this.createLocalDeployment(componentNames, retryCount + 1);
+        }
     }
 
     private Map<String, ComponentDeploymentSpecification> parseComponentNamesAndPrepare(
