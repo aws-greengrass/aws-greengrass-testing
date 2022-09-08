@@ -36,13 +36,13 @@
         <cucumber.version>5.7.0</cucumber.version>
         <immutables.version>2.8.2</immutables.version>
         <log4j.version>2.17.1</log4j.version>
-        <aws.sdk.version>2.17.192</aws.sdk.version>
+        <aws.sdk.version>2.17.254</aws.sdk.version>
         <auto.service.version>1.0</auto.service.version>
         <findbugs.version>3.0.2</findbugs.version>
         <guice.version>5.0.1</guice.version>
         <jackson.version>2.12.3</jackson.version>
         <semver.version>3.1.0</semver.version>
-        <iotdevicesdk.version>1.3.3</iotdevicesdk.version>
+        <iotdevicesdk.version>1.10.3</iotdevicesdk.version>
         <picocli.version>4.6.1</picocli.version>
         <dagger.version>2.37</dagger.version>
     </properties>
