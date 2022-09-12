@@ -55,7 +55,7 @@ public class StepTrackingReporting implements EventListener {
             String path = stepStarted.getTestCase().getUri().toString().replace("classpath:", "");
             Logger logger = scenarioToLogger.computeIfAbsent(stepStarted.getTestCase().getId(),
                     key -> LogManager.getLogger(path));
-            logger.info("line {}: '{}'", step.getStep().getLine(), step.getStep().getText());
+            logger.debug("Executing line {}: '{}'", step.getStep().getLine(), step.getStep().getText());
         }
     }
 
@@ -72,7 +72,7 @@ public class StepTrackingReporting implements EventListener {
                         stepFinished.getResult().getError());
                 builder.failed(true).message("Failed at '" + step.getStep().getText() + "'");
             } else {
-                logger.debug("Finished step: '{}' with status {}",
+                logger.info("Finished step: '{}' with status {}",
                         step.getStep().getText(),
                         stepFinished.getResult().getStatus());
             }
