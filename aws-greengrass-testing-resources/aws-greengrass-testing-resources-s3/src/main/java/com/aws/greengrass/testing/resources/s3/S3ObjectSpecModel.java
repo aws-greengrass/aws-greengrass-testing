@@ -12,6 +12,7 @@ import com.aws.greengrass.testing.resources.ResourceSpec;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.immutables.value.Value;
+import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadRequest;
@@ -51,6 +52,10 @@ interface S3ObjectSpecModel extends ResourceSpec<S3Client, S3Object>, S3TaggingM
 
     @Override
     default S3ObjectSpec create(S3Client client, AWSResources resources) {
+        return this.create(client, resources, 0);
+    }
+
+    default S3ObjectSpec create(S3Client client, AWSResources resources, int retryCount) {
         final CreateMultipartUploadRequest multipartUploadRequest = CreateMultipartUploadRequest.builder()
                 .bucket(bucket())
                 .key(key())
@@ -98,6 +103,12 @@ interface S3ObjectSpecModel extends ResourceSpec<S3Client, S3Object>, S3TaggingM
         } catch (IOException e) {
             LOGGER.error("IOException occurred while uploading artifacts to S3 bucket: {}", e);
             throw new RuntimeException(e);
+        } catch (SdkClientException e) {
+            if (retryCount > 3) {
+                throw e;
+            }
+            LOGGER.debug("S3 upload request threw an SdkClientException, retied {} times...", retryCount);
+            return create(client, resources, retryCount + 1);
         } finally {
             try {
                 if (fileInputStream != null) {
