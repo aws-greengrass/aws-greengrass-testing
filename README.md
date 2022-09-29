@@ -1,5 +1,7 @@
 ## AWS Greengrass Testing Framework
 
+Owner: IoT Greengrass Team
+
 This framework is a collection of building blocks
 to support end to end automation from the customer
 perspective, using Cucumber as the feature driver. AWS Greengrass uses these very same building

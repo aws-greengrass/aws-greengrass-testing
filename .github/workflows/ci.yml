@@ -31,6 +31,22 @@ jobs:
         run: mvn -U -ntp process-resources
       - name: Build with Maven
         run: mvn -U -ntp clean verify
+      - name: Upload Failed Test Report
+        uses: actions/upload-artifact@v1.0.0
+        if: failure()
+        with:
+          name: Failed Test Report
+          path: target/surefire-reports
+      - name: Upload Coverage
+        uses: actions/upload-artifact@v1.0.0
+        if: always()
+        with:
+          name: Coverage Report
+          path: target/jacoco-report
+      - name: Convert Jacoco unit test report to Cobertura
+        run: python3 .github/scripts/cover2cover.py target/jacoco-report/jacoco.xml src/main/java > target/jacoco-report/cobertura.xml
+      - name: Convert Jacoco integ test report to Cobertura
+        run: python3 .github/scripts/cover2cover.py target/jacoco-report/jacoco-it/jacoco.xml src/main/java > target/jacoco-report/cobertura-it.xml
 
   uat-linux:
     permissions:
