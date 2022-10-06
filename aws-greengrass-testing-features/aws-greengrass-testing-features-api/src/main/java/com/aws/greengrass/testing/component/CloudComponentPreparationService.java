@@ -13,6 +13,7 @@ import com.aws.greengrass.testing.model.GreengrassContext;
 import com.aws.greengrass.testing.model.TestContext;
 import com.aws.greengrass.testing.modules.FeatureParameters;
 import com.aws.greengrass.testing.resources.greengrass.GreengrassV2Lifecycle;
+import com.google.common.annotations.VisibleForTesting;
 import com.vdurmont.semver4j.Requirement;
 import com.vdurmont.semver4j.Semver;
 import software.amazon.awssdk.arns.Arn;
@@ -54,7 +55,8 @@ public class CloudComponentPreparationService implements ComponentPreparationSer
         this.testContext = testContext;
     }
 
-    private Optional<Component> pinpointComponent(ComponentOverrideNameVersion nameVersion) {
+    @VisibleForTesting
+    Optional<Component> pinpointComponent(ComponentOverrideNameVersion nameVersion) {
         // We'll scan through private component override
         final Optional<Component> privateComponent = ggv2.listComponents(ComponentVisibilityScope.PRIVATE)
                 .components()
@@ -83,7 +85,8 @@ public class CloudComponentPreparationService implements ComponentPreparationSer
                         .build());
     }
 
-    private ComponentOverrideNameVersion convert(ComponentOverrideNameVersion original, String componentVersion) {
+    @VisibleForTesting
+    ComponentOverrideNameVersion convert(ComponentOverrideNameVersion original, String componentVersion) {
         return ComponentOverrideNameVersion.builder()
                 .from(original)
                 .version(ComponentOverrideVersion.builder()
