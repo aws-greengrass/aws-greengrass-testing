@@ -121,8 +121,13 @@ public class CloudComponentPreparationService implements ComponentPreparationSer
                     } else if (nameVersion.version().value().equals(NUCLEUS_VERSION)) {
                         return convert(nameVersion, ggContext.version());
                     } else if (nameVersion.version().value().equals(GG_CLI_VERSION)) {
-                        return convert(nameVersion, parameterValues.getString(FeatureParameters.GG_CLI_VERSION).orElse(
-                                ggContext.version() == null ? testContext.coreVersion() : ggContext.version()));
+                        String componentVersion = parameterValues.getString(FeatureParameters.GG_CLI_VERSION)
+                                .orElse(ggContext.version() == null ? testContext.coreVersion() : ggContext.version());
+                        if (componentVersion.isEmpty()) {
+                            componentVersion =
+                                    ggContext.version() == null ? testContext.coreVersion() : ggContext.version();
+                        }
+                        return convert(nameVersion, componentVersion);
                     } else {
                         return convert(nameVersion, pinpointViableVersion(nameVersion, component));
                     }
