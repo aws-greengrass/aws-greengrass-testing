@@ -22,6 +22,7 @@ import javax.inject.Inject;
 public class LoggerSteps {
     private static final Pattern FEATURE = Pattern.compile("/(\\w+)\\.feature");
     private static final Logger LOGGER = LogManager.getLogger(LoggerSteps.class);
+    private static final String OTF_VERSION_PREFIX = "otf";
     private final TestContext testContext;
 
     @Inject
@@ -42,6 +43,12 @@ public class LoggerSteps {
         if (matcher.find()) {
             feature = matcher.group(1);
         }
+
+        // get otf version and bake it into log
+        final String otfVersionContent = getOTFVersionLogContent();
+        ThreadContext.put("otfversion", otfVersionContent);
+        LOGGER.info("OTF Version is {}", otfVersionContent);
+
         ThreadContext.put("testId", testContext.testId().prefixedId());
         ThreadContext.put("feature", feature);
         ThreadContext.put("scenarioId", scenario.getName());
@@ -53,5 +60,10 @@ public class LoggerSteps {
     public void clearContext(final Scenario scenario) {
         LOGGER.info("Clearing thread context on scenario: '{}'", scenario.getName());
         ThreadContext.clearMap();
+    }
+
+    private String getOTFVersionLogContent() {
+        final String otfVersion = LoggerSteps.class.getPackage().getImplementationVersion();
+        return String.format("%s-%s", OTF_VERSION_PREFIX, otfVersion);
     }
 }
