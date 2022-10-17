@@ -85,6 +85,7 @@ public class RecipeComponentPreparationService implements ComponentPreparationSe
                             .resolve(testContext.testId().id())
                             .resolve("components")
                             .resolve(componentName);
+
                     Files.createDirectories(componentArtifact);
                     componentArtifact = componentArtifact.resolve(contentPath.getFileName());
                     try (FileOutputStream fos = new FileOutputStream(componentArtifact.toFile())) {
