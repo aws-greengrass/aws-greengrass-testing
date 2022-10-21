@@ -24,6 +24,7 @@ import software.amazon.awssdk.utils.IoUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -67,6 +68,8 @@ public class GreengrassContextModule extends AbstractModule {
                 LOGGER.debug("Extracting {} into {}", entry.getName(), contentPath);
                 try (FileOutputStream output = new FileOutputStream(contentPath.toFile())) {
                     IoUtils.copy(zipStream, output);
+                } catch (FileNotFoundException e) {
+                    throw new FileNotFoundException("file doesn't exist");
                 }
                 if (entry.getName().contains("recipe.yaml")) {
                     JsonNode node = mapper.readTree(contentPath.toFile());

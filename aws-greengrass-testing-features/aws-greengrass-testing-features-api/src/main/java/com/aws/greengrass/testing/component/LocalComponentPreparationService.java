@@ -21,6 +21,7 @@ import software.amazon.awssdk.utils.IoUtils;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -99,6 +100,8 @@ public class LocalComponentPreparationService implements ComponentPreparationSer
                         iterator.remove();
                         String filepath = uri.split(":")[1];
                         Path componentArtifact;
+
+
                         try (InputStream content = Objects.requireNonNull(getClass().getResourceAsStream(filepath),
                                 "not found on classpath " + filepath)) {
                             Path contentPath = Paths.get(filepath);
@@ -106,9 +109,10 @@ public class LocalComponentPreparationService implements ComponentPreparationSer
                                     .resolve(testContext.testId().id())
                                     .resolve("components")
                                     .resolve(componentName);
+
                             Files.createDirectories(componentArtifact);
                             componentArtifact = componentArtifact.resolve(contentPath.getFileName());
-                            try (FileOutputStream fos = new FileOutputStream(componentArtifact.toFile())) {
+                            try (OutputStream fos = Files.newOutputStream(componentArtifact)) {
                                 IoUtils.copy(content, fos);
                             }
                         }

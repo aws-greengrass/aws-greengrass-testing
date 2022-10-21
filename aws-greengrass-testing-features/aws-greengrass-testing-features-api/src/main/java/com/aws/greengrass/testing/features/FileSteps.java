@@ -29,6 +29,7 @@ import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.stream.IntStream;
 import javax.inject.Inject;
 
 @ScenarioScoped
@@ -169,7 +170,8 @@ public class FileSteps {
             throw new IllegalStateException("The file " + filePath + " already exists");
         }
         try (BufferedWriter writer = Files.newBufferedWriter(filePath, StandardCharsets.UTF_8)) {
-            random.ints(0, 127).limit(notation.apply(length)).forEach(singleByte -> {
+            SecureRandom random = new SecureRandom();
+            random.ints(random.nextInt(127)).limit(notation.apply(length)).forEach(singleByte -> {
                 try {
                     writer.write(singleByte);
                 } catch (IOException e) {

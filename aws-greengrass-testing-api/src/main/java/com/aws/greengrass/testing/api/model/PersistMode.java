@@ -6,6 +6,7 @@
 package com.aws.greengrass.testing.api.model;
 
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
@@ -48,7 +49,7 @@ public enum PersistMode implements Function<PersistenceBuilder, PersistenceBuild
      * @return true if its a valid enum
      */
     public static boolean validPersistMode(String value) {
-        value = value.replace('.', '_').toUpperCase();
+        value = value.replace('.', '_').toUpperCase(Locale.ROOT);
         for (PersistMode mode : values()) {
             if (mode.name().equals(value)) {
                 return true;
