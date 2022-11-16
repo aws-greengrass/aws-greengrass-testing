@@ -20,10 +20,10 @@ import com.aws.greengrass.testing.resources.s3.S3Lifecycle;
 import com.aws.greengrass.testing.resources.s3.S3ObjectSpec;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.annotations.VisibleForTesting;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import software.amazon.awssdk.core.SdkBytes;
-import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.utils.IoUtils;
 
 import java.io.FileOutputStream;
@@ -72,7 +72,8 @@ public class RecipeComponentPreparationService implements ComponentPreparationSe
         this.overrides = overrides;
     }
 
-    private String uploadArtifact(String componentName, String uri, String bucketName) throws IOException {
+    @VisibleForTesting
+    String uploadArtifact(String componentName, String uri, String bucketName) throws IOException {
         String[] parts = uri.split(":", 2);
         Path componentArtifact;
         // TODO: make this an extension point
@@ -117,7 +118,8 @@ public class RecipeComponentPreparationService implements ComponentPreparationSe
         return s3Path;
     }
 
-    private String getOrCreateBucket() {
+    @VisibleForTesting
+    String getOrCreateBucket() {
         S3Lifecycle s3 = resources.lifecycle(S3Lifecycle.class);
         return Optional.ofNullable(overrides.bucketName())
                 .orElseGet(() -> {

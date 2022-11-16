@@ -14,11 +14,11 @@ import com.aws.greengrass.testing.modules.JacksonModule;
 import com.aws.greengrass.testing.platform.Platform;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.annotations.VisibleForTesting;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import software.amazon.awssdk.utils.IoUtils;
 
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -48,13 +48,19 @@ public class LocalComponentPreparationService implements ComponentPreparationSer
 
     private final Platform platform;
     private final TestContext testContext;
+
     private final ContentLoader loader;
+
     private final ObjectMapper mapper;
     private final GreengrassContext greengrassContext;
 
     @FunctionalInterface
     public interface ContentLoader {
         InputStream load(String version) throws IOException;
+    }
+
+    public ContentLoader getLoader() {
+        return this.loader;
     }
 
     /**
@@ -79,7 +85,8 @@ public class LocalComponentPreparationService implements ComponentPreparationSer
     @Override
     public Optional<ComponentOverrideNameVersion> prepare(ComponentOverrideNameVersion overrideNameVersion) {
         try {
-            Map<String, Object> recipe = mapper.readValue(loader.load(overrideNameVersion.version().value()),
+            // Load the recipe content from the recipe path
+            Map<String, Object> recipe = mapper.readValue(getLoader().load(overrideNameVersion.version().value()),
                     new TypeReference<Map<String, Object>>() {
             });
             String componentName = overrideNameVersion.name();
@@ -99,23 +106,7 @@ public class LocalComponentPreparationService implements ComponentPreparationSer
                     } else if (uri.startsWith("classpath")) {
                         iterator.remove();
                         String filepath = uri.split(":")[1];
-                        Path componentArtifact;
-
-
-                        try (InputStream content = Objects.requireNonNull(getClass().getResourceAsStream(filepath),
-                                "not found on classpath " + filepath)) {
-                            Path contentPath = Paths.get(filepath);
-                            componentArtifact = greengrassContext.tempDirectory()
-                                    .resolve(testContext.testId().id())
-                                    .resolve("components")
-                                    .resolve(componentName);
-
-                            Files.createDirectories(componentArtifact);
-                            componentArtifact = componentArtifact.resolve(contentPath.getFileName());
-                            try (OutputStream fos = Files.newOutputStream(componentArtifact)) {
-                                IoUtils.copy(content, fos);
-                            }
-                        }
+                        Path componentArtifact = writeFileContentToFilePath(filepath, componentName);
                         copyArtifactToLocalStore(componentArtifact,componentName,componentVersion);
                     }
                 }
@@ -140,7 +131,29 @@ public class LocalComponentPreparationService implements ComponentPreparationSer
         }
     }
 
-    private void copyArtifactToLocalStore(Path artifactFilePath, String componentName, String componentVersion) {
+    @VisibleForTesting
+    Path writeFileContentToFilePath(String filepath, String componentName) throws IOException {
+        Path componentArtifact;
+        try (InputStream content = Objects.requireNonNull(getClass().getResourceAsStream(filepath),
+                "not found on classpath " + filepath)) {
+            Path contentPath = Paths.get(filepath);
+            componentArtifact = greengrassContext.tempDirectory()
+                    .resolve(testContext.testId().id())
+                    .resolve("components")
+                    .resolve(componentName);
+
+            Files.createDirectories(componentArtifact);
+            componentArtifact = componentArtifact.resolve(contentPath.getFileName());
+            try (OutputStream fos = Files.newOutputStream(componentArtifact)) {
+                IoUtils.copy(content, fos);
+            }
+        }
+
+        return componentArtifact;
+    }
+
+    @VisibleForTesting
+    void copyArtifactToLocalStore(Path artifactFilePath, String componentName, String componentVersion) {
         Path localStoreArtifactPathOnDevice = testContext.installRoot().resolve(LOCAL_STORE).resolve(ARTIFACTS_DIR);
         Path componentArtifactPath = localStoreArtifactPathOnDevice.resolve(componentName).resolve(componentVersion);
 
@@ -148,7 +161,8 @@ public class LocalComponentPreparationService implements ComponentPreparationSer
         platform.files().copyTo(artifactFilePath, componentArtifactPath.resolve(artifactFilePath.getFileName()));
     }
 
-    private void copyRecipeToLocalStore(String recipe, String componentName, String componentVersion)
+    @VisibleForTesting
+    void copyRecipeToLocalStore(String recipe, String componentName, String componentVersion)
             throws IOException {
         Path hostPath = testContext.testDirectory().resolve(LOCAL_STORE).resolve(RECIPE_DIR);
         Files.createDirectories(hostPath);

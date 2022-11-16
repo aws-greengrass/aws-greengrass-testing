@@ -1,0 +1,25 @@
+#
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+
+---
+RecipeFormatVersion: 2020-01-25
+ComponentName: com.aws.MockComponentA
+ComponentVersion: '1.0.1'
+ComponentDescription: Mock Component A
+ComponentPublisher: Amazon
+Manifests:
+  - Artifacts:
+      - URI: classpath:/mockgreengrass/components/artifacts/mockArtifact.zip
+        Unarchive: ZIP
+        Permission:
+          Read: ALL
+          Execute: ALL
+    Lifecycle:
+      Run: |
+        echo "Mock Component A"
+ComponentDependencies:
+  com.aws.MockComponentB:
+    VersionRequirement: "99.0.0"
+    DependencyType: HARD
