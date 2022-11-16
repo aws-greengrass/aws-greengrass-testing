@@ -29,6 +29,8 @@ jobs:
           java-version: 1.8
       - name: Init Submodule
         run: git submodule update --init
+      - name: Clean Cache
+        run: mvn clean install -U
       - name: Maven Preprocess
         run: mvn -U -ntp clean process-resources
       - name: Build with Maven
