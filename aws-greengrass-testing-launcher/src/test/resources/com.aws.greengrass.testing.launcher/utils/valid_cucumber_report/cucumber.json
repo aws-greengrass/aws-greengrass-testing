@@ -1,0 +1,671 @@
+[
+  {
+    "line": 1,
+    "elements": [
+      {
+        "line": 3,
+        "name": "",
+        "description": "",
+        "type": "background",
+        "keyword": "Background",
+        "steps": [
+          {
+            "result": {
+              "duration": 5071354000,
+              "status": "passed"
+            },
+            "line": 4,
+            "name": "my device is registered as a Thing",
+            "match": {
+              "location": "com.aws.greengrass.testing.features.RegistrationSteps.registerAsThing()"
+            },
+            "keyword": "Given "
+          },
+          {
+            "result": {
+              "duration": 1021590000,
+              "status": "passed"
+            },
+            "line": 5,
+            "name": "my device is running Greengrass",
+            "match": {
+              "location": "com.aws.greengrass.testing.features.GreengrassSteps.start()"
+            },
+            "keyword": "And "
+          }
+        ]
+      },
+      {
+        "start_timestamp": "2022-11-02T00:25:19.522Z",
+        "before": [
+          {
+            "result": {
+              "duration": 822122000,
+              "status": "passed"
+            },
+            "match": {
+              "location": "com.aws.greengrass.testing.features.LoggerSteps.addContext(io.cucumber.java.Scenario)"
+            }
+          }
+        ],
+        "line": 8,
+        "name": "As a developer, I can create a component in Cloud and deploy it on my device",
+        "description": "",
+        "id": "testing-cloud-component-in-greengrass;as-a-developer--i-can-create-a-component-in-cloud-and-deploy-it-on-my-device",
+        "after": [
+          {
+            "result": {
+              "duration": 99000,
+              "status": "passed"
+            },
+            "match": {
+              "location": "com.aws.greengrass.testing.features.DeploymentSteps.cleanupDeployments()"
+            }
+          },
+          {
+            "result": {
+              "duration": 11562000,
+              "status": "passed"
+            },
+            "match": {
+              "location": "com.aws.greengrass.testing.features.mqtt.MQTTSteps.disconnect()"
+            }
+          },
+          {
+            "result": {
+              "duration": 76429000,
+              "status": "passed"
+            },
+            "match": {
+              "location": "com.aws.greengrass.testing.features.GreengrassSteps.close()"
+            }
+          },
+          {
+            "embeddings": [
+              {
+                "data": "",
+                "mime_type": "text/plain",
+                "name": "main.log"
+              },
+              {
+                "data": "test",
+                "mime_type": "text/plain",
+                "name": "greengrass.log"
+              },
+              {
+                "data": "test",
+                "mime_type": "text/plain",
+                "name": "com.aws.HelloWorld.log"
+              },
+              {
+                "data": "",
+                "mime_type": "text/plain",
+                "name": "aws.greengrass.Nucleus.log"
+              }
+            ],
+            "result": {
+              "duration": 52318000,
+              "status": "passed"
+            },
+            "match": {
+              "location": "com.aws.greengrass.testing.features.FileSteps.copyLogs(io.cucumber.java.Scenario)"
+            }
+          },
+          {
+            "result": {
+              "duration": 4944216000,
+              "status": "passed"
+            },
+            "match": {
+              "location": "com.aws.greengrass.testing.features.AWSResourcesSteps.close()"
+            }
+          },
+          {
+            "result": {
+              "duration": 1226000,
+              "status": "passed"
+            },
+            "match": {
+              "location": "com.aws.greengrass.testing.features.DockerSteps.removeCreatedImages()"
+            }
+          },
+          {
+            "result": {
+              "duration": 126000,
+              "status": "passed"
+            },
+            "match": {
+              "location": "com.aws.greengrass.testing.features.LoggerSteps.clearContext(io.cucumber.java.Scenario)"
+            }
+          }
+        ],
+        "type": "scenario",
+        "keyword": "Scenario",
+        "steps": [
+          {
+            "result": {
+              "duration": 12754497000,
+              "status": "passed"
+            },
+            "line": 9,
+            "name": "I create a Greengrass deployment with components",
+            "match": {
+              "location": "com.aws.greengrass.testing.features.DeploymentSteps.createDeployment(java.util.List\u003cjava.util.List\u003cjava.lang.String\u003e\u003e)"
+            },
+            "rows": [
+              {
+                "cells": [
+                  "com.aws.HelloWorld",
+                  "classpath:/greengrass/components/recipes/hello_world_recipe.yaml"
+                ]
+              }
+            ],
+            "keyword": "When "
+          },
+          {
+            "result": {
+              "duration": 383615000,
+              "status": "passed"
+            },
+            "line": 11,
+            "name": "I deploy the Greengrass deployment configuration",
+            "match": {
+              "location": "com.aws.greengrass.testing.features.DeploymentSteps.startDeployment()"
+            },
+            "keyword": "And "
+          },
+          {
+            "result": {
+              "duration": 16512564000,
+              "status": "passed"
+            },
+            "line": 12,
+            "name": "the Greengrass deployment is COMPLETED on the device after 180 seconds",
+            "match": {
+              "arguments": [
+                {
+                  "val": "COMPLETED",
+                  "offset": 29
+                },
+                {
+                  "val": "180",
+                  "offset": 59
+                },
+                {
+                  "val": "seconds",
+                  "offset": 63
+                }
+              ],
+              "location": "com.aws.greengrass.testing.features.DeploymentSteps.deploymentSucceeds(java.lang.String,int,java.lang.String)"
+            },
+            "keyword": "Then "
+          },
+          {
+            "result": {
+              "duration": 1319000,
+              "status": "passed"
+            },
+            "line": 13,
+            "name": "the com.aws.HelloWorld log on the device contains the line \"Hello World!!\" within 20 seconds",
+            "match": {
+              "arguments": [
+                {
+                  "val": "com.aws.HelloWorld",
+                  "offset": 4
+                },
+                {
+                  "val": "\"Hello World!!\"",
+                  "offset": 59
+                },
+                {
+                  "val": "20",
+                  "offset": 82
+                },
+                {
+                  "val": "seconds",
+                  "offset": 85
+                }
+              ],
+              "location": "com.aws.greengrass.testing.features.FileSteps.logContains(java.lang.String,java.lang.String,int,java.lang.String)"
+            },
+            "keyword": "And "
+          },
+          {
+            "result": {
+              "duration": 1150085000,
+              "status": "passed"
+            },
+            "line": 15,
+            "name": "I create a Greengrass deployment with components",
+            "match": {
+              "location": "com.aws.greengrass.testing.features.DeploymentSteps.createDeployment(java.util.List\u003cjava.util.List\u003cjava.lang.String\u003e\u003e)"
+            },
+            "rows": [
+              {
+                "cells": [
+                  "com.aws.HelloWorld",
+                  "classpath:/greengrass/components/recipes/hello_world_updated_recipe.yaml"
+                ]
+              }
+            ],
+            "keyword": "When "
+          },
+          {
+            "result": {
+              "duration": 359996000,
+              "status": "passed"
+            },
+            "line": 17,
+            "name": "I deploy the Greengrass deployment configuration",
+            "match": {
+              "location": "com.aws.greengrass.testing.features.DeploymentSteps.startDeployment()"
+            },
+            "keyword": "And "
+          },
+          {
+            "result": {
+              "duration": 7457462000,
+              "status": "passed"
+            },
+            "line": 18,
+            "name": "the Greengrass deployment is COMPLETED on the device after 180 seconds",
+            "match": {
+              "arguments": [
+                {
+                  "val": "COMPLETED",
+                  "offset": 29
+                },
+                {
+                  "val": "180",
+                  "offset": 59
+                },
+                {
+                  "val": "seconds",
+                  "offset": 63
+                }
+              ],
+              "location": "com.aws.greengrass.testing.features.DeploymentSteps.deploymentSucceeds(java.lang.String,int,java.lang.String)"
+            },
+            "keyword": "Then "
+          },
+          {
+            "result": {
+              "duration": 483000,
+              "status": "passed"
+            },
+            "line": 19,
+            "name": "the com.aws.HelloWorld log on the device contains the line \"Hello World Updated!!\" within 20 seconds",
+            "match": {
+              "arguments": [
+                {
+                  "val": "com.aws.HelloWorld",
+                  "offset": 4
+                },
+                {
+                  "val": "\"Hello World Updated!!\"",
+                  "offset": 59
+                },
+                {
+                  "val": "20",
+                  "offset": 90
+                },
+                {
+                  "val": "seconds",
+                  "offset": 93
+                }
+              ],
+              "location": "com.aws.greengrass.testing.features.FileSteps.logContains(java.lang.String,java.lang.String,int,java.lang.String)"
+            },
+            "keyword": "And "
+          }
+        ],
+        "tags": [
+          {
+            "name": "@CloudDeployment"
+          },
+          {
+            "name": "@IDT"
+          },
+          {
+            "name": "@OTFStable"
+          }
+        ]
+      },
+      {
+        "line": 3,
+        "name": "",
+        "description": "",
+        "type": "background",
+        "keyword": "Background",
+        "steps": [
+          {
+            "result": {
+              "duration": 2504335000,
+              "status": "passed"
+            },
+            "line": 4,
+            "name": "my device is registered as a Thing",
+            "match": {
+              "location": "com.aws.greengrass.testing.features.RegistrationSteps.registerAsThing()"
+            },
+            "keyword": "Given "
+          },
+          {
+            "result": {
+              "duration": 1052759000,
+              "status": "passed"
+            },
+            "line": 5,
+            "name": "my device is running Greengrass",
+            "match": {
+              "location": "com.aws.greengrass.testing.features.GreengrassSteps.start()"
+            },
+            "keyword": "And "
+          }
+        ]
+      },
+      {
+        "start_timestamp": "2022-11-02T00:26:10.184Z",
+        "before": [
+          {
+            "result": {
+              "duration": 29519000,
+              "status": "passed"
+            },
+            "match": {
+              "location": "com.aws.greengrass.testing.features.LoggerSteps.addContext(io.cucumber.java.Scenario)"
+            }
+          }
+        ],
+        "line": 22,
+        "name": "As a developer, I can create a component in Cloud and deploy it on my device via thing group",
+        "description": "",
+        "id": "testing-cloud-component-in-greengrass;as-a-developer--i-can-create-a-component-in-cloud-and-deploy-it-on-my-device-via-thing-group",
+        "after": [
+          {
+            "result": {
+              "duration": 38000,
+              "status": "passed"
+            },
+            "match": {
+              "location": "com.aws.greengrass.testing.features.DeploymentSteps.cleanupDeployments()"
+            }
+          },
+          {
+            "result": {
+              "duration": 36000,
+              "status": "passed"
+            },
+            "match": {
+              "location": "com.aws.greengrass.testing.features.mqtt.MQTTSteps.disconnect()"
+            }
+          },
+          {
+            "result": {
+              "duration": 54706000,
+              "status": "passed"
+            },
+            "match": {
+              "location": "com.aws.greengrass.testing.features.GreengrassSteps.close()"
+            }
+          },
+          {
+            "embeddings": [
+              {
+                "data": "",
+                "mime_type": "text/plain",
+                "name": "main.log"
+              },
+              {
+                "data": "test",
+                "mime_type": "text/plain",
+                "name": "greengrass.log"
+              },
+              {
+                "data": "test",
+                "mime_type": "text/plain",
+                "name": "com.aws.HelloWorld.log"
+              },
+              {
+                "data": "",
+                "mime_type": "text/plain",
+                "name": "aws.greengrass.Nucleus.log"
+              }
+            ],
+            "result": {
+              "duration": 34710000,
+              "status": "passed"
+            },
+            "match": {
+              "location": "com.aws.greengrass.testing.features.FileSteps.copyLogs(io.cucumber.java.Scenario)"
+            }
+          },
+          {
+            "result": {
+              "duration": 4504853000,
+              "status": "passed"
+            },
+            "match": {
+              "location": "com.aws.greengrass.testing.features.AWSResourcesSteps.close()"
+            }
+          },
+          {
+            "result": {
+              "duration": 116000,
+              "status": "passed"
+            },
+            "match": {
+              "location": "com.aws.greengrass.testing.features.DockerSteps.removeCreatedImages()"
+            }
+          },
+          {
+            "result": {
+              "duration": 126000,
+              "status": "passed"
+            },
+            "match": {
+              "location": "com.aws.greengrass.testing.features.LoggerSteps.clearContext(io.cucumber.java.Scenario)"
+            }
+          }
+        ],
+        "type": "scenario",
+        "keyword": "Scenario",
+        "steps": [
+          {
+            "result": {
+              "duration": 11240089000,
+              "status": "passed"
+            },
+            "line": 23,
+            "name": "I create a Greengrass deployment with components",
+            "match": {
+              "location": "com.aws.greengrass.testing.features.DeploymentSteps.createDeployment(java.util.List\u003cjava.util.List\u003cjava.lang.String\u003e\u003e)"
+            },
+            "rows": [
+              {
+                "cells": [
+                  "com.aws.HelloWorld",
+                  "classpath:/greengrass/components/recipes/hello_world_recipe.yaml"
+                ]
+              }
+            ],
+            "keyword": "When "
+          },
+          {
+            "result": {
+              "duration": 696436000,
+              "status": "passed"
+            },
+            "line": 25,
+            "name": "I deploy the Greengrass deployment configuration to thing group",
+            "match": {
+              "location": "com.aws.greengrass.testing.features.DeploymentSteps.startDeploymentForThingGroup()"
+            },
+            "keyword": "And "
+          },
+          {
+            "result": {
+              "duration": 26836342000,
+              "status": "passed"
+            },
+            "line": 26,
+            "name": "the Greengrass deployment is COMPLETED on the device after 180 seconds",
+            "match": {
+              "arguments": [
+                {
+                  "val": "COMPLETED",
+                  "offset": 29
+                },
+                {
+                  "val": "180",
+                  "offset": 59
+                },
+                {
+                  "val": "seconds",
+                  "offset": 63
+                }
+              ],
+              "location": "com.aws.greengrass.testing.features.DeploymentSteps.deploymentSucceeds(java.lang.String,int,java.lang.String)"
+            },
+            "keyword": "Then "
+          },
+          {
+            "result": {
+              "duration": 407000,
+              "status": "passed"
+            },
+            "line": 27,
+            "name": "the com.aws.HelloWorld log on the device contains the line \"Hello World!!\" within 20 seconds",
+            "match": {
+              "arguments": [
+                {
+                  "val": "com.aws.HelloWorld",
+                  "offset": 4
+                },
+                {
+                  "val": "\"Hello World!!\"",
+                  "offset": 59
+                },
+                {
+                  "val": "20",
+                  "offset": 82
+                },
+                {
+                  "val": "seconds",
+                  "offset": 85
+                }
+              ],
+              "location": "com.aws.greengrass.testing.features.FileSteps.logContains(java.lang.String,java.lang.String,int,java.lang.String)"
+            },
+            "keyword": "And "
+          },
+          {
+            "result": {
+              "duration": 1293050000,
+              "status": "passed"
+            },
+            "line": 29,
+            "name": "I create a Greengrass deployment with components",
+            "match": {
+              "location": "com.aws.greengrass.testing.features.DeploymentSteps.createDeployment(java.util.List\u003cjava.util.List\u003cjava.lang.String\u003e\u003e)"
+            },
+            "rows": [
+              {
+                "cells": [
+                  "com.aws.HelloWorld",
+                  "classpath:/greengrass/components/recipes/hello_world_updated_recipe.yaml"
+                ]
+              }
+            ],
+            "keyword": "When "
+          },
+          {
+            "result": {
+              "duration": 689167000,
+              "status": "passed"
+            },
+            "line": 31,
+            "name": "I deploy the Greengrass deployment configuration to thing group",
+            "match": {
+              "location": "com.aws.greengrass.testing.features.DeploymentSteps.startDeploymentForThingGroup()"
+            },
+            "keyword": "And "
+          },
+          {
+            "result": {
+              "duration": 10810327000,
+              "status": "passed"
+            },
+            "line": 32,
+            "name": "the Greengrass deployment is COMPLETED on the device after 180 seconds",
+            "match": {
+              "arguments": [
+                {
+                  "val": "COMPLETED",
+                  "offset": 29
+                },
+                {
+                  "val": "180",
+                  "offset": 59
+                },
+                {
+                  "val": "seconds",
+                  "offset": 63
+                }
+              ],
+              "location": "com.aws.greengrass.testing.features.DeploymentSteps.deploymentSucceeds(java.lang.String,int,java.lang.String)"
+            },
+            "keyword": "Then "
+          },
+          {
+            "result": {
+              "duration": 358000,
+              "status": "passed"
+            },
+            "line": 33,
+            "name": "the com.aws.HelloWorld log on the device contains the line \"Hello World Updated!!\" within 20 seconds",
+            "match": {
+              "arguments": [
+                {
+                  "val": "com.aws.HelloWorld",
+                  "offset": 4
+                },
+                {
+                  "val": "\"Hello World Updated!!\"",
+                  "offset": 59
+                },
+                {
+                  "val": "20",
+                  "offset": 90
+                },
+                {
+                  "val": "seconds",
+                  "offset": 93
+                }
+              ],
+              "location": "com.aws.greengrass.testing.features.FileSteps.logContains(java.lang.String,java.lang.String,int,java.lang.String)"
+            },
+            "keyword": "And "
+          }
+        ],
+        "tags": [
+          {
+            "name": "@CloudDeployment"
+          },
+          {
+            "name": "@IDT"
+          },
+          {
+            "name": "@OTFStable"
+          }
+        ]
+      }
+    ],
+    "name": "Testing Cloud component in Greengrass",
+    "description": "",
+    "id": "testing-cloud-component-in-greengrass",
+    "keyword": "Feature",
+    "uri": "classpath:greengrass/features/cloudComponent.feature",
+    "tags": []
+  }
+]
