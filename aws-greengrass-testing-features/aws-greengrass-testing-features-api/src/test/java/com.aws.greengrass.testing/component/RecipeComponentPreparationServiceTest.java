@@ -25,12 +25,16 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-import java.io.*;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @ExtendWith(MockitoExtension.class)
 public class RecipeComponentPreparationServiceTest {
@@ -108,9 +112,9 @@ public class RecipeComponentPreparationServiceTest {
         assertTrue(res.isPresent());
         ComponentOverrideNameVersion componentOverrideNameVersion= res.get();
         assertNotNull(componentOverrideNameVersion);
-        assertEquals(componentOverrideNameVersion.version().value(), MOCK_COMPONENT_A_VERSION);
-        assertEquals(componentOverrideNameVersion.version().type(), MOCK_COMPONENT_A_TYPE);
-        assertEquals(componentOverrideNameVersion.name(), MOCK_COMPONENT_A_NAME);
+        assertEquals(MOCK_COMPONENT_A_VERSION, componentOverrideNameVersion.version().value());
+        assertEquals(MOCK_COMPONENT_A_TYPE, componentOverrideNameVersion.version().type());
+        assertEquals(MOCK_COMPONENT_A_NAME, componentOverrideNameVersion.name());
 
     }
 }
