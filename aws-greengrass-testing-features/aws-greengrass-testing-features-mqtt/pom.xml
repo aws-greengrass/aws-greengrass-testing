@@ -89,6 +89,8 @@
                                       newenvironment="true"
                                       classpathref="maven.test.classpath">
                                     <sysproperty key="ggc.archive" value="greengrass-nucleus-latest.zip"/>
+<!--                                    Uncomment this if you want to enable DEBUG log -->
+<!--                                    <sysproperty key="log.level" value="DEBUG"/>-->
 <!--                                    Uncomment below lines to set the parameters for hsm -->
 <!--                                    <sysproperty key="ggc.trusted.plugins" value="/Users/abanthiy/IDT_hsm_latest/aws.greengrass.crypto.Pkcs11Provider.jar"/>-->
 <!--                                    <sysproperty key="ggc.hsm.configured" value="true"/>-->
