@@ -67,7 +67,19 @@ public class GreengrassCliSteps {
     }
 
     /**
-     * Verify status of local deployemnt.
+     * Verify a component status using the greengrass-cli.
+     *
+     * @param componentName name of the component
+     * @param status        {RUNNING, BROKEN, FINISHED}
+     * @throws InterruptedException {@link InterruptedException}
+     */
+    @And("I verify the {word} component is {word} using the greengrass-cli")
+    public void verifyComponentIsRunning(String componentName, String status) throws InterruptedException {
+        waitSteps.untilTrue(() -> this.getComponentStatus(componentName, status), 30, TimeUnit.SECONDS);
+    }
+
+    /**
+     * Verify status of local deployment.
      * @param status desired status
      * @param timeout timeout in seconds
      * @throws InterruptedException {@link InterruptedException}
@@ -92,5 +104,16 @@ public class GreengrassCliSteps {
 
         String[] responseArray = response.split(":");
         return responseArray[responseArray.length - 1].trim();
+    }
+
+    private boolean getComponentStatus(String componentName, String componentStatus) {
+        String response = platform.commands().executeToString(CommandInput.builder()
+                .line(testContext.installRoot().resolve("bin").resolve("greengrass-cli").toString())
+                .addAllArgs(Arrays.asList("component", "details", "--name", componentName))
+                .build());
+        LOGGER.debug(String.format("component status response received for component %s is %s",
+                componentName, response));
+
+        return response.contains(String.format("State: %s", componentStatus));
     }
 }
