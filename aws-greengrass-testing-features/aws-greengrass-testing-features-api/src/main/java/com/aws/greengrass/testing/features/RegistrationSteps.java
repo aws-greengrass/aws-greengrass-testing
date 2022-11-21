@@ -208,7 +208,8 @@ public class RegistrationSteps {
         }
     }
 
-    private void setupConfig(
+    @VisibleForTesting
+    void setupConfig(
             IotThing thing,
             IotRoleAliasSpec roleAliasSpec,
             String config,
