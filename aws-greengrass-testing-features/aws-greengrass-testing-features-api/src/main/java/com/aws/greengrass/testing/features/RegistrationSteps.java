@@ -130,7 +130,6 @@ public class RegistrationSteps {
         final String configFile = Optional.ofNullable(configName).orElse(getDefaultConfigName());
         String tesRoleNameName = testContext.tesRoleName();
         Optional<IamRole> optionalIamRole = Optional.empty();
-        System.out.println("break 0");
         if (!tesRoleNameName.isEmpty()) {
             optionalIamRole = iamLifecycle.getIamRole(tesRoleNameName);
             if (!optionalIamRole.isPresent()) {
