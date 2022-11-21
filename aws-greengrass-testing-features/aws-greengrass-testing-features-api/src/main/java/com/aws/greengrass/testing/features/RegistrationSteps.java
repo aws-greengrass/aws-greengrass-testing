@@ -29,6 +29,7 @@ import com.aws.greengrass.testing.resources.iot.IotThingGroupSpec;
 import com.aws.greengrass.testing.resources.iot.IotThingSpec;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.annotations.VisibleForTesting;
 import io.cucumber.guice.ScenarioScoped;
 import io.cucumber.java.en.Given;
 import org.apache.logging.log4j.LogManager;
@@ -124,10 +125,12 @@ public class RegistrationSteps {
         }
     }
 
-    private void registerAsThing(String configName, String thingGroupName) throws IOException {
+    @VisibleForTesting
+    void registerAsThing(String configName, String thingGroupName) throws IOException {
         final String configFile = Optional.ofNullable(configName).orElse(getDefaultConfigName());
         String tesRoleNameName = testContext.tesRoleName();
         Optional<IamRole> optionalIamRole = Optional.empty();
+        System.out.println("break 0");
         if (!tesRoleNameName.isEmpty()) {
             optionalIamRole = iamLifecycle.getIamRole(tesRoleNameName);
             if (!optionalIamRole.isPresent()) {
@@ -136,12 +139,27 @@ public class RegistrationSteps {
                 throw new IllegalArgumentException(errorString);
             }
         }
-
         String csrPath = parameterValues.getString(FeatureParameters.CSR_PATH).orElse("");
+        IotThingSpec thingSpec = getThingSpec(csrPath, thingGroupName, optionalIamRole);
+        setupConfigWithConfigFile(configFile, thingSpec);
+    }
 
+    @VisibleForTesting
+    void setupConfigWithConfigFile(String configFile, IotThingSpec thingSpec) throws IOException {
+        try (InputStream input = getClass().getResourceAsStream(configFile)) {
+            setupConfig(
+                    thingSpec.resource(),
+                    thingSpec.roleAliasSpec(),
+                    IoUtils.toUtf8String(input),
+                    new HashMap<>());
+        }
+    }
 
+    @VisibleForTesting
+    IotThingSpec getThingSpec(String csrPath, String thingGroupName,
+                              Optional<IamRole> optionalIamRole) throws IOException {
         // TODO: move this into iot steps.
-        IotThingSpec thingSpec = resources.create(IotThingSpec.builder()
+        return resources.create(IotThingSpec.builder()
                 .thingName(testContext.coreThingName())
                 .addThingGroups(IotThingGroupSpec.of(thingGroupName))
                 // Currently in case of hsm certificate is expected to be already created and in hsm.
@@ -160,20 +178,12 @@ public class RegistrationSteps {
                         .name(testContext.testId().idFor("ggc-role-alias"))
                         .iamRole(optionalIamRole.orElseGet(() ->
                                 resources.trackingSpecs(IamRoleSpec.class)
-                                .filter(s -> s.roleName().equals(testContext.testId().idFor("ggc-role")))
-                                .findFirst()
-                                .orElseGet(iamSteps::createDefaultIamRole)
-                                .resource()))
+                                        .filter(s -> s.roleName().equals(testContext.testId().idFor("ggc-role")))
+                                        .findFirst()
+                                        .orElseGet(iamSteps::createDefaultIamRole)
+                                        .resource()))
                         .build())
                 .build());
-
-        try (InputStream input = getClass().getResourceAsStream(configFile)) {
-            setupConfig(
-                    thingSpec.resource(),
-                    thingSpec.roleAliasSpec(),
-                    IoUtils.toUtf8String(input),
-                    new HashMap<>());
-        }
     }
 
     private String getDefaultConfigName() {
@@ -183,7 +193,8 @@ public class RegistrationSteps {
         return DEFAULT_CONFIG;
     }
 
-    private void checkHSMConfigForPreInstalled() {
+    @VisibleForTesting
+    void checkHSMConfigForPreInstalled() {
         Path configPath = testContext.installRoot().resolve("config")
                 .resolve("effectiveConfig.yaml");
         byte[] bytes = platform.files().readBytes(configPath);
