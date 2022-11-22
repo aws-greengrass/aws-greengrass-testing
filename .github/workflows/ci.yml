@@ -48,7 +48,7 @@ jobs:
       - name: Convert Jacoco unit test report to Cobertura
         run: python3 .github/scripts/cover2cover.py aws-greengrass-testing-features/aws-greengrass-testing-features-api/target/jacoco-report/jacoco.xml src/main/java > aws-greengrass-testing-features/aws-greengrass-testing-features-api/target/jacoco-report/cobertura.xml
       - name: Convert Jacoco unit test report to Cobertura for aws-greengrass-testing-launcher
-          run: python3 .github/scripts/cover2cover.py aws-greengrass-testing-launcher/target/jacoco-report/jacoco.xml src/main/java > aws-greengrass-testing-launcher/target/jacoco-report/cobertura.xml
+        run: python3 .github/scripts/cover2cover.py aws-greengrass-testing-launcher/target/jacoco-report/jacoco.xml src/main/java > aws-greengrass-testing-launcher/target/jacoco-report/cobertura.xml
       - name: Upload Coverage
         uses: actions/upload-artifact@v1.0.0
         if: matrix.os == 'ubuntu-latest'
