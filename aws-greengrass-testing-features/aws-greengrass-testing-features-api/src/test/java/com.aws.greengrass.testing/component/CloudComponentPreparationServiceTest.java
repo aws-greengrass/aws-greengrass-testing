@@ -14,7 +14,7 @@ import com.aws.greengrass.testing.resources.greengrass.GreengrassV2Lifecycle;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -78,7 +78,7 @@ public class CloudComponentPreparationServiceTest {
                 .version(ComponentOverrideVersion.of("cloud", "GG_CLI_VERSION"))
                 .build();
 
-        assertEquals(componentPreparation.prepare(overrideNameVersion).get().version().value(), "GG_CLI_VERSION");
+        assertEquals("GG_CLI_VERSION", componentPreparation.prepare(overrideNameVersion).get().version().value());
     }
 
 }
