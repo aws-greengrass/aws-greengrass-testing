@@ -75,7 +75,7 @@ public class GreengrassCliSteps {
      */
     @And("I verify the {word} component is {word} using the greengrass-cli")
     public void verifyComponentIsRunning(String componentName, String status) throws InterruptedException {
-        waitSteps.untilTrue(() -> this.getComponentStatus(componentName, status), 30, TimeUnit.SECONDS);
+        waitSteps.untilTrue(() -> this.isComponentInState(componentName, status), 30, TimeUnit.SECONDS);
     }
 
     /**
@@ -106,7 +106,7 @@ public class GreengrassCliSteps {
         return responseArray[responseArray.length - 1].trim();
     }
 
-    private boolean getComponentStatus(String componentName, String componentStatus) {
+    private boolean isComponentInState(String componentName, String componentStatus) {
         String response = platform.commands().executeToString(CommandInput.builder()
                 .line(testContext.installRoot().resolve("bin").resolve("greengrass-cli").toString())
                 .addAllArgs(Arrays.asList("component", "details", "--name", componentName))
