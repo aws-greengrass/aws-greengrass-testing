@@ -20,7 +20,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -88,8 +89,8 @@ public class LocalComponentPreparationServiceTest {
 
         assertTrue(res.isPresent());
         ComponentOverrideNameVersion componentOverrideNameVersion= res.get();
-        assertEquals(componentOverrideNameVersion.version().value(), MOCK_COMPONENT_C_VERSION);
-        assertEquals(componentOverrideNameVersion.version().type(), MOCK_COMPONENT_C_TYPE);
-        assertEquals(componentOverrideNameVersion.name(), MOCK_COMPONENT_C_NAME);
+        assertEquals(MOCK_COMPONENT_C_VERSION, componentOverrideNameVersion.version().value());
+        assertEquals(MOCK_COMPONENT_C_TYPE, componentOverrideNameVersion.version().type());
+        assertEquals(MOCK_COMPONENT_C_NAME, componentOverrideNameVersion.name());
     }
 }
