@@ -48,7 +48,7 @@ public class CucumberReportUtilsTest {
 
     @Test
     void GIVEN_noCucumberReport_WHEN_parseDryRunCucumberReport_THEN_throwIOException () {
-        Mockito.when(parameterValues.getString(TestLauncherParameters.TEST_RESULTS_PATH)).thenReturn(Optional.of(""));
+        Mockito.when(parameterValues.getString(TestLauncherParameters.TEST_RESULTS_PATH)).thenReturn(Optional.of("dummyValue"));
         assertThrows(IOException.class,
                 () -> cucumberReportUtils.parseDryRunCucumberReport(parallelizationConfig, parameterValues));
     }

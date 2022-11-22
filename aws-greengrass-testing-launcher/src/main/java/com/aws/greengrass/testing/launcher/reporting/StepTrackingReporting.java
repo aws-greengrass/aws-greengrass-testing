@@ -8,6 +8,7 @@ package com.aws.greengrass.testing.launcher.reporting;
 import com.aws.greengrass.testing.api.ScenarioTestRuns;
 import com.aws.greengrass.testing.api.TestRuns;
 import com.aws.greengrass.testing.api.model.TestRun;
+import com.google.common.annotations.VisibleForTesting;
 import io.cucumber.plugin.EventListener;
 import io.cucumber.plugin.event.EventPublisher;
 import io.cucumber.plugin.event.PickleStepTestStep;
@@ -31,9 +32,15 @@ public class StepTrackingReporting implements EventListener {
     private static final Logger LOGGER = LogManager.getLogger(StepTrackingReporting.class);
     private static final String CONTEXT_TEST_ID = "testId";
     private static final String CONTEXT_FEATURE = "feature";
-    private final Map<UUID, Logger> scenarioToLogger = new ConcurrentHashMap<>();
-    private final Map<UUID, TestRun.Builder> inflightRuns = new ConcurrentHashMap<>();
-    private final TestRuns testRuns = ScenarioTestRuns.instance();
+
+    @VisibleForTesting
+    final Map<UUID, Logger> scenarioToLogger = new ConcurrentHashMap<>();
+
+    @VisibleForTesting
+    final Map<UUID, TestRun.Builder> inflightRuns = new ConcurrentHashMap<>();
+
+    @VisibleForTesting
+    final TestRuns testRuns = ScenarioTestRuns.instance();
 
     @Override
     public void setEventPublisher(EventPublisher eventPublisher) {
@@ -44,12 +51,14 @@ public class StepTrackingReporting implements EventListener {
         eventPublisher.registerHandlerFor(TestRunFinished.class, this::handleTestSuiteFinished);
     }
 
-    private void handleScenarioStarted(final TestCaseStarted scenarioStarted) {
+    @VisibleForTesting
+    void handleScenarioStarted(final TestCaseStarted scenarioStarted) {
         inflightRuns.computeIfAbsent(scenarioStarted.getTestCase().getId(),
                 key -> TestRun.builder().name(scenarioStarted.getTestCase().getName()));
     }
 
-    private void handleStepStarted(final TestStepStarted stepStarted) {
+    @VisibleForTesting
+    void handleStepStarted(final TestStepStarted stepStarted) {
         if (stepStarted.getTestStep() instanceof PickleStepTestStep) {
             PickleStepTestStep step = (PickleStepTestStep) stepStarted.getTestStep();
             String path = stepStarted.getTestCase().getUri().toString().replace("classpath:", "");
@@ -59,7 +68,8 @@ public class StepTrackingReporting implements EventListener {
         }
     }
 
-    private void handleStepFinished(final TestStepFinished stepFinished) {
+    @VisibleForTesting
+    void handleStepFinished(final TestStepFinished stepFinished) {
         Logger logger = scenarioToLogger.get(stepFinished.getTestCase().getId());
         if (Objects.nonNull(logger) && stepFinished.getTestStep() instanceof PickleStepTestStep) {
             PickleStepTestStep step = (PickleStepTestStep) stepFinished.getTestStep();
@@ -79,7 +89,8 @@ public class StepTrackingReporting implements EventListener {
         }
     }
 
-    private void handleScenarioFinished(final TestCaseFinished scenarioFinished) {
+    @VisibleForTesting
+    void handleScenarioFinished(final TestCaseFinished scenarioFinished) {
         Logger logger = scenarioToLogger.remove(scenarioFinished.getTestCase().getId());
         TestRun.Builder builder = inflightRuns.remove(scenarioFinished.getTestCase().getId());
         if (Objects.nonNull(builder)) {

@@ -21,6 +21,7 @@ import com.aws.greengrass.testing.resources.iot.IotThing;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.annotations.VisibleForTesting;
 import io.cucumber.guice.ScenarioScoped;
 import io.cucumber.java.After;
 import io.cucumber.java.en.Given;
@@ -62,7 +63,10 @@ public class DeploymentSteps {
     private final WaitSteps waits;
     private final ObjectMapper mapper;
     private final ScenarioContext scenarioContext;
-    private GreengrassDeploymentSpec deployment;
+
+    @VisibleForTesting
+    GreengrassDeploymentSpec deployment;
+
     private Platform platform;
     private Path artifactPath;
     private Path recipePath;
@@ -97,8 +101,7 @@ public class DeploymentSteps {
      */
     @Given("I create a Greengrass deployment with components")
     public void createDeployment(List<List<String>> componentNames) {
-        IotLifecycle lifecycle = resources.lifecycle(IotLifecycle.class);
-        IotThing thing = lifecycle.thingByThingName(testContext.coreThingName());
+        IotThing thing = getIotThing();
         final Map<String, ComponentDeploymentSpecification> components =
                 new HashMap<String, ComponentDeploymentSpecification>() {{
                     put("aws.greengrass.Nucleus", ComponentDeploymentSpecification.builder()
@@ -115,6 +118,27 @@ public class DeploymentSteps {
                 .putAllComponents(components)
                 .build();
     }
+
+    /**
+     * Get IoT Thing name.
+     * @return
+     */
+    @VisibleForTesting
+    IotThing getIotThing() {
+        IotLifecycle lifecycle = resources.lifecycle(IotLifecycle.class);
+        return lifecycle.thingByThingName(testContext.coreThingName());
+    }
+
+    /**
+     * Get IoT Thing groups for a Thing.
+     * @return
+     */
+    @VisibleForTesting
+    SdkIterable<GroupNameAndArn> getThingGroupIterable(String coreThingName) {
+        IotLifecycle lifecycle = resources.lifecycle(IotLifecycle.class);
+        return lifecycle.listThingGroupsForAThing(coreThingName).thingGroups();
+    }
+
 
     /**
      * Create a local deployment using greengrass cli.
@@ -164,7 +188,8 @@ public class DeploymentSteps {
         }
     }
 
-    private Map<String, ComponentDeploymentSpecification> parseComponentNamesAndPrepare(
+    @VisibleForTesting
+    Map<String, ComponentDeploymentSpecification> parseComponentNamesAndPrepare(
             List<List<String>> componentNames) {
         Map<String, ComponentDeploymentSpecification> components = new HashMap<>();
         componentNames.forEach(tuple -> {
@@ -230,9 +255,7 @@ public class DeploymentSteps {
      */
     @When("I deploy the Greengrass deployment configuration to thing group {}")
     public void startDeploymentForThingGroup(String thingGroupName) {
-        IotLifecycle lifecycle = resources.lifecycle(IotLifecycle.class);
-        SdkIterable<GroupNameAndArn> thingGroupIterable =
-                lifecycle.listThingGroupsForAThing(testContext.coreThingName()).thingGroups();
+        SdkIterable<GroupNameAndArn> thingGroupIterable = getThingGroupIterable(testContext.coreThingName());
         Optional<GroupNameAndArn> thingGroupOptional;
         //Get the first thing group from list and deploy to it
         if (testContext.initializationContext().persistInstalledSoftware()) {
@@ -290,7 +313,8 @@ public class DeploymentSteps {
         }
     }
 
-    private Optional<EffectiveDeploymentExecutionStatus> effectivelyDeploymentStatus() {
+    @VisibleForTesting
+    Optional<EffectiveDeploymentExecutionStatus> effectivelyDeploymentStatus() {
         GreengrassV2Lifecycle ggv2 = resources.lifecycle(GreengrassV2Lifecycle.class);
         String deploymentName = testContext.testId().idFor("gg-deployment");
         GreengrassDeploymentSpec ggcDeployment = ggv2.trackingSpecs(GreengrassDeploymentSpec.class)
@@ -335,7 +359,8 @@ public class DeploymentSteps {
      * @param targetArn target arn for the thing/thingGroup for empty deployment
      * @throws InterruptedException when the wait is interrupted
      */
-    private void emptyDeployment(String targetArn) throws InterruptedException {
+    @VisibleForTesting
+    void emptyDeployment(String targetArn) throws InterruptedException {
         Map<String, ComponentDeploymentSpecification> emptyComponent =
                 new HashMap<>();
 
@@ -350,6 +375,16 @@ public class DeploymentSteps {
         LOGGER.info("Cleaning up component through an empty deployment");
         deployment = resources.create(deployment);
         String deploymentId = deployment.resource().deploymentId();
+        checkADeploymentReachesCompleted(ggv2, deploymentId);
+    }
+
+    /**
+     * Check if a deployment reaches COMPLETED status.
+     * @param ggv2 greengrass v2 client
+     * @param deploymentId deployment id
+     */
+    @VisibleForTesting
+    void checkADeploymentReachesCompleted(GreengrassV2Lifecycle ggv2, String deploymentId) {
         //TODO: use effectivelyDeploymentStatus() to check status
         try {
             if (!waits.untilTrue(() -> ggv2.deployment(deploymentId)
