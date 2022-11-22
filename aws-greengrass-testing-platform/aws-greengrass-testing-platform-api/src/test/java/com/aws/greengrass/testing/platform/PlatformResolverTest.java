@@ -14,9 +14,6 @@ import com.aws.greengrass.testing.platform.linux.LinuxPlatform;
 import com.aws.greengrass.testing.platform.macos.MacosPlatform;
 import com.aws.greengrass.testing.platform.windows.WindowsPlatform;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,14 +26,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 public class PlatformResolverTest {
-    
-    private static final Map<String,Integer> linuxMap = new HashMap<String, Integer>() {{
-        put("linux", 10);
-    }};
-
-    private static final Map<String,Integer> macosMap = new HashMap<String, Integer>() {{
-        put("macos", 20);
-    }};
 
     @Mock
     PlatformOS platformOS;

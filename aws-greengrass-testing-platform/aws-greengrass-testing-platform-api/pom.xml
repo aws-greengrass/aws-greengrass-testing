@@ -27,32 +27,70 @@
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>0.8.5</version>
                 <configuration>
-                    <destFile>${basedir}/target/coverage-reports/jacoco-unit.exec</destFile>
-                    <dataFile>${basedir}/target/coverage-reports/jacoco-unit.exec</dataFile>
+                    <excludes>
+                        <exclude>**/*Exception*</exclude>
+                    </excludes>
                 </configuration>
                 <executions>
                     <execution>
-                        <id>jacoco-initialize</id>
+                        <id>pre-unit-test</id>
+                        <phase>test-compile</phase>
                         <goals>
-                        <goal>prepare-agent</goal>
+                            <goal>prepare-agent</goal>
                         </goals>
                     </execution>
                     <execution>
-                        <id>jacoco-site</id>
-                        <phase>package</phase>
+                        <id>post-unit-test</id>
+                        <phase>test</phase>
                         <goals>
                             <goal>report</goal>
                         </goals>
                     </execution>
+                    <execution>
+                        <id>pre-integration-test</id>
+                        <goals>
+                            <goal>prepare-agent-integration</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>post-integration-test</id>
+                        <goals>
+                            <goal>report-integration</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>merge-results</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>merge</goal>
+                        </goals>
+                        <configuration>
+                            <fileSets>
+                                <fileSet>
+                                    <directory>${project.build.directory}</directory>
+                                    <includes>
+                                        <include>*.exec</include>
+                                    </includes>
+                                    <excludes>
+                                        <exclude>aggregate.exec</exclude>
+                                    </excludes>
+                                </fileSet>
+                            </fileSets>
+                            <destFile>${project.build.directory}/aggregate.exec</destFile>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>post-merge-report</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                        <configuration>
+                            <dataFile>${project.build.directory}/aggregate.exec</dataFile>
+                            <outputDirectory>target/jacoco-report</outputDirectory>
+                        </configuration>
+                    </execution>
                 </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <source>1.9</source>
-                    <target>1.9</target>
-                </configuration>
             </plugin>
         </plugins>
     </build>
