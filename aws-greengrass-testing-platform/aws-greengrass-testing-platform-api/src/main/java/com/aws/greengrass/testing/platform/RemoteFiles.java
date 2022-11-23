@@ -11,7 +11,6 @@ import com.aws.greengrass.testing.api.device.exception.CopyException;
 import com.aws.greengrass.testing.api.device.model.CommandInput;
 import com.aws.greengrass.testing.api.device.model.PlatformOS;
 import com.aws.greengrass.testing.api.model.PillboxContext;
-import com.google.common.annotations.VisibleForTesting;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -39,8 +38,7 @@ public class RemoteFiles implements PlatformFiles, UnixPathsMixin {
         this.pillboxContext = pillboxContext;
     }
 
-    @VisibleForTesting
-    byte[] files(String command, String...args) {
+    private byte[] files(String command, String...args) {
         return device.execute(CommandInput.builder()
                 .line("java")
                 .addArgs("-jar", pillboxContext.onDevice().toString(), "files", command)

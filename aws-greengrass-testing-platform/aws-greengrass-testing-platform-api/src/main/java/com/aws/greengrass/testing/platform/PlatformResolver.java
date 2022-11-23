@@ -12,7 +12,6 @@ import com.aws.greengrass.testing.platform.exception.PlatformResolutionException
 import com.aws.greengrass.testing.platform.linux.LinuxPlatform;
 import com.aws.greengrass.testing.platform.macos.MacosPlatform;
 import com.aws.greengrass.testing.platform.windows.WindowsPlatform;
-import com.google.common.annotations.VisibleForTesting;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -51,8 +50,7 @@ public class PlatformResolver {
         throw new PlatformResolutionException("Could not find a platform support for device: " + device.platform());
     }
 
-    @VisibleForTesting
-    Map<String, Integer> createRanks() {
+    private Map<String, Integer> createRanks() {
         Map<String, Integer> ranks = new HashMap<>();
         // figure out what OS we're running and add applicable tags
         // The more specific a tag is, the higher its rank should be
