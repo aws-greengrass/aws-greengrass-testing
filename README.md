@@ -48,7 +48,7 @@ curl https://d2s8p88vqu9w66.cloudfront.net/releases/greengrass-nucleus-latest.zi
 
 - Run the tests
 ```
-mvn -DskipTests=false -pl aws-greengrass-testing-examples/aws-greengrass-testing-examples-component -am integration-test
+mvn clean -DskipTests=false -pl aws-greengrass-testing-examples/aws-greengrass-testing-examples-component -am integration-test
 ```
 
 - Run mqtt tests
