@@ -98,19 +98,19 @@ public class DefaultGreengrassTest {
     @Test
     void GIVEN_a_test_that_has_installed_greengrass_WHEN_start_method_is_called_THEN_greengrass_starts_with_a_process_id() {
         startGreengrass();
-        assertEquals(MOCK_NUCLEUS_PROCESS_ID, greengrass.getGreengrassProcess());
+        assertEquals(MOCK_NUCLEUS_PROCESS_ID, greengrass.greengrassProcess);
     }
 
     @Test
     void GIVEN_a_greengrass_is_running_with_a_pid_WHEN_stop_method_is_called_THEN_all_processes_started_by_greengrass_are_killed() {
         startGreengrass();
 
-        int runningGreengrassProcess = greengrass.getGreengrassProcess();
+        int runningGreengrassProcess = greengrass.greengrassProcess;
         Mockito.doNothing().when(mockCommands).killAll(runningGreengrassProcess);
         Mockito.doReturn(new ArrayList<>(Arrays.asList(1))).when(mockCommands).findDescendants(runningGreengrassProcess);
 
         assertDoesNotThrow(() -> greengrass.stop());
-        assertEquals(0, greengrass.getGreengrassProcess());
+        assertEquals(0, greengrass.greengrassProcess);
     }
 
     private void startGreengrass() {

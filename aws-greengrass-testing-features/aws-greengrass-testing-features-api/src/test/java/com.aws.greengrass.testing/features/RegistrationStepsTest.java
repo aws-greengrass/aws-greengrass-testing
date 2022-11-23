@@ -34,6 +34,7 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.iot.model.KeyPair;
 import software.amazon.awssdk.utils.IoUtils;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import java.io.FileInputStream;
 import java.nio.file.Files;
@@ -188,6 +189,7 @@ public class RegistrationStepsTest {
 
         // do clean up
         FileUtils.recursivelyDelete(Paths.get(System.getProperty("user.dir"), MOCK_INSTALL_ROOT));
+        assertFalse(Files.exists(Paths.get(System.getProperty("user.dir"), MOCK_INSTALL_ROOT)));
     }
 
     private TestContext initializeMockTestContext() {

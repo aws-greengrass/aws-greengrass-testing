@@ -33,7 +33,8 @@ public class DefaultGreengrass implements Greengrass {
     private final Platform platform;
     private final GreengrassContext greengrassContext;
 
-    private int greengrassProcess;
+    @VisibleForTesting
+    int greengrassProcess;
     private final TestContext testContext;
     private final WaitSteps waits;
     private FileSteps fileSteps;
@@ -61,11 +62,6 @@ public class DefaultGreengrass implements Greengrass {
         this.testContext = testContext;
         this.waits = waits;
         this.fileSteps = fileSteps;
-    }
-
-    @VisibleForTesting
-    int getGreengrassProcess() {
-        return this.greengrassProcess;
     }
 
     @VisibleForTesting
