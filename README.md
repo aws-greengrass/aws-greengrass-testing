@@ -53,7 +53,7 @@ mvn -DskipTests=false -pl aws-greengrass-testing-examples/aws-greengrass-testing
 
 - Run mqtt tests
 ```
-mvn clean -DskipTests=false -pl aws-greengrass-testing-features/aws-greengrass-testing-features-mqtt/ -am integration-test
+mvn clean -DskipITs=false -pl aws-greengrass-testing-features/aws-greengrass-testing-features-mqtt/ -am integration-test
 ```
 
 - Run cloud component tests
