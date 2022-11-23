@@ -8,6 +8,7 @@ package com.aws.greengrass.testing.model;
 import com.aws.greengrass.testing.platform.Platform;
 import com.aws.greengrass.testing.resources.AWSResources;
 import com.aws.greengrass.testing.resources.ResourceSpec;
+import com.google.common.annotations.VisibleForTesting;
 import io.cucumber.guice.ScenarioScoped;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -51,12 +52,19 @@ public class ScenarioContext {
         put("test.id", testContext.testId().id());
     }
 
+    /**
+     * Put action on a scenario context.
+     * @param key key
+     * @param value value
+     * @return
+     */
     public ScenarioContext put(final String key, final String value) {
         context.put(testContext.testId().idFor(key), value);
         return this;
     }
 
-    private String pascalCase(String name) {
+    @VisibleForTesting
+    String pascalCase(String name) {
         return Character.toUpperCase(name.charAt(0)) + name.substring(1);
     }
 
