@@ -10,6 +10,7 @@ import com.aws.greengrass.testing.api.device.model.CommandInput;
 import com.aws.greengrass.testing.model.ScenarioContext;
 import com.aws.greengrass.testing.model.TestContext;
 import com.aws.greengrass.testing.platform.Platform;
+import com.google.common.annotations.VisibleForTesting;
 import io.cucumber.guice.ScenarioScoped;
 import io.cucumber.java.en.And;
 import org.apache.logging.log4j.LogManager;
@@ -67,7 +68,19 @@ public class GreengrassCliSteps {
     }
 
     /**
-     * Verify status of local deployemnt.
+     * Verify a component status using the greengrass-cli.
+     *
+     * @param componentName name of the component
+     * @param status        {RUNNING, BROKEN, FINISHED}
+     * @throws InterruptedException {@link InterruptedException}
+     */
+    @And("I verify the {word} component is {word} using the greengrass-cli")
+    public void verifyComponentIsRunning(String componentName, String status) throws InterruptedException {
+        waitSteps.untilTrue(() -> this.isComponentInState(componentName, status), 30, TimeUnit.SECONDS);
+    }
+
+    /**
+     * Verify status of local deployment.
      * @param status desired status
      * @param timeout timeout in seconds
      * @throws InterruptedException {@link InterruptedException}
@@ -81,7 +94,8 @@ public class GreengrassCliSteps {
                 terminalStatuses::contains, timeout, TimeUnit.SECONDS);
     }
 
-    private String getLocalDeploymentStatus() {
+    @VisibleForTesting
+    String getLocalDeploymentStatus() {
         String deploymentId = scenarioContext.get(LOCAL_DEPLOYMENT_ID);
         String response = platform.commands().executeToString(CommandInput.builder()
                 .line(testContext.installRoot().resolve("bin").resolve("greengrass-cli").toString())
@@ -89,8 +103,18 @@ public class GreengrassCliSteps {
                 .build());
         LOGGER.debug(String.format("deployment status response received for deployment ID %s is %s",
                 deploymentId, response));
-
         String[] responseArray = response.split(":");
         return responseArray[responseArray.length - 1].trim();
+    }
+
+    private boolean isComponentInState(String componentName, String componentStatus) {
+        String response = platform.commands().executeToString(CommandInput.builder()
+                .line(testContext.installRoot().resolve("bin").resolve("greengrass-cli").toString())
+                .addAllArgs(Arrays.asList("component", "details", "--name", componentName))
+                .build());
+        LOGGER.debug(String.format("component status response received for component %s is %s",
+                componentName, response));
+
+        return response.contains(String.format("State: %s", componentStatus));
     }
 }
