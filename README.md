@@ -53,7 +53,7 @@ mvn clean -DskipTests=false -pl aws-greengrass-testing-examples/aws-greengrass-t
 
 - Run mqtt tests
 ```
-mvn clean -DskipTests=false -pl aws-greengrass-testing-features/aws-greengrass-testing-features-mqtt/ -am integration-test
+mvn clean -DskipITs=false -pl aws-greengrass-testing-features/aws-greengrass-testing-features-mqtt/ -am integration-test
 ```
 
 - Run cloud component tests
@@ -61,7 +61,7 @@ mvn clean -DskipTests=false -pl aws-greengrass-testing-features/aws-greengrass-t
 mvn clean -DskipTests=false -pl aws-greengrass-testing-features/aws-greengrass-testing-features-cloudcomponent/ -am integration-test
 ```
 
-__Runnign tests with HSM configuration__
+__Running tests with HSM configuration__
 
 Any test can be run with HSM configuration. HSM configuration parameters are defined [here](src/main/java/com/aws/greengrass/testing/modules/HsmParameters.java)
 If *ggc.hsm.configured* is set to true, then the framework expects the other HSM parameters to be configured. When 

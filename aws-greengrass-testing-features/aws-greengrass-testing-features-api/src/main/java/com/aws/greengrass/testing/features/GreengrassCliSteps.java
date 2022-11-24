@@ -10,6 +10,7 @@ import com.aws.greengrass.testing.api.device.model.CommandInput;
 import com.aws.greengrass.testing.model.ScenarioContext;
 import com.aws.greengrass.testing.model.TestContext;
 import com.aws.greengrass.testing.platform.Platform;
+import com.google.common.annotations.VisibleForTesting;
 import io.cucumber.guice.ScenarioScoped;
 import io.cucumber.java.en.And;
 import org.apache.logging.log4j.LogManager;
@@ -93,7 +94,8 @@ public class GreengrassCliSteps {
                 terminalStatuses::contains, timeout, TimeUnit.SECONDS);
     }
 
-    private String getLocalDeploymentStatus() {
+    @VisibleForTesting
+    String getLocalDeploymentStatus() {
         String deploymentId = scenarioContext.get(LOCAL_DEPLOYMENT_ID);
         String response = platform.commands().executeToString(CommandInput.builder()
                 .line(testContext.installRoot().resolve("bin").resolve("greengrass-cli").toString())
@@ -101,7 +103,6 @@ public class GreengrassCliSteps {
                 .build());
         LOGGER.debug(String.format("deployment status response received for deployment ID %s is %s",
                 deploymentId, response));
-
         String[] responseArray = response.split(":");
         return responseArray[responseArray.length - 1].trim();
     }

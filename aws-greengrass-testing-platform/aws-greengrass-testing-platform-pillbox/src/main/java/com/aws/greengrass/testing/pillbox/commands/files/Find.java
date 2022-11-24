@@ -27,7 +27,7 @@ public class Find implements Callable<Integer> {
         FILE("f"), DIRECTORY("d");
 
         String code;
-
+        
         Type(String code) {
             this.code = code;
         }

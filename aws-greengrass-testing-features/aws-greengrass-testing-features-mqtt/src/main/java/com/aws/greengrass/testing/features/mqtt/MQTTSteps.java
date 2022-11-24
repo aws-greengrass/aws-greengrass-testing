@@ -14,6 +14,7 @@ import com.aws.greengrass.testing.resources.AWSResources;
 import com.aws.greengrass.testing.resources.iot.IotCertificateSpec;
 import com.aws.greengrass.testing.resources.iot.IotLifecycle;
 import com.aws.greengrass.testing.resources.iot.IotThingSpec;
+import com.google.common.annotations.VisibleForTesting;
 import io.cucumber.guice.ScenarioScoped;
 import io.cucumber.java.After;
 import io.cucumber.java.en.Given;
@@ -74,6 +75,11 @@ public class MQTTSteps {
         mqttResponses = new ConcurrentHashMap<>();
     }
 
+    @VisibleForTesting
+    MqttClientConnection getConnection() {
+        return connection;
+    }
+
     /**
      * Connects a scenario based MQTT client.
      *
@@ -92,26 +98,31 @@ public class MQTTSteps {
                             .thingName(testContext.testId().idFor("host-mqtt"))
                             .build())
                     .build());
-            try (EventLoopGroup loopGroup = new EventLoopGroup(1);
-                 HostResolver resolver = new HostResolver(loopGroup);
-                ClientBootstrap bootstrap = new ClientBootstrap(loopGroup, resolver);
-                AwsIotMqttConnectionBuilder builder = AwsIotMqttConnectionBuilder.newMtlsBuilder(
-                        hostThing.resource().certificate().certificatePem(),
-                        hostThing.resource().certificate().keyPair().privateKey())) {
+            establishConnection(hostThing, lifecycle);
+        }
+    }
 
-                connection = builder
-                        .withBootstrap(bootstrap)
-                        .withKeepAliveMs(31_000)
-                        .withPingTimeoutMs(30_000)
-                        .withClientId(hostThing.thingName())
-                        .withCertificateAuthority(registrationContext.rootCA())
-                        .withCleanSession(false)
-                        .withEndpoint(lifecycle.dataEndpoint())
-                        .withPort(PORT)
-                        .build();
+    @VisibleForTesting
+    void establishConnection(IotThingSpec hostThing, IotLifecycle lifecycle) throws ExecutionException,
+            InterruptedException {
+        try (EventLoopGroup loopGroup = new EventLoopGroup(1);
+             HostResolver resolver = new HostResolver(loopGroup);
+             ClientBootstrap bootstrap = new ClientBootstrap(loopGroup, resolver);
+             AwsIotMqttConnectionBuilder builder = AwsIotMqttConnectionBuilder.newMtlsBuilder(
+                     hostThing.resource().certificate().certificatePem(),
+                     hostThing.resource().certificate().keyPair().privateKey())) {
+            connection = builder
+                    .withBootstrap(bootstrap)
+                    .withKeepAliveMs(31_000)
+                    .withPingTimeoutMs(30_000)
+                    .withClientId(hostThing.thingName())
+                    .withCertificateAuthority(registrationContext.rootCA())
+                    .withCleanSession(false)
+                    .withEndpoint(lifecycle.dataEndpoint())
+                    .withPort(PORT)
+                    .build();
 
-                connection.connect().get();
-            }
+            connection.connect().get();
         }
     }
 
@@ -137,17 +148,22 @@ public class MQTTSteps {
                     .add(topic)
                     .toString();
             scenarioContext.put(topic, realTopic);
-            CompletableFuture<Integer> subscription = connection.subscribe(realTopic, QualityOfService.AT_LEAST_ONCE,
-                    message -> {
-                        LOGGER.debug("Received MQTT message on {}", message.getTopic());
-                        mqttResponses.compute(topic, (key, list) -> {
-                            List<MqttMessage> ls = Optional.ofNullable(list).orElseGet(ArrayList::new);
-                            ls.add(message);
-                            return ls;
-                        });
-                    });
+            CompletableFuture<Integer> subscription = getSubscription(realTopic, topic);
             subscription.get();
         }
+    }
+
+    @VisibleForTesting
+    CompletableFuture<Integer> getSubscription(String realTopic, String topic) {
+        return connection.subscribe(realTopic, QualityOfService.AT_LEAST_ONCE,
+                message -> {
+                    LOGGER.debug("Received MQTT message on {}", message.getTopic());
+                    mqttResponses.compute(topic, (key, list) -> {
+                        List<MqttMessage> ls = Optional.ofNullable(list).orElseGet(ArrayList::new);
+                        ls.add(message);
+                        return ls;
+                    });
+                });
     }
 
     /**
@@ -162,6 +178,7 @@ public class MQTTSteps {
         if (!isConnected()) {
             connect();
         }
+
         for (List<String> tuple : topicTuples) {
             if (tuple.size() < 2) {
                 continue;
@@ -173,7 +190,7 @@ public class MQTTSteps {
             MqttMessage message = new MqttMessage(realTopic,
                     tuple.get(1).getBytes(StandardCharsets.UTF_8),
                     QualityOfService.AT_LEAST_ONCE);
-            CompletableFuture<Integer> post = connection.publish(message);
+            CompletableFuture<Integer> post = getConnection().publish(message);
             post.get();
         }
     }
