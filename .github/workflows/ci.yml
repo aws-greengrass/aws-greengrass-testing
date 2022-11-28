@@ -89,7 +89,7 @@ jobs:
         with:
           name: Coverage Report
           path: aws-greengrass-testing-platform/aws-greengrass-testing-platform-pillbox/target/jacoco-report
-      - name: cobertura-report-unit-test
+      - name: cobertura-report-unit-test for aws-greengrass-testing-features
         uses: shaguptashaikh/cobertura-action@master
         continue-on-error: true
         with:
@@ -108,7 +108,7 @@ jobs:
           # Use class names instead of the filename
           show_class_names: true
           # Use a unique name for the report and comment
-          report_name: Unit Tests Coverage Report
+          report_name: Unit Tests Coverage Report for aws-greengrass-testing-features
       - name: cobertura-report-unit-test for aws-greengrass-testing-launcher
         uses: shaguptashaikh/cobertura-action@master
         continue-on-error: true
@@ -129,6 +129,46 @@ jobs:
           show_class_names: true
           # Use a unique name for the report and comment
           report_name: Unit Tests Coverage Report for aws-greengrass-testing-launcher
+      - name: cobertura-report-unit-test for aws-greengrass-testing-platform-api
+        uses: shaguptashaikh/cobertura-action@master
+        continue-on-error: true
+        with:
+          # The GITHUB_TOKEN for this repo
+          repo_token: ${{ github.token }}
+          # Path to the cobertura file.
+          path: aws-greengrass-testing-platform/aws-greengrass-testing-platform-api/target/jacoco-report/cobertura.xml
+          # If files with 100% should be skipped from report.
+          skip_covered: false
+          # Minimum allowed coverage percentage as an integer.
+          minimum_coverage: 60
+          # Show line rate as specific column.
+          show_line: true
+          # Show branch rate as specific column.
+          show_branch: true
+          # Use class names instead of the filename
+          show_class_names: true
+          # Use a unique name for the report and comment
+          report_name: Unit Tests Coverage Report for aws-greengrass-testing-platform-api
+      - name: cobertura-report-unit-test for aws-greengrass-testing-platform-pillbox
+        uses: shaguptashaikh/cobertura-action@master
+        continue-on-error: true
+        with:
+          # The GITHUB_TOKEN for this repo
+          repo_token: ${{ github.token }}
+          # Path to the cobertura file.
+          path: aws-greengrass-testing-platform/aws-greengrass-testing-platform-pillbox/target/jacoco-report/cobertura.xml
+          # If files with 100% should be skipped from report.
+          skip_covered: false
+          # Minimum allowed coverage percentage as an integer.
+          minimum_coverage: 60
+          # Show line rate as specific column.
+          show_line: true
+          # Show branch rate as specific column.
+          show_branch: true
+          # Use class names instead of the filename
+          show_class_names: true
+          # Use a unique name for the report and comment
+          report_name: Unit Tests Coverage Report for aws-greengrass-testing-platform-pillbox
 
 
   uat-linux:
