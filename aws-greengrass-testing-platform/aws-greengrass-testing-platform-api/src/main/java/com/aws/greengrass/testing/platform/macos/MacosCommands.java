@@ -10,6 +10,7 @@ import com.aws.greengrass.testing.api.device.exception.CommandExecutionException
 import com.aws.greengrass.testing.api.device.model.CommandInput;
 import com.aws.greengrass.testing.api.model.PillboxContext;
 import com.aws.greengrass.testing.platform.UnixCommands;
+import com.google.common.annotations.VisibleForTesting;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -24,7 +25,8 @@ public class MacosCommands extends UnixCommands {
         super(device, pillboxContext);
     }
 
-    private Map<Integer, List<Integer>> findDirectDescendants() throws CommandExecutionException {
+    @VisibleForTesting
+    Map<Integer, List<Integer>> findDirectDescendants() throws CommandExecutionException {
         final Map<Integer, List<Integer>> pidMapping = new HashMap<>();
         final String result = executeToString(CommandInput.builder().line("ps a -o ppid,pid").build());
         for (String pid : result.split("\\r?\\n")) {

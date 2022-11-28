@@ -10,6 +10,7 @@ import com.aws.greengrass.testing.api.device.exception.CommandExecutionException
 import com.aws.greengrass.testing.api.device.model.CommandInput;
 import com.aws.greengrass.testing.platform.Commands;
 import com.aws.greengrass.testing.platform.NucleusInstallationParameters;
+import com.google.common.annotations.VisibleForTesting;
 
 import java.nio.file.Path;
 import java.util.ArrayDeque;
