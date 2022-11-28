@@ -15,6 +15,7 @@ import com.aws.greengrass.testing.model.TestContext;
 import com.aws.greengrass.testing.modules.model.AWSResourcesContext;
 import com.aws.greengrass.testing.platform.NucleusInstallationParameters;
 import com.aws.greengrass.testing.platform.Platform;
+import com.google.common.annotations.VisibleForTesting;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -31,7 +32,9 @@ public class DefaultGreengrass implements Greengrass {
     private final AWSResourcesContext resourcesContext;
     private final Platform platform;
     private final GreengrassContext greengrassContext;
-    private int greengrassProcess;
+
+    @VisibleForTesting
+    int greengrassProcess;
     private final TestContext testContext;
     private final WaitSteps waits;
     private FileSteps fileSteps;
@@ -61,17 +64,29 @@ public class DefaultGreengrass implements Greengrass {
         this.fileSteps = fileSteps;
     }
 
-    private boolean isRunning() {
+    @VisibleForTesting
+    boolean isRunning() {
         if (testContext.initializationContext().persistInstalledSoftware()) {
             return true;
         }
         return greengrassProcess != 0;
     }
 
-    private boolean isRegistered() {
+    @VisibleForTesting
+    boolean isRegistered() {
         return testContext.initializationContext().persistInstalledSoftware()
                 && platform.files().exists(testContext.installRoot()
                         .resolve("config").resolve("effectiveConfig.yaml"));
+    }
+
+    @VisibleForTesting
+    String getAWSRegion() {
+        return resourcesContext.region().metadata().id();
+    }
+
+    @VisibleForTesting
+    String getEnvStage() {
+        return resourcesContext.envStage();
     }
 
     @Override
@@ -87,8 +102,8 @@ public class DefaultGreengrass implements Greengrass {
             systemProperties.put("log.level", testContext.logLevel());
 
             Map<String, String> ggParameters = new HashMap<>();
-            ggParameters.put("--aws-region", resourcesContext.region().metadata().id());
-            ggParameters.put("--env-stage", resourcesContext.envStage());
+            ggParameters.put("--aws-region", getAWSRegion());
+            ggParameters.put("--env-stage", getEnvStage());
             if (!testContext.currentUser().isEmpty()) {
                 ggParameters.put("--component-default-user", testContext.currentUser());
             }
