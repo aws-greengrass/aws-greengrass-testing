@@ -33,20 +33,62 @@ jobs:
         run: mvn -U -ntp clean process-resources
       - name: Build with Maven
         run: mvn -U -ntp clean verify
-      - name: Upload Failed Test Report
+      - name: Upload Failed Test Report for aws-greengrass-testing-features-api
         uses: actions/upload-artifact@v1.0.0
         if: failure()
         with:
           name: Failed Test Report
           path: aws-greengrass-testing-features/aws-greengrass-testing-features-api/target/surefire-reports
-      - name: Convert Jacoco unit test report to Cobertura
+      - name: Upload Failed Test Report for aws-greengrass-testing-launcher
+        uses: actions/upload-artifact@v1.0.0
+        if: failure()
+        with:
+          name: Failed Test Report
+          path: aws-greengrass-testing-launcher/target/surefire-reports
+      - name: Upload Failed Test Report for aws-greengrass-testing-platform-api
+        uses: actions/upload-artifact@v1.0.0
+        if: failure()
+        with:
+          name: Failed Test Report
+          path: aws-greengrass-testing-platform/aws-greengrass-testing-platform-api/target/surefire-reports
+      - name: Upload Failed Test Report for aws-greengrass-testing-platform-pillbox
+        uses: actions/upload-artifact@v1.0.0
+        if: failure()
+        with:
+          name: Failed Test Report
+          path: aws-greengrass-testing-platform/aws-greengrass-testing-platform-pillbox/target/surefire-reports
+      - name: Convert Jacoco unit test report to Cobertura for aws-greengrass-testing-features-api
         run: python3 .github/scripts/cover2cover.py aws-greengrass-testing-features/aws-greengrass-testing-features-api/target/jacoco-report/jacoco.xml src/main/java > aws-greengrass-testing-features/aws-greengrass-testing-features-api/target/jacoco-report/cobertura.xml
-      - name: Upload Coverage
+      - name: Convert Jacoco unit test report to Cobertura for aws-greengrass-testing-launcher
+        run: python3 .github/scripts/cover2cover.py aws-greengrass-testing-launcher/target/jacoco-report/jacoco.xml src/main/java > aws-greengrass-testing-launcher/target/jacoco-report/cobertura.xml
+      - name: Convert Jacoco unit test report to Cobertura for aws-greengrass-testing-platform-api
+        run: python3 .github/scripts/cover2cover.py aws-greengrass-testing-platform/aws-greengrass-testing-platform-api/target/jacoco-report/jacoco.xml src/main/java > aws-greengrass-testing-platform/aws-greengrass-testing-platform-api/target/jacoco-report/cobertura.xml
+      - name: Convert Jacoco unit test report to Cobertura for aws-greengrass-testing-platform-pillbox
+        run: python3 .github/scripts/cover2cover.py aws-greengrass-testing-platform/aws-greengrass-testing-platform-pillbox/target/jacoco-report/jacoco.xml src/main/java > aws-greengrass-testing-platform/aws-greengrass-testing-platform-pillbox/target/jacoco-report/cobertura.xml
+      - name: Upload Coverage for aws-greengrass-testing-features-api
         uses: actions/upload-artifact@v1.0.0
         if: matrix.os == 'ubuntu-latest'
         with:
           name: Coverage Report
           path: aws-greengrass-testing-features/aws-greengrass-testing-features-api/target/jacoco-report
+      - name: Upload Coverage for aws-greengrass-testing-launcher
+        uses: actions/upload-artifact@v1.0.0
+        if: matrix.os == 'ubuntu-latest'
+        with:
+          name: Coverage Report
+          path: aws-greengrass-testing-launcher/target/jacoco-report
+      - name: Upload Coverage for aws-greengrass-testing-platform-api
+        uses: actions/upload-artifact@v1.0.0
+        if: matrix.os == 'ubuntu-latest'
+        with:
+          name: Coverage Report
+          path: aws-greengrass-testing-platform/aws-greengrass-testing-platform-api/target/jacoco-report
+      - name: Upload Coverage for aws-greengrass-testing-platform-pillbox
+        uses: actions/upload-artifact@v1.0.0
+        if: matrix.os == 'ubuntu-latest'
+        with:
+          name: Coverage Report
+          path: aws-greengrass-testing-platform/aws-greengrass-testing-platform-pillbox/target/jacoco-report
       - name: cobertura-report-unit-test
         uses: shaguptashaikh/cobertura-action@master
         continue-on-error: true
@@ -67,6 +109,26 @@ jobs:
           show_class_names: true
           # Use a unique name for the report and comment
           report_name: Unit Tests Coverage Report
+      - name: cobertura-report-unit-test for aws-greengrass-testing-launcher
+        uses: shaguptashaikh/cobertura-action@master
+        continue-on-error: true
+        with:
+          # The GITHUB_TOKEN for this repo
+          repo_token: ${{ github.token }}
+          # Path to the cobertura file.
+          path: aws-greengrass-testing-launcher/target/jacoco-report/cobertura.xml
+          # If files with 100% should be skipped from report.
+          skip_covered: false
+          # Minimum allowed coverage percentage as an integer.
+          minimum_coverage: 60
+          # Show line rate as specific column.
+          show_line: true
+          # Show branch rate as specific column.
+          show_branch: true
+          # Use class names instead of the filename
+          show_class_names: true
+          # Use a unique name for the report and comment
+          report_name: Unit Tests Coverage Report for aws-greengrass-testing-launcher
 
 
   uat-linux:
