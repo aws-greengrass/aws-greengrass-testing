@@ -41,8 +41,8 @@ curl https://d2s8p88vqu9w66.cloudfront.net/releases/greengrass-nucleus-latest.zi
 ```
 
 - Get credentials for AWS account. The test needs credentials to identify the AWS account to use and to be able to create
-  test resources in the account. [Here](https://docs.aws.amazon.com/sdk-for-java/v1/developer-guide/credentials.html#credentials-default) 
-  is the defaul credential provider chain. The credentials need to made available on the device. Some options are:
+  test resources in the account. [Here](https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/setup.html#setup-credentials) 
+  is the instruction on how to set up credentials. The credentials need to made available on the device. Some options are:
   - Copy temporary credentials and set them as env variables
   - Set AWS profile for your environment
 
@@ -63,9 +63,9 @@ mvn clean -DskipTests=false -pl aws-greengrass-testing-features/aws-greengrass-t
 
 __Running tests with HSM configuration__
 
-Any test can be run with HSM configuration. HSM configuration parameters are defined [here](src/main/java/com/aws/greengrass/testing/modules/HsmParameters.java)
+Any test can be run with HSM configuration. HSM configuration parameters are defined [here](aws-greengrass-testing-features/aws-greengrass-testing-features-api/src/main/java/com/aws/greengrass/testing/modules/HsmParameters.java).
 If *ggc.hsm.configured* is set to true, then the framework expects the other HSM parameters to be configured. When 
-hsm is configured, [this](src/main/resources/nucleus/configs/basic_hsm_config.yaml) initial config file is used to start
+hsm is configured, [this](aws-greengrass-testing-features/aws-greengrass-testing-features-api/src/main/resources/nucleus/configs/basic_hsm_config.yaml) initial config file is used to start
 the greengrass with. Before you run the tests with HSM, following steps are pre-requisite:
 1. DUT has the HSM installed.
 2. A device certificate is created and added to the HSM along with private key. You specify the certificate ARN and 
