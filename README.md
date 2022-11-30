@@ -144,3 +144,12 @@ See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more inform
 
 This project is licensed under the Apache-2.0 License.
 
+## Getting Help
+GitHub [issue](https://github.com/aws-greengrass/aws-greengrass-testing/issues) is the preferred channel to interact with our team.
+
+## Resources
+
+- [AWS Greengrass Testing Framework Home Page](https://github.com/aws-greengrass/aws-greengrass-testing/wiki/AWS-Greengrass-Testing-Framework-Home-Page)
+- [How to build custom test cases with AWS Greengrass Testing Framework](https://github.com/aws-greengrass/aws-greengrass-testing/wiki/How-to-build-custom-test-cases-with-AWS-Greengrass-Testing-Framework)
+- [How to run test cases with AWS Greengrass Testing Framework locally](https://github.com/aws-greengrass/aws-greengrass-testing/wiki/How-to-run-test-cases-with-AWS-Greengrass-Testing-Framework-locally)
+
