@@ -29,9 +29,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ExtendWith(MockitoExtension.class)
 public class FindTest {
-    private static final String badPath = "./doesNotExist";
-    private static final String filePath = "./dummyDirectory";
-    private static final String dummyFile = "./dummyDirectory/dummyFile.txt";
+    private static final String badPath = Paths.get(".").resolve("doesNotExist").toString();
+    private static final String filePath = Paths.get(".").resolve("dummyDirectory").toString();
+    private static final String dummyFile = Paths.get(".").resolve("dummyDirectory").resolve("dummyFile.txt").toString();
     private static final String dummyText = "dummyText";
 
     final PrintStream originalOut = System.out;
@@ -67,7 +67,10 @@ public class FindTest {
         String output = out.toString();
 
         assertEquals(0, returnValue);
-        assertEquals("File " + badPath.toString() + " does not exists\n", output);
+        assertEquals(
+            ("File " + badPath + " does not exists").replaceAll("\\s+",""),
+            output.replaceAll("\\s+","")
+        );
     }
 
     @Test
@@ -76,7 +79,10 @@ public class FindTest {
         String output = out.toString();
 
         assertEquals(0, returnValue);
-        assertEquals(filePath + "\n" + dummyFile + "\n", output);
+        assertEquals(
+            (filePath + "\n" + dummyFile + "\n").replaceAll("\\s+",""),
+            output.replaceAll("\\s+","")
+        );
     }
 
     @Test
@@ -85,7 +91,10 @@ public class FindTest {
         String output = out.toString();
 
         assertEquals(0, returnValue);
-        assertEquals(filePath + "\n" + dummyFile + "\n", output);
+        assertEquals(
+            (filePath + "\n" + dummyFile + "\n").replaceAll("\\s+",""),
+            output.replaceAll("\\s+","")
+        );
     }
 
     @Test

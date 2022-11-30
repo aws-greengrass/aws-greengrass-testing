@@ -20,14 +20,17 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 public class CatTest {
-    private static final String badPath = "./doesNotExist";
-    private static final String filePath = "./dummyDirectory";
-    private static final String dummyFile = "./dummyDirectory/dummyFile.txt";
+    private static final String badPath = Paths.get(".").resolve("doesNotExist").toString();
+    private static final String filePath = Paths.get(".").resolve("dummyDirectory").toString();
+    private static final String dummyFile =
+            Paths.get(".").resolve("dummyDirectory").resolve("dummyFile.txt").toString();
     private static final String dummyText = "dummyText";
 
     final PrintStream originalOut = System.out;
@@ -45,7 +48,7 @@ public class CatTest {
         System.setErr(new PrintStream(err));
 
         commandLine = new CommandLine(new Cat());
-        
+
         Files.createDirectories(Paths.get(filePath));
         FileWriter writer = new FileWriter(dummyFile);
         writer.write(dummyText);
@@ -61,16 +64,19 @@ public class CatTest {
     }
 
     @Test
-    void GIVEN_filePath_that_does_not_exist_WHEN_making_call_THEN_return_0_and_outputs(){
+    void GIVEN_filePath_that_does_not_exist_WHEN_making_call_THEN_return_0_and_outputs() {
         Integer returnValue = commandLine.execute(badPath);
         String output = out.toString();
 
         assertEquals(0, returnValue);
-        assertEquals("File " + badPath.toString() + " does not exists\n", output);
+        assertEquals(
+            ("File " + badPath + " does not exists").replaceAll("\\s+", ""),
+            output.replaceAll("\\s+", ""))
+        ;
     }
 
     @Test
-    void GIVEN_regular_file_that_does_exist_WHEN_making_call_THEN_return_0_and_file_text(){
+    void GIVEN_regular_file_that_does_exist_WHEN_making_call_THEN_return_0_and_file_text() {
         Integer returnValue = commandLine.execute(dummyFile);
         String output = out.toString();
 
@@ -79,11 +85,14 @@ public class CatTest {
     }
 
     @Test
-    void GIVEN_non_regular_file_WHEN_making_call_THEN_return_1_and_output_error(){
+    void GIVEN_non_regular_file_WHEN_making_call_THEN_return_1_and_output_error() {
         Integer returnValue = commandLine.execute(filePath);
         String output = err.toString();
 
         assertEquals(1, returnValue);
-        assertEquals("File '" + filePath.toString() + "' is not a file.\n", output);
+        assertEquals(
+            ("File '" + filePath + "' is not a file.").replaceAll("\\s+",""),
+            output.replaceAll("\\s+","")
+        );
     }
 }
