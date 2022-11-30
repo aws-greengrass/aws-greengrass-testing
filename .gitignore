@@ -7,6 +7,7 @@ aws-greengrass-testing-features/**/*.jar
 greengrass-nucleus-latest.zip
 aws.greengrass.nucleus.zip
 dependency-reduced-pom.xml
+.flattened-pom.xml
 testResults
 cucumber.json
 *DS_Store
