@@ -28,9 +28,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 public class RemoveTest {
-    private static final String badPath = "./doesNotExist";
-    private static final String dummyDirectory = "./dummyDirectory";
-    private static final String dummyFile = "./dummyDirectory/dummyFile.txt";
+    private static final String badPath = Paths.get(".").resolve("doesNotExist").toString();
+    private static final String dummyDirectory = Paths.get(".").resolve("dummyDirectory").toString();
+    private static final String dummyFile = Paths.get(".").resolve("dummyDirectory").resolve("dummyFile.txt").toString();
     private static final String dummyText = "dummyText";
 
     final PrintStream originalOut = System.out;
@@ -48,7 +48,7 @@ public class RemoveTest {
         System.setErr(new PrintStream(err));
 
         commandLine = new CommandLine(new Remove());
-        
+
         Files.createDirectories(Paths.get(dummyDirectory));
         FileWriter writer = new FileWriter(dummyFile);
         writer.write(dummyText);
@@ -79,13 +79,16 @@ public class RemoveTest {
         String output = err.toString();
 
         assertEquals(1, returnValue);
-        assertEquals("cannot remove '" + dummyDirectory + "': Is a directory\n", output);
+        assertEquals(
+            ("cannot remove '" + dummyDirectory + "': Is a directory").replaceAll("\\s+",""),
+            output.replaceAll("\\s+","")
+        );
     }
 
     @Test
     void GIVEN_path_of_file_WHEN_calling_remove_THEN_file_no_longer_exists() {
         assertTrue(Files.exists(Paths.get(dummyFile)));
-        
+
         Integer returnValue = commandLine.execute(dummyFile);
 
         assertEquals(0, returnValue);

@@ -24,8 +24,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @ExtendWith(MockitoExtension.class)
 public class ExistsTest {
-    private static final String badPath = "./doesNotExist";
-    private static final String filePath = "./dummyDirectory";
+    private static final String badPath = Paths.get(".").resolve("doesNotExist").toString();
+    private static final String filePath = Paths.get(".").resolve("dummyDirectory").toString();
+
 
     final PrintStream originalOut = System.out;
     final ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -55,7 +56,7 @@ public class ExistsTest {
         String output = out.toString();
 
         assertEquals(0, returnValue);
-        assertEquals("true\n", output);
+        assertEquals("true", output.replaceAll("\\s+",""));
     }
 
     @Test
@@ -64,6 +65,6 @@ public class ExistsTest {
         String output = out.toString();
 
         assertEquals(0, returnValue);
-        assertEquals("false\n", output);
+        assertEquals("false", output.replaceAll("\\s+",""));
     }
 }
