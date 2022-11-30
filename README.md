@@ -20,12 +20,21 @@ __Special first time instructions__
 
 This is needed to pull in the latest StreamManger SDK and install them locally for building.
 
+
 **Unix Based Systems**
+
+If this directory `./aws-greengrass-testing-components/aws-greengrass-testing-components-streammanager/lib/streammanager` already exists within your project, remove it by running 
+
+```
+rm -rf ./aws-greengrass-testing-components/aws-greengrass-testing-components-streammanager/lib/streammanager
+```
+
+This ensures that when running the next commands you are getting a fresh version of the submodules that this project loads
+
 
 From the root of the project run
 
 ```
-rm -rf ./aws-greengrass-testing-components/aws-greengrass-testing-components-streammanager/lib/streammanager
 git submodule update --init
 mvn process-resources
 ```
@@ -36,15 +45,27 @@ In order for the `git submodule update --init` command to work on Windows the `c
 needs to be enabled on git. To do that:
 
 1. Open a command prompt as an Administrator
-2. Run `git config --system core.longpaths true`
+2. Run `git config --global core.longpaths true`
 
 This is required because Windows has a limit of 260 chars for file names and when pulling the submodules,
 the file names are paths that are longer than 260 characters which cause pulling the submodule to fail.
 
-After enabling `core.longpaths` run from the root of the project:
+Note:
+
+After enabling `core.longpaths`,
+
+If this directory `.\aws-greengrass-testing-components\aws-greengrass-testing-components-streammanager\lib\streammanager` already exists within your project, remove it by running (you can also delete the folder using the UI):
 
 ```
 rm .\aws-greengrass-testing-components\aws-greengrass-testing-components-streammanager\lib\streammanager
+```
+
+This ensures that when running the next commands you are getting a fresh version of the submodules that this project loads
+
+From the root of the project run
+
+
+```
 git submodule update --init
 mvn process-resources
 ```
