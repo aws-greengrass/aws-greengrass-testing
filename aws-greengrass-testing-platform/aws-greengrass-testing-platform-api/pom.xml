@@ -99,7 +99,7 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>31.1-jre</version>
+            <version>23.0</version>
         </dependency>
         <dependency>
             <groupId>org.immutables</groupId>
@@ -141,6 +141,16 @@
             <artifactId>mockito-inline</artifactId>
             <version>2.13.0</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>utils</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.18.22</version>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
 
