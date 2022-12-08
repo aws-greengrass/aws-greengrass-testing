@@ -11,7 +11,7 @@ public interface Platform {
     PlatformFiles files();
 
     default NetworkUtils getNetworkUtils() {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
 }
