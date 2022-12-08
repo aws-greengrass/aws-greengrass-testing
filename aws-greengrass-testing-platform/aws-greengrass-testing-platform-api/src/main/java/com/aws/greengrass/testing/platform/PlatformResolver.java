@@ -13,6 +13,7 @@ import com.aws.greengrass.testing.platform.linux.LinuxPlatform;
 import com.aws.greengrass.testing.platform.macos.MacosPlatform;
 import com.aws.greengrass.testing.platform.windows.WindowsPlatform;
 import com.google.common.annotations.VisibleForTesting;
+import io.cucumber.guice.ScenarioScoped;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -20,7 +21,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.inject.Inject;
 
+@ScenarioScoped
 public class PlatformResolver {
     private static final Set<String> SUPPORTED_PLATFORMS = Collections.unmodifiableSet(Stream.of(
             "all", "any", "unix", "posix", "linux", "debian", "windows", "fedora", "ubuntu", "macos",
@@ -29,6 +32,7 @@ public class PlatformResolver {
     private final Device device;
     private final PillboxContext pillboxContext;
 
+    @Inject
     public PlatformResolver(final Device device, final PillboxContext pillboxContext) {
         this.device = device;
         this.pillboxContext = pillboxContext;

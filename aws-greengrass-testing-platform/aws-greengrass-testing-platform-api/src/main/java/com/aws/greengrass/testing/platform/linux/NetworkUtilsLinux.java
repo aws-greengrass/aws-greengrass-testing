@@ -6,7 +6,6 @@
 package com.aws.greengrass.testing.platform.linux;
 
 import com.aws.greengrass.testing.platform.NetworkUtils;
-import lombok.AllArgsConstructor;
 import software.amazon.awssdk.utils.IoUtils;
 
 import java.io.IOException;
@@ -20,7 +19,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-@AllArgsConstructor
+
 public class NetworkUtilsLinux extends NetworkUtils {
     private static final String ENABLE_OPTION = "--insert";
     private static final String DISABLE_OPTION = "--delete";
