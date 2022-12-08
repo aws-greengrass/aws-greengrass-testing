@@ -11,7 +11,7 @@ public interface Platform {
     PlatformFiles files();
 
     default NetworkUtils getNetworkUtils() {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("Not yet implemented");
     }
 
 }
