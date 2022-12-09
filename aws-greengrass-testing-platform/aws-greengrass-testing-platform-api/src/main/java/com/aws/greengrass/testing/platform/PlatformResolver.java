@@ -24,7 +24,7 @@ import java.util.stream.Stream;
 import javax.inject.Inject;
 
 @ScenarioScoped
-public class PlatformResolver {
+public class PlatformResolver implements Platform {
     private static final Set<String> SUPPORTED_PLATFORMS = Collections.unmodifiableSet(Stream.of(
             "all", "any", "unix", "posix", "linux", "debian", "windows", "fedora", "ubuntu", "macos",
             "raspbian", "qnx", "cygwin", "freebsd", "solaris", "sunos").collect(Collectors.toSet()));
@@ -106,5 +106,15 @@ public class PlatformResolver {
             }
         }
         return ranks;
+    }
+
+    @Override
+    public Commands commands() {
+        return null;
+    }
+
+    @Override
+    public PlatformFiles files() {
+        return null;
     }
 }

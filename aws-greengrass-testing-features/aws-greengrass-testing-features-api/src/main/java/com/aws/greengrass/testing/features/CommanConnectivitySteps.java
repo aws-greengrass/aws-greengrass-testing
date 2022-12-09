@@ -5,6 +5,9 @@
 
 package com.aws.greengrass.testing.features;
 
+import com.aws.greengrass.testing.api.device.Device;
+import com.aws.greengrass.testing.api.model.PillboxContext;
+import com.aws.greengrass.testing.platform.Platform;
 import com.aws.greengrass.testing.platform.PlatformResolver;
 import io.cucumber.guice.ScenarioScoped;
 import io.cucumber.java.en.Given;
@@ -18,33 +21,31 @@ import javax.inject.Inject;
  *
  * @throws IOException {throws IOException}
  * @throws InterruptedException {throws IInterruptedException}
- *
  */
 @ScenarioScoped
 public class CommanConnectivitySteps {
-    private final PlatformResolver platformResolver;
+    private final Platform platform;
 
     @Inject
     @SuppressWarnings("MissingJavadocMethod")
-    public CommanConnectivitySteps(PlatformResolver platformResolver) {
-        this.platformResolver = platformResolver;
+    public CommanConnectivitySteps(Platform platform) {
+          this.platform = platform;
     }
 
     /**
      * Checks the connectivity for platfroms.
      *
-     * @throws IOException {throws IOException}
-     * @throws InterruptedException {throws IInterruptedException}
      * @param connectivity checks platfrom connectivity
-     *
+     * @throws IOException          {throws IOException}
+     * @throws InterruptedException {throws IInterruptedException}
      */
     @Given("device network connectivity is {word}")
     @When("I set device network connectivity to {word}")
     public void setDeviceNetwork(final String connectivity) throws IOException, InterruptedException {
         if ("offline".equalsIgnoreCase(connectivity)) {
-            platformResolver.resolve().getNetworkUtils().disconnectNetwork();
+            platform.getNetworkUtils().disconnectNetwork();
         } else {
-            platformResolver.resolve().getNetworkUtils().recoverNetwork();
+            platform.getNetworkUtils().recoverNetwork();
         }
     }
 }
