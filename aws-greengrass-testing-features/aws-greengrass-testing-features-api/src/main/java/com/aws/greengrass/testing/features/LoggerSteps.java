@@ -14,6 +14,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.ThreadContext;
 
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.inject.Inject;
@@ -63,7 +64,8 @@ public class LoggerSteps {
     }
 
     private String getOTFVersionLogContent() {
-        final String otfVersion = LoggerSteps.class.getPackage().getImplementationVersion();
+        final String otfVersion = Optional.ofNullable(LoggerSteps.class.getPackage().getImplementationVersion())
+                .orElse("1.0.0-SNAPSHOT");
         return String.format("%s-%s", OTF_VERSION_PREFIX, otfVersion);
     }
 }
