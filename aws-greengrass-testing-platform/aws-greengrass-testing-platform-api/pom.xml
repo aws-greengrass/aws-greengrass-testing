@@ -146,18 +146,6 @@
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>utils</artifactId>
         </dependency>
-        <dependency>
-            <groupId>javax.inject</groupId>
-            <artifactId>javax.inject</artifactId>
-            <version>1</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.cucumber</groupId>
-            <artifactId>cucumber-guice</artifactId>
-            <version>5.7.0</version>
-            <scope>compile</scope>
-        </dependency>
     </dependencies>
 
 </project>
