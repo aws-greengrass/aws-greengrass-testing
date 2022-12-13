@@ -25,7 +25,7 @@ public class ConnectivitySteps {
     }
 
     /**
-     * Blocks the traffic port (IP ports) on ports 443,8888,8889 and when the connectivity parameter is "offline" and.
+     * Blocks the traffic port (IP ports) on ports 443,8888,8889 and when the connectivity parameter is "offline" and
      * re-enables traffic on the ports when it is "online".
      *
      * @param connectivity desired connectivity status ("offline", "online")
