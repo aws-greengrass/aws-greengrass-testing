@@ -46,7 +46,7 @@ public class ConnectivitySteps {
                 throw new UnsupportedOperationException("Connectivity " + connectivity + " is not supported");
         }
 
-        "offline".equalsIgnoreCase(connectivity);
+        offline = "offline".equalsIgnoreCase(connectivity);
     }
 
     @After
