@@ -13,10 +13,6 @@ import io.cucumber.java.en.When;
 import java.io.IOException;
 import javax.inject.Inject;
 
-/**
- * Blocks the traffic port (IP ports) on ports 443,8888,8889 and back online it.
- * Re-enables them to simulate Network Connectivity.
- */
 @ScenarioScoped
 public class ConnectivitySteps {
     private final Platform platform;
@@ -29,10 +25,10 @@ public class ConnectivitySteps {
     }
 
     /**
-     * Blocks the traffic port (IP ports) on ports 443,8888,8889 and back online it.
-     * Re-enables them to simulate Network Connectivity.
+     * Blocks the traffic port (IP ports) on ports 443,8888,8889 and when the connectivity parameter is "offline" and.
+     * re-enables traffic on the ports when it is "online".
      *
-     * @param connectivity checks platform connectivity
+     * @param connectivity desired connectivity status ("offline", "online")
      * @throws IOException          {throws IOException}
      * @throws InterruptedException {throws IInterruptedException}
      * @throws UnsupportedOperationException {throws UnsupportedOperationException}
@@ -47,20 +43,14 @@ public class ConnectivitySteps {
                 platform.getNetworkUtils().recoverNetwork();
                 break;
             default:
-                throw new UnsupportedOperationException("Connectivity " + connectivity + " is not supported ");
+                throw new UnsupportedOperationException("Connectivity " + connectivity + " is not supported");
         }
 
         offline = connectivity.equalsIgnoreCase("offline");
     }
 
-    /**
-     * After Each scenario if there is any failure it will make the device go online.
-     * Re-enables them to simulate Network Connectivity.
-     * @throws IOException {IOException}
-     * @throws InterruptedException {InterruptedException}
-     */
     @After
-    public void teardown() throws IOException, InterruptedException {
+    private void teardown() throws IOException, InterruptedException {
         if (offline) {
             platform.getNetworkUtils().recoverNetwork();
         }

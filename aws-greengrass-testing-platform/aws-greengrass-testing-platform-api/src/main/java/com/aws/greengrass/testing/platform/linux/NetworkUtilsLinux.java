@@ -58,7 +58,6 @@ public class NetworkUtilsLinux extends NetworkUtils {
         }
     }
 
-
     private void filterPortOnInterface(String iface, int port) throws IOException, InterruptedException {
         // Filtering SSH traffic impacts test execution, so we explicitly disallow it
         if (port == SSH_PORT) {
@@ -120,6 +119,7 @@ public class NetworkUtilsLinux extends NetworkUtils {
     @Override
     public void recoverNetwork() throws InterruptedException, IOException {
         interfacepolicy(IPTABLE_COMMAND_STR, DISABLE_OPTION, "connection-recover", NETWORK_PORTS);
+
         if (bandwidthSetup.get()) {
             deleteRootNetemQdiscOnInterface();
             bandwidthSetup.set(false);
@@ -127,8 +127,7 @@ public class NetworkUtilsLinux extends NetworkUtils {
     }
 
     private void interfacepolicy(String iptableCommandString, String option, String eventName, String... ports)
-            throws InterruptedException,
-            IOException {
+            throws InterruptedException, IOException {
         for (String port : ports) {
             new ProcessBuilder().command("sh", "-c", String.format(iptableCommandString, option, port, option, port))
                     .start().waitFor(2, TimeUnit.SECONDS);
