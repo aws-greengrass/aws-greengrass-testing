@@ -1,38 +1,38 @@
 ## AWS Greengrass Testing Framework
 
 This framework is a collection of building blocks
-to support end to end automation from the customer
-perspective, using Cucumber as the feature driver. AWS Greengrass uses these very same building
-blocks to qualify software changes on variable devices.
+that supports end to end automation from the customer
+perspective using Cucumber as the feature driver. AWS Greengrass uses the same building
+blocks to qualify software changes on various devices.
 
 ## What's inside?
 
 - AWS Resource Management (`aws-greengrass-testing-resources`)
 - A platform abstraction over Java Process API
 - A bunch of common steps (`aws-greengrass-testing-features`)
-- Ability for the features to be driven through IDT.
-- Some example use-cases and components (`aws-greengrass-testing-components`)
-- Service discovery for extensions like other AWS resources, steps, and configuration.
+- The ability for features to be driven through IDT.
+- Example use-cases and components (`aws-greengrass-testing-components`)
+- Service discovery for extensions such as other AWS resources, steps, and configuration.
 
 ## How to build?
 
-__Special first time instructions__
+__First time instructions__
 
-This is needed to pull in the latest StreamManger SDK and install them locally for building.
+Install the latest StreamManger SDK locally.
 
 
 **Unix Based Systems**
 
-If this directory `./aws-greengrass-testing-components/aws-greengrass-testing-components-streammanager/lib/streammanager` already exists within your project, remove it by running 
+If the directory `./aws-greengrass-testing-components/aws-greengrass-testing-components-streammanager/lib/streammanager` exists in your project, remove it by running the following command:
 
 ```
 rm -rf ./aws-greengrass-testing-components/aws-greengrass-testing-components-streammanager/lib/streammanager
 ```
 
-This ensures that when running the next commands you are getting a fresh version of the submodules that this project loads
+This makes sure that when you run the following commands you get a fresh version of the project's submodules.
 
 
-From the root of the project run
+From the root of the project run:
 
 ```
 git submodule update --init
@@ -41,28 +41,26 @@ mvn process-resources
 
 **Windows**
 
-In order for the `git submodule update --init` command to work on Windows the `core.longpaths` setting
-needs to be enabled on git. To do that:
+For the `git submodule update --init` command to work on Windows the `core.longpaths` setting
+must be enabled on git. To do that:
 
-1. Open a command prompt as an Administrator
+1. Open a command prompt as Administrator
 2. Run `git config --global core.longpaths true`
 
-This is required because Windows has a limit of 260 chars for file names and when pulling the submodules,
-the file names are paths that are longer than 260 characters which cause pulling the submodule to fail.
+Windows has a limit of 260 chars for file names. When pulling the submodules,
+the file names have paths that are longer than 260 characters, which causes pulling the submodule to fail.
 
 Note:
 
-After enabling `core.longpaths`,
-
-If this directory `.\aws-greengrass-testing-components\aws-greengrass-testing-components-streammanager\lib\streammanager` already exists within your project, remove it by running (you can also delete the folder using the UI):
+After enabling `core.longpaths`, if the directory `.\aws-greengrass-testing-components\aws-greengrass-testing-components-streammanager\lib\streammanager`  exists in your project, remove it by running the following command, or delete the folder using the UI.
 
 ```
 rm .\aws-greengrass-testing-components\aws-greengrass-testing-components-streammanager\lib\streammanager
 ```
 
-This ensures that when running the next commands you are getting a fresh version of the submodules that this project loads
+This makes sure that when you run the following commands you get a fresh version of the project's submodules.
 
-From the root of the project run
+From the root of the project run:
 
 
 ```
@@ -70,13 +68,13 @@ git submodule update --init
 mvn process-resources
 ```
 
-When pulling the submodule succeeds you should be able to find this jar on
+After the command succeeds you should be able to find this jar
 `aws-greengrass-testing-components/aws-greengrass-testing-components-streammanager/lib/streammanager/sdk/aws-greengrass-stream-manager-sdk-java.jar`
 
 
 __Regular compilation instructions__
 
-Replace `compile` with `package` to build shaded jars.
+Replace `compile` with `package` to build shared jars.
 
 ```
 mvn clean compile
@@ -84,50 +82,49 @@ mvn clean compile
 
 __Run integration tests for the example component__
 
-- Download latest greengrass archive at the example component path
+- Download the latest Greengrass archive at the example component path:
 ```
 curl https://d2s8p88vqu9w66.cloudfront.net/releases/greengrass-nucleus-latest.zip -o aws-greengrass-testing-examples/aws-greengrass-testing-examples-component/greengrass-nucleus-latest.zip
 ```
 
-- Get credentials for AWS account. The test needs credentials to identify the AWS account to use and to be able to create
-  test resources in the account. [Here](https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/setup.html#setup-credentials) 
-  is the instruction on how to set up credentials. The credentials need to made available on the device. Some options are:
+- Get credentials for an AWS account. The test needs credentials to identify the AWS account to use and to create
+  test resources in the account. For instructions, see [Set default credentials and Region](https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/setup.html#setup-credentials). The credentials must be available on the device. Some options are:
   - Copy temporary credentials and set them as env variables
-  - Set AWS profile for your environment
+  - Set the AWS profile for your environment
 
-- Run the tests
+- Run the tests:
 ```
 mvn clean -DskipTests=false -pl aws-greengrass-testing-examples/aws-greengrass-testing-examples-component -am integration-test
 ```
 
-- Run mqtt tests
+- Run the MQTT tests:
 ```
 mvn clean -DskipITs=false -pl aws-greengrass-testing-features/aws-greengrass-testing-features-mqtt/ -am integration-test
 ```
 
-- Run cloud component tests
+- Run the cloud component tests:
 ```
 mvn clean -DskipTests=false -pl aws-greengrass-testing-features/aws-greengrass-testing-features-cloudcomponent/ -am integration-test
 ```
 
-__Running tests with HSM configuration__
+__Running tests with an HSM__
 
-Any test can be run with HSM configuration. HSM configuration parameters are defined [here](aws-greengrass-testing-features/aws-greengrass-testing-features-api/src/main/java/com/aws/greengrass/testing/modules/HsmParameters.java).
-If *ggc.hsm.configured* is set to true, then the framework expects the other HSM parameters to be configured. When 
-hsm is configured, [this](aws-greengrass-testing-features/aws-greengrass-testing-features-api/src/main/resources/nucleus/configs/basic_hsm_config.yaml) initial config file is used to start
-the greengrass with. Before you run the tests with HSM, following steps are pre-requisite:
-1. DUT has the HSM installed.
-2. A device certificate is created and added to the HSM along with private key. You specify the certificate ARN and 
-hsm labels for key and cert as parameters.
-3. PKCS library is present either on the host or on the DUT. If the library is already on the DUT, specify the library 
-path with a prefix *"dut:"*
-4. Similarly, the pkcs plugin jar can be on the host agent or on the DUT. If it is already on DUT, specify the path 
-  with the prefix *"dut:"*
+Any test can be run with an HSM configuration. HSM configuration parameters are defined in the [HsmParameters.java](aws-greengrass-testing-features/aws-greengrass-testing-features-api/src/main/java/com/aws/greengrass/testing/modules/HsmParameters.java) file.
+If *ggc.hsm.configured* is set to true, you must configure the other HSM parameters. When
+an HSM is configured, [this initial config file](aws-greengrass-testing-features/aws-greengrass-testing-features-api/src/main/resources/nucleus/configs/basic_hsm_config.yaml) is used to start
+Greengrass. Before you run tests with an HSM, following is required:
+1. Install the HSM on the DUT.
+2. Create and add a device certificate to the HSM, along with a private key. You specify the certificate ARN and
+   HSM labels for the key and cert as parameters.
+3. Install the PKCS library on the host or the DUT. If the library is on the DUT, specify the library
+   path with a prefix *"dut:"*
+4. Similarly, the PKCS plugin jar can be on the host agent or on the DUT. If it is on the DUT, specify the path
+   with the prefix *"dut:"*
 
 __Debugging test failures__
 
-The test logs path is set using the "test.log.path" property in the project. The default value for this will be
-"testResults". Thus, by default logs for example component test run will be found at `aws-greengrass-testing-examples/aws-greengrass-testing-examples-component/testResults`
+Set the test log path using the "test.log.path" property in the project. The default value is
+"testResults". By default, logs for the example component test run are found at `aws-greengrass-testing-examples/aws-greengrass-testing-examples-component/testResults`
 
 __Fixing licenses__
 
