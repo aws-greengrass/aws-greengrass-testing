@@ -109,7 +109,7 @@ curl https://d2s8p88vqu9w66.cloudfront.net/releases/greengrass-nucleus-latest.zi
 
   - Example component tests: 
     - ```mvn clean -DskipTests=false -pl aws-greengrass-testing-examples/aws-greengrass-testing-examples-component -am integration-test```
-  - MQTT tests: `
+  - MQTT tests: 
     - ```mvn clean -DskipITs=false -pl aws-greengrass-testing-features/aws-greengrass-testing-features-mqtt/ -am integration-test```
   - Cloud component tests: 
     - ```mvn clean -DskipTests=false -pl aws-greengrass-testing-features/aws-greengrass-testing-features-cloudcomponent/ -am integration-test```
