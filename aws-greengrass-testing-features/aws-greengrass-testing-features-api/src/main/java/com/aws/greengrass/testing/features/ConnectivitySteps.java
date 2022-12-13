@@ -35,7 +35,7 @@ public class ConnectivitySteps {
      */
     @When("the device network connectivity is {word}")
     public void setDeviceNetwork(final String connectivity) throws IOException, InterruptedException {
-        switch (connectivity) {
+        switch (connectivity.toLowerCase()) {
             case "offline":
                 platform.getNetworkUtils().disconnectNetwork();
                 break;
@@ -46,7 +46,7 @@ public class ConnectivitySteps {
                 throw new UnsupportedOperationException("Connectivity " + connectivity + " is not supported");
         }
 
-        offline = connectivity.equalsIgnoreCase("offline");
+        "offline".equalsIgnoreCase(connectivity);
     }
 
     @After
