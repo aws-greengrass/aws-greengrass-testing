@@ -12,7 +12,8 @@ import com.aws.greengrass.testing.platform.NetworkUtils;
 
 public class LinuxPlatform extends AbstractPlatform {
 
-    NetworkUtilsLinux networkUtilsLinux= null;
+    private final NetworkUtilsLinux networkUtilsLinux;
+
     public LinuxPlatform(final Device device, final PillboxContext pillboxContext) {
         super(device, pillboxContext);
         networkUtilsLinux = new NetworkUtilsLinux();
