@@ -5,11 +5,9 @@
 
 package com.aws.greengrass.testing.features;
 
-import com.aws.greengrass.testing.api.device.Device;
-import com.aws.greengrass.testing.api.model.PillboxContext;
 import com.aws.greengrass.testing.platform.Platform;
-import com.aws.greengrass.testing.platform.PlatformResolver;
 import io.cucumber.guice.ScenarioScoped;
+import io.cucumber.java.After;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.When;
 
@@ -23,12 +21,12 @@ import javax.inject.Inject;
  * @throws InterruptedException {throws IInterruptedException}
  */
 @ScenarioScoped
-public class CommanConnectivitySteps {
+public class CommonConnectivitySteps {
     private final Platform platform;
 
     @Inject
     @SuppressWarnings("MissingJavadocMethod")
-    public CommanConnectivitySteps(Platform platform) {
+    public CommonConnectivitySteps(Platform platform) {
           this.platform = platform;
     }
 
@@ -48,5 +46,11 @@ public class CommanConnectivitySteps {
             platform.getNetworkUtils().recoverNetwork();
         }
     }
+
+    @After
+    public void afterEachScenario()throws IOException, InterruptedException {
+        platform.getNetworkUtils().recoverNetwork();
+    }
+
 }
 
