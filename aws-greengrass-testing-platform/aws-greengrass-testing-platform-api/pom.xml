@@ -146,11 +146,6 @@
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>utils</artifactId>
         </dependency>
-        <dependency>
-        <groupId>com.google.inject</groupId>
-        <artifactId>guice</artifactId>
-        <version>${guice.version}</version>
-    </dependency>
     </dependencies>
 
 </project>
