@@ -80,7 +80,7 @@ Replace `compile` with `package` to build shared jars.
 mvn clean compile
 ```
 
-__Run integration tests for the example component__
+__Run integration tests__
 
 - Download the latest Greengrass archive at the example component path:
 ```
@@ -91,6 +91,19 @@ curl https://d2s8p88vqu9w66.cloudfront.net/releases/greengrass-nucleus-latest.zi
   test resources in the account. For instructions, see [Set default credentials and Region](https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/setup.html#setup-credentials). The credentials must be available on the device. Some options are:
   - Copy temporary credentials and set them as env variables
   - Set the AWS profile for your environment
+
+
+- Configure user on Windows device
+    - Open the Windows Command Prompt (cmd.exe) as an administrator.
+    - Create user in the LocalSystem account on the Windows device. Replace **user_name** with the same name of your current system user. Replace **password** with a secure password.
+      - ```net user /add user-name password```
+    - Download and install the [PsExec utility](https://learn.microsoft.com/en-us/sysinternals/downloads/psexec) from Microsoft on the device.
+    - Use the PsExec utility to store the user name and password in the Credential Manager instance for the LocalSystem account.
+      - Run the following command. Replace user-name and password with the user's user name and password that you set earlier.
+        - ```psexec -s cmd /c cmdkey /generic:user-name /user:user-name /pass:password```
+      - If the **PsExec License Agreement** opens, choose **Accept** to agree to the license and run the command.
+      
+
 
 - Run the tests:
 ```
