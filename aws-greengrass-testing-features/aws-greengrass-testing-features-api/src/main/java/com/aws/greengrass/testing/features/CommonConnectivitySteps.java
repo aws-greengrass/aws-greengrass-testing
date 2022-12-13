@@ -23,6 +23,7 @@ import javax.inject.Inject;
 @ScenarioScoped
 public class CommonConnectivitySteps {
     private final Platform platform;
+    private boolean offline;
 
     @Inject
     @SuppressWarnings("MissingJavadocMethod")
@@ -31,26 +32,28 @@ public class CommonConnectivitySteps {
     }
 
     /**
-     * Checks the connectivity for platfroms.
+     * Checks the connectivity for platforms.
      *
-     * @param connectivity checks platfrom connectivity
+     * @param connectivity checks platform connectivity
      * @throws IOException          {throws IOException}
      * @throws InterruptedException {throws IInterruptedException}
      */
-    @Given("device network connectivity is {word}")
-    @When("I set device network connectivity to {word}")
+
+    @When("device network connectivity is {word}")
     public void setDeviceNetwork(final String connectivity) throws IOException, InterruptedException {
         if ("offline".equalsIgnoreCase(connectivity)) {
             platform.getNetworkUtils().disconnectNetwork();
+            offline=true;
         } else {
             platform.getNetworkUtils().recoverNetwork();
         }
     }
-
     @After
-    public void afterEachScenario()throws IOException, InterruptedException {
-        platform.getNetworkUtils().recoverNetwork();
+    public void teardown() throws IOException, InterruptedException {
+        if (offline) {
+            platform.getNetworkUtils().recoverNetwork();
+            offline=false;
+        }
     }
-
 }
 

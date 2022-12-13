@@ -11,8 +11,11 @@ import com.aws.greengrass.testing.platform.AbstractPlatform;
 import com.aws.greengrass.testing.platform.NetworkUtils;
 
 public class LinuxPlatform extends AbstractPlatform {
+
+    NetworkUtilsLinux networkUtilsLinux= null;
     public LinuxPlatform(final Device device, final PillboxContext pillboxContext) {
         super(device, pillboxContext);
+        networkUtilsLinux = new NetworkUtilsLinux();
     }
 
     @Override
@@ -22,6 +25,6 @@ public class LinuxPlatform extends AbstractPlatform {
 
     @Override
     public NetworkUtils getNetworkUtils() {
-        return new NetworkUtilsLinux();
+        return  this.networkUtilsLinux;
     }
 }
