@@ -32,7 +32,7 @@ java \
 The results of the run can be found in `hello_world/test-results`.
 
 ## Run provided features
-You can also run features provided by this test framework.Here are the provided test features: 
+You can also run features provided by this test framework. Here are the provided test features: 
 - Basic test features:
   - [cloudComponent.feature](../aws-greengrass-testing-features/aws-greengrass-testing-features-cloudcomponent/src/main/resources/greengrass/features/cloudComponent.feature): Validates device capability for cloud components. 
   - [localdeployment.feature](../aws-greengrass-testing-features/aws-greengrass-testing-features-localdeployment/src/main/resources/greengrass/features/localdeployment.feature): Validates device capability for local components.
