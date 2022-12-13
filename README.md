@@ -95,7 +95,7 @@ curl https://d2s8p88vqu9w66.cloudfront.net/releases/greengrass-nucleus-latest.zi
 
 - Configure user on Windows device
     - Open the Windows Command Prompt (cmd.exe) as an administrator.
-    - Create user in the LocalSystem account on the Windows device. Replace **user_name** with the same name of your current system user. Replace **password** with a secure password.
+    - Create user in the LocalSystem account on the Windows device. Replace **user-name** with the same name of your current system user. Replace **password** with a secure password.
       - ```net user /add user-name password```
     - Download and install the [PsExec utility](https://learn.microsoft.com/en-us/sysinternals/downloads/psexec) from Microsoft on the device.
     - Use the PsExec utility to store the user name and password in the Credential Manager instance for the LocalSystem account.
