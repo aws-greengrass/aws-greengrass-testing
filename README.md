@@ -105,20 +105,14 @@ curl https://d2s8p88vqu9w66.cloudfront.net/releases/greengrass-nucleus-latest.zi
       
 
 
-- Run the tests:
-```
-mvn clean -DskipTests=false -pl aws-greengrass-testing-examples/aws-greengrass-testing-examples-component -am integration-test
-```
+- Run the integration tests (For Window device, open the Windows Command Prompt (cmd.exe) as an administrator to run below tests):
 
-- Run the MQTT tests:
-```
-mvn clean -DskipITs=false -pl aws-greengrass-testing-features/aws-greengrass-testing-features-mqtt/ -am integration-test
-```
-
-- Run the cloud component tests:
-```
-mvn clean -DskipTests=false -pl aws-greengrass-testing-features/aws-greengrass-testing-features-cloudcomponent/ -am integration-test
-```
+  - Example component tests: 
+    - ```mvn clean -DskipTests=false -pl aws-greengrass-testing-examples/aws-greengrass-testing-examples-component -am integration-test```
+  - MQTT tests: `
+    - ```mvn clean -DskipITs=false -pl aws-greengrass-testing-features/aws-greengrass-testing-features-mqtt/ -am integration-test```
+  - Cloud component tests: 
+    - ```mvn clean -DskipTests=false -pl aws-greengrass-testing-features/aws-greengrass-testing-features-cloudcomponent/ -am integration-test```
 
 __Running tests with an HSM__
 
