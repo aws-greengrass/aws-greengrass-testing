@@ -6,6 +6,7 @@ on:
       - 'main'
       - 'external_pr_*'
   pull_request:
+    branches-ignore: '*:*'
     branches: '*'
 env:
   AWS_REGION : "us-west-2"
