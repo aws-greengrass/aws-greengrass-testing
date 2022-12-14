@@ -181,12 +181,14 @@ jobs:
         os: [ ubuntu-latest ]
     steps:
       - name: configure aws credentials
+        if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
         uses: aws-actions/configure-aws-credentials@v1
         with:
           role-to-assume: arn:aws:iam::686385081908:role/aws-greengrass-testing-codebuild-uat-role-amazonlinux
           role-session-name: otfCI
           aws-region: ${{ env.AWS_REGION }}
       - name: Run UAT on linux
+        if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
         uses: aws-actions/aws-codebuild-run-build@v1
         with:
           project-name: ${{ env.CODE_BUILD_PROJECT_LINUX }}
