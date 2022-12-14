@@ -13,6 +13,7 @@ env:
 
 jobs:
   build:
+    if: github.repository == 'aws-greengrass/aws-greengrass-testing'
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -172,6 +173,7 @@ jobs:
 
 
   uat-linux:
+    if: github.repository == 'aws-greengrass/aws-greengrass-testing'
     permissions:
       id-token: write
       contents: read
