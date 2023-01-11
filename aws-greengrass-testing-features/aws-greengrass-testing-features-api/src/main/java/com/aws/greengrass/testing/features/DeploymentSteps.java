@@ -35,9 +35,12 @@ import software.amazon.awssdk.services.greengrassv2.model.ComponentDeploymentSpe
 import software.amazon.awssdk.services.greengrassv2.model.EffectiveDeploymentExecutionStatus;
 import software.amazon.awssdk.services.iot.model.GroupNameAndArn;
 
+import java.io.IOException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -56,6 +59,7 @@ import static com.aws.greengrass.testing.features.GreengrassCliSteps.LOCAL_DEPLO
 public class DeploymentSteps {
     private static final Logger LOGGER = LogManager.getLogger(DeploymentSteps.class);
     private static final String IOT_JOB_EXECUTION_STATUS_SUCCEEDED = "SUCCEEDED";
+    private static final Path LOCAL_STORE_RECIPES = Paths.get("local:", "local-store", "recipes");
     private final AWSResources resources;
     private final ComponentPreparationService componentPreparation;
     private final ComponentOverrides overrides;
@@ -139,6 +143,75 @@ public class DeploymentSteps {
         return lifecycle.listThingGroupsForAThing(coreThingName).thingGroups();
     }
 
+    /**
+     * implemented the step of installing a custom component with configuration. This requires Recipe for the custom
+     * compoenent.
+     *
+     * @param componentName         the name of the custom component
+     * @param configurationTable    the table which describes the configurations
+     * @throws InterruptedException InterruptedException could be throw out during the component deployment
+     * @throws IOException          IOException could be throw out during preparation of the CLI command
+     */
+    @When("I install the component {word} from local store with configuration otf")
+    public void installComponentWithConfiguration(final String componentName, final String configurationTable)
+            throws InterruptedException, IOException {
+        // read the recipe from local store, and get component name and version from recipe
+        List<String> componentSpecs = Arrays.asList(
+                componentName, LOCAL_STORE_RECIPES.resolve(String.format("%s.yaml", componentName)).toString()
+        );
+
+        // handle the config input
+        List<Map<String, Object>> configuration = readConfigurationTable(configurationTable);
+        createLocalDeploymentWithConfig(new ArrayList<>(Collections.singleton(componentSpecs)),
+                configuration, 0);
+    }
+
+    private List<Map<String, Object>> readConfigurationTable(String configurationTable) throws JsonProcessingException {
+        List<Map<String, Object>> configuration = new ArrayList<>();
+        String updatedConfiguration = this.scenarioContext.applyInline(configurationTable);
+        Map<String, Object> json = this.mapper.readValue(updatedConfiguration,
+                new TypeReference<Map<String, Object>>() {});
+        configuration.add(json);
+        return configuration;
+    }
+
+    private void createLocalDeploymentWithConfig(List<List<String>> componentNames,
+                                                 List<Map<String, Object>> configuration,
+                                                 int retryCount) throws InterruptedException, IOException {
+        // find the component artifacts and copy into a local store
+        final Map<String, ComponentDeploymentSpecification> components = parseComponentNamesAndPrepare(componentNames);
+
+        List<String> commandArgs = new ArrayList<>();
+
+        commandArgs.addAll(Arrays.asList("deployment", "create",
+                "--artifactDir "  + artifactPath.toString(),
+                "--recipeDir " + recipePath.toString()));
+
+        for (Map.Entry<String, ComponentDeploymentSpecification> entry : components.entrySet()) {
+            commandArgs.add(" --merge ");
+            String componentName = entry.getKey();
+            commandArgs.add(componentName + "=" + entry.getValue().componentVersion());
+            String updateConfigArgs = getCliUpdateConfigArgs(componentName, configuration);
+            if (!updateConfigArgs.isEmpty()) {
+                commandArgs.add("--update-config '" + updateConfigArgs + "'");
+            }
+        }
+
+        executeCommand(retryCount, commandArgs);
+    }
+
+    private String getCliUpdateConfigArgs(String componentName, List<Map<String, Object>> configuration)
+            throws IOException {
+        Map<String, Map<String, Object>> configurationUpdate = new HashMap<>();
+        // config update for each component, in the format of <componentName, <MERGE/RESET, map>>
+        for (Map<String, Object> configKeyValue : configuration) {
+            configurationUpdate.put(componentName, configKeyValue);
+        }
+        if (configurationUpdate.isEmpty()) {
+            return "";
+        }
+        return mapper.writeValueAsString(configurationUpdate);
+    }
 
     /**
      * Create a local deployment using greengrass cli.
@@ -154,7 +227,6 @@ public class DeploymentSteps {
         // find the component artifacts and copy into a local store
         final Map<String, ComponentDeploymentSpecification> components = parseComponentNamesAndPrepare(componentNames);
 
-        // execute the command
         List<String> commandArgs = new ArrayList<>();
 
         commandArgs.addAll(Arrays.asList("deployment", "create",
@@ -166,6 +238,11 @@ public class DeploymentSteps {
             commandArgs.add(entry.getKey() + "=" + entry.getValue().componentVersion());
         }
 
+        executeCommand(retryCount, commandArgs);
+    }
+
+    private void executeCommand(int retryCount, List<String> commandArgs)
+            throws InterruptedException {
         try {
             String response = platform.commands().executeToString(CommandInput.builder()
                     .line(testContext.installRoot().resolve("bin").resolve("greengrass-cli").toString())
@@ -182,9 +259,8 @@ public class DeploymentSteps {
             }
 
             waits.until(5, "SECONDS");
-            LOGGER.warn("the deployment request threw an exception, retried {} times...",
-                    retryCount);
-            this.createLocalDeployment(componentNames, retryCount + 1);
+            LOGGER.warn("the deployment request threw an exception, retried {} times...", retryCount);
+            this.executeCommand(retryCount + 1, commandArgs);
         }
     }
 
