@@ -152,7 +152,7 @@ public class DeploymentSteps {
      * @throws InterruptedException InterruptedException could be throw out during the component deployment
      * @throws IOException          IOException could be throw out during preparation of the CLI command
      */
-    @When("I install the component {word} from local store with configuration otf")
+    @When("I install the component {word} from local store with configuration")
     public void installComponentWithConfiguration(final String componentName, final String configurationTable)
             throws InterruptedException, IOException {
         // read the recipe from local store, and get component name and version from recipe
@@ -188,9 +188,8 @@ public class DeploymentSteps {
                 "--recipeDir " + recipePath.toString()));
 
         for (Map.Entry<String, ComponentDeploymentSpecification> entry : components.entrySet()) {
-            commandArgs.add(" --merge ");
             String componentName = entry.getKey();
-            commandArgs.add(componentName + "=" + entry.getValue().componentVersion());
+            commandArgs.add(String.format(" --merge %s=%s", componentName, entry.getValue().componentVersion()));
             String updateConfigArgs = getCliUpdateConfigArgs(componentName, configuration);
             if (!updateConfigArgs.isEmpty()) {
                 commandArgs.add("--update-config '" + updateConfigArgs + "'");
