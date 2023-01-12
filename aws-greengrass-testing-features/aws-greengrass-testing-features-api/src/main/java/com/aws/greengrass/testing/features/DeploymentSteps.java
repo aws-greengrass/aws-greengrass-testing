@@ -47,6 +47,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.StringJoiner;
 import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 
@@ -155,28 +156,26 @@ public class DeploymentSteps {
     @When("I install the component {word} from local store with configuration")
     public void installComponentWithConfiguration(final String componentName, final String configurationTable)
             throws InterruptedException, IOException {
+        // TODO: recipe of json format will also be taken.
         // read the recipe from local store, and get component name and version from recipe
         List<String> componentSpecs = Arrays.asList(
                 componentName, LOCAL_STORE_RECIPES.resolve(String.format("%s.yaml", componentName)).toString()
         );
 
         // handle the config input
-        List<Map<String, Object>> configuration = readConfigurationTable(configurationTable);
+        Map<String, Object> configuration = readConfiguration(configurationTable);
         createLocalDeploymentWithConfig(new ArrayList<>(Collections.singleton(componentSpecs)),
                 configuration, 0);
     }
 
-    private List<Map<String, Object>> readConfigurationTable(String configurationTable) throws JsonProcessingException {
-        List<Map<String, Object>> configuration = new ArrayList<>();
+    private Map<String, Object> readConfiguration(String configurationTable) throws JsonProcessingException {
         String updatedConfiguration = this.scenarioContext.applyInline(configurationTable);
-        Map<String, Object> json = this.mapper.readValue(updatedConfiguration,
+        return this.mapper.readValue(updatedConfiguration,
                 new TypeReference<Map<String, Object>>() {});
-        configuration.add(json);
-        return configuration;
     }
 
     private void createLocalDeploymentWithConfig(List<List<String>> componentNames,
-                                                 List<Map<String, Object>> configuration,
+                                                 Map<String, Object> configuration,
                                                  int retryCount) throws InterruptedException, IOException {
         // find the component artifacts and copy into a local store
         final Map<String, ComponentDeploymentSpecification> components = parseComponentNamesAndPrepare(componentNames);
@@ -189,7 +188,7 @@ public class DeploymentSteps {
 
         for (Map.Entry<String, ComponentDeploymentSpecification> entry : components.entrySet()) {
             String componentName = entry.getKey();
-            commandArgs.add(String.format(" --merge %s=%s", componentName, entry.getValue().componentVersion()));
+            commandArgs.add(String.format("--merge %s=%s", componentName, entry.getValue().componentVersion()));
             String updateConfigArgs = getCliUpdateConfigArgs(componentName, configuration);
             if (!updateConfigArgs.isEmpty()) {
                 commandArgs.add("--update-config '" + updateConfigArgs + "'");
@@ -199,13 +198,11 @@ public class DeploymentSteps {
         executeCommand(retryCount, commandArgs);
     }
 
-    private String getCliUpdateConfigArgs(String componentName, List<Map<String, Object>> configuration)
+    private String getCliUpdateConfigArgs(String componentName, Map<String, Object> configuration)
             throws IOException {
         Map<String, Map<String, Object>> configurationUpdate = new HashMap<>();
         // config update for each component, in the format of <componentName, <MERGE/RESET, map>>
-        for (Map<String, Object> configKeyValue : configuration) {
-            configurationUpdate.put(componentName, configKeyValue);
-        }
+        configurationUpdate.put(componentName, configuration);
         if (configurationUpdate.isEmpty()) {
             return "";
         }
@@ -245,7 +242,7 @@ public class DeploymentSteps {
         try {
             String response = platform.commands().executeToString(CommandInput.builder()
                     .line(testContext.installRoot().resolve("bin").resolve("greengrass-cli").toString())
-                    .addAllArgs(commandArgs)
+                    .addArgs(formatToUnixPath(commandArgs))
                     .build());
             LOGGER.debug("The response from executing gg-cli command is {}", response);
             String[] responseArray = response.split(":");
@@ -261,6 +258,15 @@ public class DeploymentSteps {
             LOGGER.warn("the deployment request threw an exception, retried {} times...", retryCount);
             this.executeCommand(retryCount + 1, commandArgs);
         }
+    }
+
+    private String formatToUnixPath(List<String> incoming) {
+        StringJoiner formatCommands = new StringJoiner(" ");
+        for (String incomingUnit: incoming) {
+            incomingUnit.replaceAll("^[A-Za-z]:", "").replace("\\", "/");
+            formatCommands.add(incomingUnit);
+        }
+        return formatCommands.toString();
     }
 
     @VisibleForTesting
