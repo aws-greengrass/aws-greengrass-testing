@@ -61,7 +61,7 @@ public abstract class UnixCommands implements Commands, UnixPathsMixin {
         return device.execute(CommandInput.builder()
                 .workingDirectory(input.workingDirectory())
                 .line("sh")
-                .addArgs("-c", formatToUnixPath(joiner.toString()))
+                .addArgs("-c", joiner.toString())
                 .input(input.input())
                 .timeout(input.timeout())
                 .build());
