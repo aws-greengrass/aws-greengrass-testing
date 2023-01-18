@@ -58,6 +58,8 @@ public abstract class UnixCommands implements Commands, UnixPathsMixin {
     public byte[] execute(CommandInput input) throws CommandExecutionException {
         final StringJoiner joiner = new StringJoiner(" ").add(input.line());
         Optional.ofNullable(input.args()).ifPresent(args -> args.forEach(joiner::add));
+        //TODO: For windows, we need to format the path to be platform agnostic, but not for the config. We also need
+        // test cases for OTF to make sure the compatibility when crossing platforms.
         return device.execute(CommandInput.builder()
                 .workingDirectory(input.workingDirectory())
                 .line("sh")
