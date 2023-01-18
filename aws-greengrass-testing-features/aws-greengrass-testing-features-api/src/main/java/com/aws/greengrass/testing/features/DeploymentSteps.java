@@ -6,12 +6,15 @@
 package com.aws.greengrass.testing.features;
 
 import com.aws.greengrass.testing.api.ComponentPreparationService;
+import com.aws.greengrass.testing.api.device.Device;
+import com.aws.greengrass.testing.api.device.exception.CommandExecutionException;
 import com.aws.greengrass.testing.api.device.model.CommandInput;
 import com.aws.greengrass.testing.api.model.ComponentOverrideNameVersion;
 import com.aws.greengrass.testing.api.model.ComponentOverrideVersion;
 import com.aws.greengrass.testing.api.model.ComponentOverrides;
 import com.aws.greengrass.testing.model.ScenarioContext;
 import com.aws.greengrass.testing.model.TestContext;
+import com.aws.greengrass.testing.platform.Commands;
 import com.aws.greengrass.testing.platform.Platform;
 import com.aws.greengrass.testing.resources.AWSResources;
 import com.aws.greengrass.testing.resources.greengrass.GreengrassDeploymentSpec;
@@ -36,6 +39,7 @@ import software.amazon.awssdk.services.greengrassv2.model.EffectiveDeploymentExe
 import software.amazon.awssdk.services.iot.model.GroupNameAndArn;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -75,6 +79,7 @@ public class DeploymentSteps {
     private Platform platform;
     private Path artifactPath;
     private Path recipePath;
+    private Device device;
 
     @Inject
     @SuppressWarnings("MissingJavadocMethod")
@@ -86,7 +91,8 @@ public class DeploymentSteps {
             final ScenarioContext scenarioContext,
             final WaitSteps waits,
             final ObjectMapper mapper,
-            final Platform platform) {
+            final Platform platform,
+            final Device device) {
         this.resources = resources;
         this.overrides = overrides;
         this.testContext = testContext;
@@ -95,6 +101,7 @@ public class DeploymentSteps {
         this.waits = waits;
         this.mapper = mapper;
         this.platform = platform;
+        this.device = device;
         this.artifactPath = testContext.installRoot().resolve(LOCAL_STORE).resolve(ARTIFACTS_DIR);;
         this.recipePath = testContext.installRoot().resolve(LOCAL_STORE).resolve(RECIPE_DIR);
     }
@@ -195,7 +202,7 @@ public class DeploymentSteps {
             }
         }
 
-        executeCommand(retryCount, commandArgs);
+        executeCommandWithConfig(retryCount, commandArgs);
     }
 
     private String getCliUpdateConfigArgs(String componentName, Map<String, Object> configuration)
@@ -207,6 +214,45 @@ public class DeploymentSteps {
             return "";
         }
         return mapper.writeValueAsString(configurationUpdate);
+    }
+
+    private void executeCommandWithConfig(int retryCount, List<String> commandArgs)
+            throws InterruptedException {
+        try {
+            CommandInput command = getDeploymentCommand(commandArgs);
+
+            String response = new String(device.execute(command), StandardCharsets.UTF_8);
+            LOGGER.debug("The response from executing gg-cli command is {}", response);
+            String[] responseArray = response.split(":");
+            String deploymentId = responseArray[responseArray.length - 1];
+            LOGGER.info("The local deployment response is " + deploymentId);
+            scenarioContext.put(LOCAL_DEPLOYMENT_ID, deploymentId);
+        } catch (Exception e) {
+            if (retryCount > 3) {
+                throw e;
+            }
+
+            waits.until(5, "SECONDS");
+            LOGGER.warn("the deployment request threw an exception, retried {} times...", retryCount);
+            this.executeCommandWithConfig(retryCount + 1, commandArgs);
+        }
+    }
+
+    private CommandInput getDeploymentCommand(List<String> commandArgs) {
+        CommandInput cliCommand = CommandInput.builder()
+                .line(testContext.installRoot().resolve("bin").resolve("greengrass-cli").toString())
+                .addAllArgs(commandArgs)
+                .build();
+        final StringJoiner joiner = new StringJoiner(" ").add(cliCommand.line());
+        Optional.ofNullable(cliCommand.args()).ifPresent(args -> args.forEach(joiner::add));
+        CommandInput shellCommand = CommandInput.builder()
+                .workingDirectory(cliCommand.workingDirectory())
+                .line("sh")
+                .addArgs("-c", joiner.toString())
+                .input(cliCommand.input())
+                .timeout(cliCommand.timeout())
+                .build();
+        return shellCommand;
     }
 
     /**
@@ -223,6 +269,7 @@ public class DeploymentSteps {
         // find the component artifacts and copy into a local store
         final Map<String, ComponentDeploymentSpecification> components = parseComponentNamesAndPrepare(componentNames);
 
+        // execute the command
         List<String> commandArgs = new ArrayList<>();
 
         commandArgs.addAll(Arrays.asList("deployment", "create",
@@ -234,15 +281,10 @@ public class DeploymentSteps {
             commandArgs.add(entry.getKey() + "=" + entry.getValue().componentVersion());
         }
 
-        executeCommand(retryCount, commandArgs);
-    }
-
-    private void executeCommand(int retryCount, List<String> commandArgs)
-            throws InterruptedException {
         try {
             String response = platform.commands().executeToString(CommandInput.builder()
                     .line(testContext.installRoot().resolve("bin").resolve("greengrass-cli").toString())
-                    .addArgs(formatToUnixPath(commandArgs))
+                    .addAllArgs(commandArgs)
                     .build());
             LOGGER.debug("The response from executing gg-cli command is {}", response);
             String[] responseArray = response.split(":");
@@ -255,18 +297,10 @@ public class DeploymentSteps {
             }
 
             waits.until(5, "SECONDS");
-            LOGGER.warn("the deployment request threw an exception, retried {} times...", retryCount);
-            this.executeCommand(retryCount + 1, commandArgs);
+            LOGGER.warn("the deployment request threw an exception, retried {} times...",
+                    retryCount);
+            this.createLocalDeployment(componentNames, retryCount + 1);
         }
-    }
-
-    private String formatToUnixPath(List<String> incoming) {
-        StringJoiner formatCommands = new StringJoiner(" ");
-        for (String incomingUnit: incoming) {
-            incomingUnit.replaceAll("^[A-Za-z]:", "").replace("\\", "/");
-            formatCommands.add(incomingUnit);
-        }
-        return formatCommands.toString();
     }
 
     @VisibleForTesting
