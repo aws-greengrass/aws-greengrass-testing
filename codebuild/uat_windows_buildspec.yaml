@@ -15,7 +15,7 @@ phases:
   build:
     commands:
       - choco install psexec -y --ignore-checksums
-      - choco install curl
+      - choco install -y --no-progress curl
       - curl https://d2s8p88vqu9w66.cloudfront.net/releases/greengrass-nucleus-latest.zip --output aws.greengrass.nucleus.zip
       - git submodule update --init
       - mvn -U -ntp process-resources
