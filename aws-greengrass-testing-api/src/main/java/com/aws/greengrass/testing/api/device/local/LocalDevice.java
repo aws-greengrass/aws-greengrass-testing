@@ -59,7 +59,6 @@ public class LocalDevice implements Device {
 
     @Override
     public byte[] execute(CommandInput input) throws CommandExecutionException {
-//        final ProcessBuilder builder = new ProcessBuilder().command(input.line());
         final ProcessBuilder builder;
         if (("cmd.exe /c").equals(input.line())) {
             builder = new ProcessBuilder().command("cmd.exe");
