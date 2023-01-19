@@ -7,14 +7,12 @@ package com.aws.greengrass.testing.features;
 
 import com.aws.greengrass.testing.api.ComponentPreparationService;
 import com.aws.greengrass.testing.api.device.Device;
-import com.aws.greengrass.testing.api.device.exception.CommandExecutionException;
 import com.aws.greengrass.testing.api.device.model.CommandInput;
 import com.aws.greengrass.testing.api.model.ComponentOverrideNameVersion;
 import com.aws.greengrass.testing.api.model.ComponentOverrideVersion;
 import com.aws.greengrass.testing.api.model.ComponentOverrides;
 import com.aws.greengrass.testing.model.ScenarioContext;
 import com.aws.greengrass.testing.model.TestContext;
-import com.aws.greengrass.testing.platform.Commands;
 import com.aws.greengrass.testing.platform.Platform;
 import com.aws.greengrass.testing.resources.AWSResources;
 import com.aws.greengrass.testing.resources.greengrass.GreengrassDeploymentSpec;
@@ -171,8 +169,9 @@ public class DeploymentSteps {
 
         // handle the config input
         Map<String, Object> configuration = readConfiguration(configurationTable);
-        createLocalDeploymentWithConfig(new ArrayList<>(Collections.singleton(componentSpecs)),
-                configuration, 0);
+        CommandInput command = getCliDeploymentCommand(new ArrayList<>(Collections.singleton(componentSpecs)),
+                configuration);
+        createLocalDeploymentWithConfigs(0, command);
     }
 
     private Map<String, Object> readConfiguration(String configurationTable) throws JsonProcessingException {
@@ -181,9 +180,8 @@ public class DeploymentSteps {
                 new TypeReference<Map<String, Object>>() {});
     }
 
-    private void createLocalDeploymentWithConfig(List<List<String>> componentNames,
-                                                 Map<String, Object> configuration,
-                                                 int retryCount) throws InterruptedException, IOException {
+    private CommandInput getCliDeploymentCommand(List<List<String>> componentNames,
+                                         Map<String, Object> configuration) throws InterruptedException, IOException {
         // find the component artifacts and copy into a local store
         final Map<String, ComponentDeploymentSpecification> components = parseComponentNamesAndPrepare(componentNames);
 
@@ -201,8 +199,10 @@ public class DeploymentSteps {
                 commandArgs.add("--update-config '" + updateConfigArgs + "'");
             }
         }
-
-        executeCommandWithConfig(retryCount, commandArgs);
+        return CommandInput.builder()
+                .line(testContext.installRoot().resolve("bin").resolve("greengrass-cli").toString())
+                .addAllArgs(commandArgs)
+                .build();
     }
 
     private String getCliUpdateConfigArgs(String componentName, Map<String, Object> configuration)
@@ -216,12 +216,10 @@ public class DeploymentSteps {
         return mapper.writeValueAsString(configurationUpdate);
     }
 
-    private void executeCommandWithConfig(int retryCount, List<String> commandArgs)
+    private void createLocalDeploymentWithConfigs(int retryCount, CommandInput command)
             throws InterruptedException {
         try {
-            CommandInput command = getDeploymentCommand(commandArgs);
-
-            String response = new String(device.execute(command), StandardCharsets.UTF_8);
+            String response = executeCommandWithConfigs(command);
             LOGGER.debug("The response from executing gg-cli command is {}", response);
             String[] responseArray = response.split(":");
             String deploymentId = responseArray[responseArray.length - 1];
@@ -234,25 +232,21 @@ public class DeploymentSteps {
 
             waits.until(5, "SECONDS");
             LOGGER.warn("the deployment request threw an exception, retried {} times...", retryCount);
-            this.executeCommandWithConfig(retryCount + 1, commandArgs);
+            this.createLocalDeploymentWithConfigs(retryCount + 1, command);
         }
     }
 
-    private CommandInput getDeploymentCommand(List<String> commandArgs) {
-        CommandInput cliCommand = CommandInput.builder()
-                .line(testContext.installRoot().resolve("bin").resolve("greengrass-cli").toString())
-                .addAllArgs(commandArgs)
-                .build();
-        final StringJoiner joiner = new StringJoiner(" ").add(cliCommand.line());
-        Optional.ofNullable(cliCommand.args()).ifPresent(args -> args.forEach(joiner::add));
+    private String executeCommandWithConfigs(CommandInput commandInput) {
+        final StringJoiner joiner = new StringJoiner(" ").add(commandInput.line());
+        Optional.ofNullable(commandInput.args()).ifPresent(args -> args.forEach(joiner::add));
         CommandInput shellCommand = CommandInput.builder()
-                .workingDirectory(cliCommand.workingDirectory())
+                .workingDirectory(commandInput.workingDirectory())
                 .line("sh")
                 .addArgs("-c", joiner.toString())
-                .input(cliCommand.input())
-                .timeout(cliCommand.timeout())
+                .input(commandInput.input())
+                .timeout(commandInput.timeout())
                 .build();
-        return shellCommand;
+        return new String(device.execute(shellCommand), StandardCharsets.UTF_8);
     }
 
     /**
