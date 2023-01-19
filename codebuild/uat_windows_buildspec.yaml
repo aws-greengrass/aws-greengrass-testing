@@ -1,0 +1,35 @@
+#
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+
+version: 0.2
+env:
+  exported-variables:
+    - requestor
+    - event-name
+phases:
+  install:
+    runtime-versions:
+      java: corretto11
+  build:
+    commands:
+      - curl https://d2s8p88vqu9w66.cloudfront.net/releases/greengrass-nucleus-latest.zip --output aws.greengrass.nucleus.zip
+      - git submodule update --init
+      - mvn -U -ntp process-resources
+      - mvn clean -U -ntp verify -DskipTests=true
+#      - ls -lrt ./aws-greengrass-testing-standalone/target/aws-greengrass-testing-standalone.jar
+#      - java -Dggc.archive=./aws.greengrass.nucleus.zip
+#        -Dtags=OTFStable -Dggc.install.root=$CODEBUILD_SRC_DIR -Dggc.log.level=INFO -Daws.region=us-east-1
+#        -jar ./aws-greengrass-testing-standalone/target/aws-greengrass-testing-standalone.jar
+
+artifacts:
+  files:
+    - 'testResults/**/*'
+  name: 'OtfUatWindowsLogs.zip'
+
+reports:
+  uat-reports:
+    files:
+      - "TEST-greengrass-results.xml"
+    file-format: "JUNITXML"
