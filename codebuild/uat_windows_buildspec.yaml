@@ -5,6 +5,7 @@
 
 version: 0.2
 env:
+  shell: cmd.exe
   exported-variables:
     - requestor
     - event-name
