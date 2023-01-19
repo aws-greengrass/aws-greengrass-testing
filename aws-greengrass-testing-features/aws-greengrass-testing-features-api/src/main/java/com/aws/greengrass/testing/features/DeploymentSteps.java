@@ -200,7 +200,7 @@ public class DeploymentSteps {
             }
         }
         return CommandInput.builder()
-                .line(testContext.installRoot().resolve("bin").resolve("greengrass-cli").toString())
+                .line(formLineOfGgCli())
                 .addAllArgs(commandArgs)
                 .build();
     }
@@ -277,7 +277,7 @@ public class DeploymentSteps {
 
         try {
             String response = platform.commands().executeToString(CommandInput.builder()
-                    .line(testContext.installRoot().resolve("bin").resolve("greengrass-cli").toString())
+                    .line(formLineOfGgCli())
                     .addAllArgs(commandArgs)
                     .build());
             LOGGER.debug("The response from executing gg-cli command is {}", response);
@@ -295,6 +295,10 @@ public class DeploymentSteps {
                     retryCount);
             this.createLocalDeployment(componentNames, retryCount + 1);
         }
+    }
+
+    private String formLineOfGgCli() {
+        return testContext.installRoot().resolve("bin").resolve("greengrass-cli").toString();
     }
 
     @VisibleForTesting
