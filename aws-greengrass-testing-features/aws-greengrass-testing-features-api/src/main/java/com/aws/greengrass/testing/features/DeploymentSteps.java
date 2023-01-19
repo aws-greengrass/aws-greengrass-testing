@@ -6,6 +6,7 @@
 package com.aws.greengrass.testing.features;
 
 import com.aws.greengrass.testing.api.ComponentPreparationService;
+import com.aws.greengrass.testing.api.device.Device;
 import com.aws.greengrass.testing.api.device.model.CommandInput;
 import com.aws.greengrass.testing.api.model.ComponentOverrideNameVersion;
 import com.aws.greengrass.testing.api.model.ComponentOverrideVersion;
@@ -35,15 +36,20 @@ import software.amazon.awssdk.services.greengrassv2.model.ComponentDeploymentSpe
 import software.amazon.awssdk.services.greengrassv2.model.EffectiveDeploymentExecutionStatus;
 import software.amazon.awssdk.services.iot.model.GroupNameAndArn;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.StringJoiner;
 import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 
@@ -56,6 +62,7 @@ import static com.aws.greengrass.testing.features.GreengrassCliSteps.LOCAL_DEPLO
 public class DeploymentSteps {
     private static final Logger LOGGER = LogManager.getLogger(DeploymentSteps.class);
     private static final String IOT_JOB_EXECUTION_STATUS_SUCCEEDED = "SUCCEEDED";
+    private static final Path LOCAL_STORE_RECIPES = Paths.get("local:", "local-store", "recipes");
     private final AWSResources resources;
     private final ComponentPreparationService componentPreparation;
     private final ComponentOverrides overrides;
@@ -70,6 +77,7 @@ public class DeploymentSteps {
     private Platform platform;
     private Path artifactPath;
     private Path recipePath;
+    private Device device;
 
     @Inject
     @SuppressWarnings("MissingJavadocMethod")
@@ -81,7 +89,8 @@ public class DeploymentSteps {
             final ScenarioContext scenarioContext,
             final WaitSteps waits,
             final ObjectMapper mapper,
-            final Platform platform) {
+            final Platform platform,
+            final Device device) {
         this.resources = resources;
         this.overrides = overrides;
         this.testContext = testContext;
@@ -90,6 +99,7 @@ public class DeploymentSteps {
         this.waits = waits;
         this.mapper = mapper;
         this.platform = platform;
+        this.device = device;
         this.artifactPath = testContext.installRoot().resolve(LOCAL_STORE).resolve(ARTIFACTS_DIR);;
         this.recipePath = testContext.installRoot().resolve(LOCAL_STORE).resolve(RECIPE_DIR);
     }
@@ -139,6 +149,105 @@ public class DeploymentSteps {
         return lifecycle.listThingGroupsForAThing(coreThingName).thingGroups();
     }
 
+    /**
+     * implemented the step of installing a custom component with configuration. This requires Recipe for the custom
+     * compoenent.
+     *
+     * @param componentName         the name of the custom component
+     * @param configurationTable    the table which describes the configurations
+     * @throws InterruptedException InterruptedException could be throw out during the component deployment
+     * @throws IOException          IOException could be throw out during preparation of the CLI command
+     */
+    @When("I install the component {word} from local store with configuration")
+    public void installComponentWithConfiguration(final String componentName, final String configurationTable)
+            throws InterruptedException, IOException {
+        // TODO: recipe of json format will also be taken.
+        // read the recipe from local store, and get component name and version from recipe
+        List<String> componentSpecs = Arrays.asList(
+                componentName, LOCAL_STORE_RECIPES.resolve(String.format("%s.yaml", componentName)).toString()
+        );
+
+        // handle the config input
+        Map<String, Object> configuration = readConfiguration(configurationTable);
+        CommandInput command = getCliDeploymentCommand(new ArrayList<>(Collections.singleton(componentSpecs)),
+                configuration);
+        createLocalDeploymentWithConfigs(0, command);
+    }
+
+    private Map<String, Object> readConfiguration(String configurationTable) throws JsonProcessingException {
+        String updatedConfiguration = this.scenarioContext.applyInline(configurationTable);
+        return this.mapper.readValue(updatedConfiguration,
+                new TypeReference<Map<String, Object>>() {});
+    }
+
+    private CommandInput getCliDeploymentCommand(List<List<String>> componentNames,
+                                         Map<String, Object> configuration) throws InterruptedException, IOException {
+        // find the component artifacts and copy into a local store
+        final Map<String, ComponentDeploymentSpecification> components = parseComponentNamesAndPrepare(componentNames);
+
+        List<String> commandArgs = new ArrayList<>();
+
+        commandArgs.addAll(Arrays.asList("deployment", "create",
+                "--artifactDir "  + artifactPath.toString(),
+                "--recipeDir " + recipePath.toString()));
+
+        for (Map.Entry<String, ComponentDeploymentSpecification> entry : components.entrySet()) {
+            String componentName = entry.getKey();
+            commandArgs.add(String.format("--merge %s=%s", componentName, entry.getValue().componentVersion()));
+            String updateConfigArgs = getCliUpdateConfigArgs(componentName, configuration);
+            if (!updateConfigArgs.isEmpty()) {
+                commandArgs.add("--update-config '" + updateConfigArgs + "'");
+            }
+        }
+        return CommandInput.builder()
+                .line(formLineOfGgCli())
+                .addAllArgs(commandArgs)
+                .build();
+    }
+
+    private String getCliUpdateConfigArgs(String componentName, Map<String, Object> configuration)
+            throws IOException {
+        Map<String, Map<String, Object>> configurationUpdate = new HashMap<>();
+        // config update for each component, in the format of <componentName, <MERGE/RESET, map>>
+        configurationUpdate.put(componentName, configuration);
+        if (configurationUpdate.isEmpty()) {
+            return "";
+        }
+        return mapper.writeValueAsString(configurationUpdate);
+    }
+
+    private void createLocalDeploymentWithConfigs(int retryCount, CommandInput command)
+            throws InterruptedException {
+        try {
+            String response = executeCommandWithConfigs(command);
+            LOGGER.debug("The response from executing gg-cli command is {}", response);
+            String[] responseArray = response.split(":");
+            String deploymentId = responseArray[responseArray.length - 1];
+            LOGGER.info("The local deployment response is " + deploymentId);
+            scenarioContext.put(LOCAL_DEPLOYMENT_ID, deploymentId);
+        } catch (Exception e) {
+            if (retryCount > 3) {
+                throw e;
+            }
+
+            waits.until(5, "SECONDS");
+            LOGGER.warn("the deployment request threw an exception, retried {} times...", retryCount);
+            this.createLocalDeploymentWithConfigs(retryCount + 1, command);
+        }
+    }
+
+    private String executeCommandWithConfigs(CommandInput commandInput) {
+        final StringJoiner joiner = new StringJoiner(" ").add(commandInput.line());
+        Optional.ofNullable(commandInput.args()).ifPresent(args -> args.forEach(joiner::add));
+        CommandInput shellCommand = CommandInput.builder()
+                .workingDirectory(commandInput.workingDirectory())
+                .line("sh")
+                .addArgs("-c", joiner.toString())
+                .input(commandInput.input())
+                .timeout(commandInput.timeout())
+                .build();
+        return new String(device.execute(shellCommand), StandardCharsets.UTF_8);
+    }
 
     /**
      * Create a local deployment using greengrass cli.
@@ -168,7 +277,7 @@ public class DeploymentSteps {
 
         try {
             String response = platform.commands().executeToString(CommandInput.builder()
-                    .line(testContext.installRoot().resolve("bin").resolve("greengrass-cli").toString())
+                    .line(formLineOfGgCli())
                     .addAllArgs(commandArgs)
                     .build());
             LOGGER.debug("The response from executing gg-cli command is {}", response);
@@ -186,6 +295,10 @@ public class DeploymentSteps {
                     retryCount);
             this.createLocalDeployment(componentNames, retryCount + 1);
         }
+    }
+
+    private String formLineOfGgCli() {
+        return testContext.installRoot().resolve("bin").resolve("greengrass-cli").toString();
     }
 
     @VisibleForTesting

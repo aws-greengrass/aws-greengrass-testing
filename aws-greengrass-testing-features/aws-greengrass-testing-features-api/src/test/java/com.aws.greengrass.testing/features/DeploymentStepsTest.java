@@ -6,6 +6,7 @@
 package com.aws.greengrass.testing.features;
 
 import com.aws.greengrass.testing.api.ComponentPreparationService;
+import com.aws.greengrass.testing.api.device.Device;
 import com.aws.greengrass.testing.api.model.*;
 import com.aws.greengrass.testing.model.ScenarioContext;
 import com.aws.greengrass.testing.model.TestContext;
@@ -74,6 +75,9 @@ public class DeploymentStepsTest {
     Platform platform;
 
     @Mock
+    Device device;
+
+    @Mock
     IotThing iotThing;
 
     @Mock
@@ -96,7 +100,7 @@ public class DeploymentStepsTest {
 
     @InjectMocks
     DeploymentSteps deploymentSteps= Mockito.spy(new DeploymentSteps(resources, overrides, testContext,
-            componentPreparation, scenarioContext, waits, mapper, platform));
+            componentPreparation, scenarioContext, waits, mapper, platform, device));
 
     @Test
     void GIVEN_a_list_of_component_names_with_mixed_type_WHEN_create_deployment_with_this_list_and_then_update_the_configuration_of_one_component_THEN_a_deployment_is_made_first_and_the_deployment_get_updated_successfully() throws JsonProcessingException {
