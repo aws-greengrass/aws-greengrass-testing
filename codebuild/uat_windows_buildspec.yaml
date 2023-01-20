@@ -17,8 +17,7 @@ phases:
       - choco install psexec -y --ignore-checksums
       - choco install -y --no-progress curl
       - net user /add ggc_user TestPassword1
-      - psexec -accepteula
-      - psexec -s cmd /c cmdkey /generic:ggc_user /user:ggc_user /pass:TestPassword1
+      - psexec -accepteula -s cmd /c cmdkey /generic:ggc_user /user:ggc_user /pass:TestPassword1
       - curl https://d2s8p88vqu9w66.cloudfront.net/releases/greengrass-nucleus-latest.zip -o aws.greengrass.nucleus.zip
       - git config --global core.longpaths true
       - git submodule update --init
