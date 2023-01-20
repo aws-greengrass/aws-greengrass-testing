@@ -16,16 +16,16 @@ phases:
     commands:
       - choco install psexec -y --ignore-checksums
       - choco install -y --no-progress curl
-      - net user /add ggc_user TestPassword1
-      - psexec -accepteula -s cmd /c cmdkey /generic:ggc_user /user:ggc_user /pass:TestPassword1
+      - net user /add ContainerAdministrator TestPassword1
+      - psexec -accepteula -s cmd /c cmdkey /generic:ContainerAdministrator /user:ContainerAdministrator /pass:TestPassword1
       - curl https://d2s8p88vqu9w66.cloudfront.net/releases/greengrass-nucleus-latest.zip -o aws.greengrass.nucleus.zip
       - git config --global core.longpaths true
       - git submodule update --init
       - mvn -U -ntp process-resources
       - mvn clean -U -ntp verify -DskipTests=true
-#      - java -Dggc.archive=./aws.greengrass.nucleus.zip -Dggc.user.name=ggc_user
-#        -Dtags=OTFStable -Dggc.install.root=$CODEBUILD_SRC_DIR -Dggc.log.level=INFO -Daws.region=us-east-1
-#        -jar ./aws-greengrass-testing-standalone/target/aws-greengrass-testing-standalone.jar
+      - java -Dggc.archive=./aws.greengrass.nucleus.zip -Dggc.user.name=ContainerAdministrator
+        -Dtags=OTFStable -Dggc.install.root=$CODEBUILD_SRC_DIR -Dggc.log.level=INFO -Daws.region=us-east-1
+        -jar ./aws-greengrass-testing-standalone/target/aws-greengrass-testing-standalone.jar
 
 artifacts:
   files:
