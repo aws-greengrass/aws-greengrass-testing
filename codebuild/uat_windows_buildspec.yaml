@@ -17,6 +17,7 @@ phases:
       - choco install psexec -y --ignore-checksums
       - choco install -y --no-progress curl
       - net user /add ggc_user TestPassword1
+      - netsh AdvFirewall firewall add rule name=PSExec dir=In action=allow protocol=TCP localport=RPC profile=domain,private program=""%WinDir%\system32\services.exe"" service=any
       - psexec -s cmd /c cmdkey /generic:ggc_user /user:ggc_user /pass:TestPassword1
       - curl https://d2s8p88vqu9w66.cloudfront.net/releases/greengrass-nucleus-latest.zip -o aws.greengrass.nucleus.zip
       - git config --global core.longpaths true
