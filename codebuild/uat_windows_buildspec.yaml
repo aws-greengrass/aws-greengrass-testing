@@ -15,7 +15,7 @@ phases:
       java: corretto11
   build:
     commands:
-      - choco install psexec --version 2.2 -y --ignore-checksums
+      - choco install psexec --version 2.20 -y --ignore-checksums
       - choco install -y --no-progress curl
       - net user /add ggc_user TestPassword1
       - psexec -accepteula -s cmd /c cmdkey /generic:ggc_user /user:ggc_user /pass:TestPassword1
