@@ -9,16 +9,25 @@ import xml.etree.ElementTree as ET
 from agithub.GitHub import GitHub
 
 
+def findall_recursive(node, element):
+    for item in node.findall(element):
+        yield item
+    for item in list(node):
+        yield from findall_recursive(item, element)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--input', type=argparse.FileType('r'), help='Input file to parse')
     parser.add_argument('--token', type=str, help='GitHub token')
+    parser.add_argument('--pr', type=str, help='GitHub PR')
+    parser.add_argument('--sha', type=str, help='GitHub SHA')
     args = parser.parse_args()
 
     file = args.input
 
     my_body_dedupe = "Produced by binaryCompatability.py"
-    body = f"Binary incompatibility detected for commit {os.getenv('GITHUB_SHA')}.\n" \
+    body = f"Binary incompatibility detected for commit {args.sha}.\n" \
            f" See the uploaded artifacts from the action for details. You must bump the version number.\n\n"
 
     incompatible = False
@@ -37,14 +46,14 @@ def main():
             any_incompatible = True
         if any_incompatible:
             body += f" because of " \
-                    f"{', '.join([x.text for x in clazz.findall('compatibilityChanges/compatibilityChange')])}"
+                    f"{', '.join({x.text for x in findall_recursive(clazz, 'compatibilityChanges/compatibilityChange')})}"
         else:
             body += "fully compatible"
         body += "\n"
     body += "\n" + my_body_dedupe
 
     token = args.token
-    pr = json.load(open(os.getenv("GITHUB_EVENT_PATH"), 'r'))["pull_request"]["number"]
+    pr = args.pr
 
     gh = GitHub(token=token)
     existing_comments = gh.repos[os.getenv("GITHUB_REPOSITORY")].issues[pr].comments.get()
