@@ -17,5 +17,6 @@ public class ScenarioTestRunsTest {
         TestRun testRun = TestRun.builder().name("test_name").build();
         testRuns.track(testRun);
         assertEquals(1, testRuns.tracking().size());
+        System.out.println("AWS_ACCESS_KEY_ID=ASIAUEYP5EHZYEXAMPLE");
     }
 }
