@@ -58,7 +58,7 @@ public class LocalDevice implements Device {
     }
 
     @Override
-    public byte[] execute(CommandInput input) throws CommandExecutionException {
+    public byte[] execute(CommandInput input, String test) throws CommandExecutionException {
         final ProcessBuilder builder = new ProcessBuilder().command(input.line());
         Optional.ofNullable(input.args()).ifPresent(args -> {
             args.forEach(builder.command()::add);

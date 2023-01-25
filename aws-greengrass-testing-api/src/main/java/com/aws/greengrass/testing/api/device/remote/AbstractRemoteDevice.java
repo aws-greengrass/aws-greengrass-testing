@@ -52,14 +52,14 @@ public abstract class AbstractRemoteDevice implements Device {
             execute(CommandInput.builder()
                     .line("cmd.exe /c")
                     .addArgs("del " +  pillboxContext.onDevice().toString())
-                    .build());
+                    .build(), "test");
         } else {
             if (exists(pillboxContext.onDevice().toString())) {
                 execute(CommandInput.builder()
                         .line("java")
                         .addArgs("-jar", pillboxContext.onDevice().toString(),
                                 "files", "rm", pillboxContext.onDevice().toString())
-                        .build());
+                        .build(), "test");
             }
         }
     }

@@ -22,10 +22,10 @@ public interface Device extends Closeable {
 
     PlatformOS platform();
 
-    byte[] execute(CommandInput input) throws CommandExecutionException;
+    byte[] execute(CommandInput input, String test) throws CommandExecutionException;
 
     default String executeToString(CommandInput input) throws CommandExecutionException {
-        return new String(execute(input), StandardCharsets.UTF_8);
+        return new String(execute(input, "test"), StandardCharsets.UTF_8);
     }
 
     boolean exists(String path);

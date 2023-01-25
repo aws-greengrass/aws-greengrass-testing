@@ -64,7 +64,7 @@ public abstract class UnixCommands implements Commands, UnixPathsMixin {
                 .addArgs("-c", formatToUnixPath(joiner.toString()))
                 .input(input.input())
                 .timeout(input.timeout())
-                .build());
+                .build(), "test");
     }
 
     private int executeInBackground(CommandInput input) throws CommandExecutionException {

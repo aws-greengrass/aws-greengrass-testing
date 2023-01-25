@@ -47,7 +47,7 @@ public class WindowsCommands implements Commands {
                 .addArgs(joiner.toString())
                 .input(input.input())
                 .timeout(input.timeout())
-                .build());
+                .build(), "test");
     }
 
     @Override

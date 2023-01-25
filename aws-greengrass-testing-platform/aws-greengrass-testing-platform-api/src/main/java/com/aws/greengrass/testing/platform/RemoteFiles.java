@@ -45,7 +45,7 @@ public class RemoteFiles implements PlatformFiles, UnixPathsMixin {
                 .line("java")
                 .addArgs("-jar", pillboxContext.onDevice().toString(), "files", command)
                 .addArgs(args)
-                .build());
+                .build(), "test");
     }
 
     @Override

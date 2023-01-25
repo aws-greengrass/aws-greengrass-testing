@@ -246,7 +246,7 @@ public class DeploymentSteps {
                 .input(commandInput.input())
                 .timeout(commandInput.timeout())
                 .build();
-        return new String(device.execute(shellCommand), StandardCharsets.UTF_8);
+        return new String(device.execute(shellCommand, "test"), StandardCharsets.UTF_8);
     }
 
     /**
