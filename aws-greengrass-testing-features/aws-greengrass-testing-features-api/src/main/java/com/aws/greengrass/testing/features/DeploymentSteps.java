@@ -35,6 +35,7 @@ import software.amazon.awssdk.services.greengrassv2.model.ComponentConfiguration
 import software.amazon.awssdk.services.greengrassv2.model.ComponentDeploymentSpecification;
 import software.amazon.awssdk.services.greengrassv2.model.EffectiveDeploymentExecutionStatus;
 import software.amazon.awssdk.services.iot.model.GroupNameAndArn;
+import software.amazon.awssdk.utils.StringUtils;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -42,7 +43,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -166,11 +166,15 @@ public class DeploymentSteps {
         List<String> componentSpecs = Arrays.asList(
                 componentName, LOCAL_STORE_RECIPES.resolve(String.format("%s.yaml", componentName)).toString()
         );
+        installComponent(componentSpecs, configurationTable);
+    }
 
-        // handle the config input
-        Map<String, Object> configuration = readConfiguration(configurationTable);
-        CommandInput command = getCliDeploymentCommand(new ArrayList<>(Collections.singleton(componentSpecs)),
-                configuration);
+    @SuppressWarnings("MissingJavadocMethod")
+    @When("I update my local deployment configuration, setting the component {word} configuration to:")
+    public void updateLocalComponentWithConfiguration(final String componentName, final String configurationTable)
+            throws InterruptedException, IOException {
+        Map<String, Object> configurations = readConfiguration(configurationTable);
+        CommandInput command = getCliDeploymentCommand(componentName, null, configurations);
         createLocalDeploymentWithConfigs(0, command);
     }
 
@@ -180,20 +184,30 @@ public class DeploymentSteps {
                 new TypeReference<Map<String, Object>>() {});
     }
 
-    private CommandInput getCliDeploymentCommand(List<List<String>> componentNames,
-                                         Map<String, Object> configuration) throws InterruptedException, IOException {
-        // find the component artifacts and copy into a local store
-        final Map<String, ComponentDeploymentSpecification> components = parseComponentNamesAndPrepare(componentNames);
+    private void installComponent(List<String> component, final String configurationTable)
+            throws InterruptedException, IOException {
+        final Map<String, ComponentDeploymentSpecification> localComponentSpec =
+                parseComponentNamesAndPrepare(Arrays.asList(component));
+        for (Map.Entry<String, ComponentDeploymentSpecification> localComponent : localComponentSpec.entrySet()) {
+            String componentName = localComponent.getKey();
+            String componentVersion = localComponent.getValue().componentVersion();
+            Map<String, Object> configurations = readConfiguration(configurationTable);
+            CommandInput command = getCliDeploymentCommand(componentName, componentVersion, configurations);
+            createLocalDeploymentWithConfigs(0, command);
+        }
+    }
 
-        List<String> commandArgs = new ArrayList<>();
-
-        commandArgs.addAll(Arrays.asList("deployment", "create",
-                "--artifactDir "  + artifactPath.toString(),
+    private CommandInput getCliDeploymentCommand(String componentName, String componentVersion,
+                                                 Map<String, Object> configuration) throws IOException {
+        List<String> commandArgs = new ArrayList<>(Arrays.asList(
+                "deployment",
+                "create",
+                "--artifactDir " + artifactPath.toString(),
                 "--recipeDir " + recipePath.toString()));
-
-        for (Map.Entry<String, ComponentDeploymentSpecification> entry : components.entrySet()) {
-            String componentName = entry.getKey();
-            commandArgs.add(String.format("--merge %s=%s", componentName, entry.getValue().componentVersion()));
+        if (StringUtils.isNotBlank(componentVersion)) {
+            commandArgs.add("--merge " + componentName + "=" + componentVersion);
+        }
+        if (!configuration.isEmpty()) {
             String updateConfigArgs = getCliUpdateConfigArgs(componentName, configuration);
             if (!updateConfigArgs.isEmpty()) {
                 commandArgs.add("--update-config '" + updateConfigArgs + "'");
