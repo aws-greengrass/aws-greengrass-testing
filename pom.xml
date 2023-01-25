@@ -149,7 +149,7 @@
             <plugin>
                 <groupId>com.github.siom79.japicmp</groupId>
                 <artifactId>japicmp-maven-plugin</artifactId>
-                <version>0.14.3</version>
+                <version>0.17.1</version>
                 <configuration>
                     <oldVersion>
                         <dependency>
@@ -157,6 +157,7 @@
                             <artifactId>${project.artifactId}</artifactId>
                             <!-- This is set by the GitHub workflow -->
                             <version>JAPICMP-OLD</version>
+                            <type>${project.packaging}</type>
                         </dependency>
                     </oldVersion>
                     <newVersion>
@@ -172,6 +173,7 @@
                         <includeExclusively>true</includeExclusively>
                         <accessModifier>public</accessModifier>
                         <onlyBinaryIncompatible>true</onlyBinaryIncompatible>
+                        <ignoreMissingClasses>true</ignoreMissingClasses>
                     </parameter>
                 </configuration>
             </plugin>
