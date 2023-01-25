@@ -210,6 +210,12 @@ jobs:
           pip3 -q install agithub &&
           python3 .github/scripts/binaryCompatibility.py --input aws-greengrass-testing-standalone/target/japicmp/default-cli.xml --token "${{ github.token }}"
         if: github.event_name == 'pull_request'
+      - name: Upload Compatibility Report
+        uses: actions/upload-artifact@v1.0.0
+        with:
+          name: Binary Compatibility Report
+          path: aws-greengrass-testing-standalone/target/japicmp/default-cli.html
+        if: github.event_name == 'pull_request'
 
   uat-linux:
     if: ${{ github.event.pull_request.head.repo.full_name == github.repository || github.event_name == 'push'}}
