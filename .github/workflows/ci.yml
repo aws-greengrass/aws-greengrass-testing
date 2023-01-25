@@ -203,11 +203,14 @@ jobs:
           git submodule update --init
           # Maven process resources
           mvn -U -ntp clean process-resources
+          mvn -U -ntp clean package
       - name: Check binary compatibility
         id: check-compatibility
-        run: |
-          mvn --batch-mode --fail-at-end --no-transfer-progress package japicmp:cmp -DskipTests
-        
+        run: >-
+          mvn -ntp japicmp:cmp -DskipTests &&
+          pip3 -q install agithub &&
+          python3 .github/scripts/binaryCompatibility.py --input aws-greengrass-testing-standalone/target/japicmp/default-cli.xml --token "${{ github.token }}"
+        if: github.event_name == 'pull_request' && matrix.os == 'Linux'
 
   uat-linux:
     if: ${{ github.event.pull_request.head.repo.full_name == github.repository || github.event_name == 'push'}}
