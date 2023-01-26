@@ -17,7 +17,6 @@ jobs:
     strategy:
       matrix:
         os: [ ubuntu-latest, windows-latest]
-    name: Build on ${{ matrix.os }}
     steps:
       - name: Enable core.longpaths
         run: git config --global core.longpaths true
