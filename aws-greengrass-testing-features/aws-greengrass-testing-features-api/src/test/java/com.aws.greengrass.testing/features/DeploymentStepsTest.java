@@ -74,8 +74,6 @@ public class DeploymentStepsTest {
     @Mock
     Platform platform;
 
-    @Mock
-    Device device;
 
     @Mock
     IotThing iotThing;
@@ -100,7 +98,7 @@ public class DeploymentStepsTest {
 
     @InjectMocks
     DeploymentSteps deploymentSteps= Mockito.spy(new DeploymentSteps(resources, overrides, testContext,
-            componentPreparation, scenarioContext, waits, mapper, platform, device));
+            componentPreparation, scenarioContext, waits, mapper, platform));
 
     @Test
     void GIVEN_a_list_of_component_names_with_mixed_type_WHEN_create_deployment_with_this_list_and_then_update_the_configuration_of_one_component_THEN_a_deployment_is_made_first_and_the_deployment_get_updated_successfully() throws JsonProcessingException {
