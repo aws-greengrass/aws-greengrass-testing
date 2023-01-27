@@ -182,13 +182,13 @@ public class DeploymentSteps {
                 new TypeReference<Map<String, Object>>() {});
     }
 
-    private void installComponent(List<String> component, final String configurationTable)
+    private void installComponent(List<String> components, final String configurationTable)
             throws InterruptedException, IOException {
-        final Map<String, ComponentDeploymentSpecification> localComponentSpec =
-                parseComponentNamesAndPrepare(Arrays.asList(component));
-        for (Map.Entry<String, ComponentDeploymentSpecification> localComponent : localComponentSpec.entrySet()) {
-            String componentName = localComponent.getKey();
-            String componentVersion = localComponent.getValue().componentVersion();
+        final Map<String, ComponentDeploymentSpecification> localComponentSpecs =
+                parseComponentNamesAndPrepare(Arrays.asList(components));
+        for (Map.Entry<String, ComponentDeploymentSpecification> localComponentSpec : localComponentSpecs.entrySet()) {
+            String componentName = localComponentSpec.getKey();
+            String componentVersion = localComponentSpec.getValue().componentVersion();
             Map<String, Object> configurations = readConfiguration(configurationTable);
             CommandInput command = getCliDeploymentCommand(componentName, componentVersion, configurations);
             createLocalDeploymentWithConfigs(0, command);
