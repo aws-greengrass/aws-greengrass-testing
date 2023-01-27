@@ -6,7 +6,6 @@
 package com.aws.greengrass.testing.features;
 
 import com.aws.greengrass.testing.api.ComponentPreparationService;
-import com.aws.greengrass.testing.api.device.Device;
 import com.aws.greengrass.testing.api.device.model.CommandInput;
 import com.aws.greengrass.testing.api.model.ComponentOverrideNameVersion;
 import com.aws.greengrass.testing.api.model.ComponentOverrideVersion;
@@ -39,6 +38,7 @@ import software.amazon.awssdk.utils.StringUtils;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -49,7 +49,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.StringJoiner;
 import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 
@@ -62,7 +61,7 @@ import static com.aws.greengrass.testing.features.GreengrassCliSteps.LOCAL_DEPLO
 public class DeploymentSteps {
     private static final Logger LOGGER = LogManager.getLogger(DeploymentSteps.class);
     private static final String IOT_JOB_EXECUTION_STATUS_SUCCEEDED = "SUCCEEDED";
-    private static final Path LOCAL_STORE_RECIPES = Paths.get("local:", "local-store", "recipes");
+    private static final String LOCAL_STORE_RECIPES = "local:/local-store/recipes/";
     private final AWSResources resources;
     private final ComponentPreparationService componentPreparation;
     private final ComponentOverrides overrides;
@@ -70,6 +69,7 @@ public class DeploymentSteps {
     private final WaitSteps waits;
     private final ObjectMapper mapper;
     private final ScenarioContext scenarioContext;
+    private final Path configFilePath;
 
     @VisibleForTesting
     GreengrassDeploymentSpec deployment;
@@ -77,7 +77,6 @@ public class DeploymentSteps {
     private Platform platform;
     private Path artifactPath;
     private Path recipePath;
-    private Device device;
 
     @Inject
     @SuppressWarnings("MissingJavadocMethod")
@@ -89,8 +88,7 @@ public class DeploymentSteps {
             final ScenarioContext scenarioContext,
             final WaitSteps waits,
             final ObjectMapper mapper,
-            final Platform platform,
-            final Device device) {
+            final Platform platform) {
         this.resources = resources;
         this.overrides = overrides;
         this.testContext = testContext;
@@ -99,9 +97,9 @@ public class DeploymentSteps {
         this.waits = waits;
         this.mapper = mapper;
         this.platform = platform;
-        this.device = device;
         this.artifactPath = testContext.installRoot().resolve(LOCAL_STORE).resolve(ARTIFACTS_DIR);;
         this.recipePath = testContext.installRoot().resolve(LOCAL_STORE).resolve(RECIPE_DIR);
+        this.configFilePath = Paths.get(testContext.testDirectory().toString(), "update_config.json");
     }
 
     /**
@@ -164,7 +162,7 @@ public class DeploymentSteps {
         // TODO: recipe of json format will also be taken.
         // read the recipe from local store, and get component name and version from recipe
         List<String> componentSpecs = Arrays.asList(
-                componentName, LOCAL_STORE_RECIPES.resolve(String.format("%s.yaml", componentName)).toString()
+                componentName, LOCAL_STORE_RECIPES + String.format("%s.yaml", componentName)
         );
         installComponent(componentSpecs, configurationTable);
     }
@@ -208,9 +206,10 @@ public class DeploymentSteps {
             commandArgs.add("--merge " + componentName + "=" + componentVersion);
         }
         if (!configuration.isEmpty()) {
-            String updateConfigArgs = getCliUpdateConfigArgs(componentName, configuration);
-            if (!updateConfigArgs.isEmpty()) {
-                commandArgs.add("--update-config '" + updateConfigArgs + "'");
+            String configurationUpdate = getCliUpdateConfigArgs(componentName, configuration);
+            if (!configurationUpdate.isEmpty()) {
+                Files.write(configFilePath, configurationUpdate.getBytes(StandardCharsets.UTF_8));
+                commandArgs.add("--update-config " + configFilePath);
             }
         }
         return CommandInput.builder()
@@ -251,16 +250,7 @@ public class DeploymentSteps {
     }
 
     private String executeCommandWithConfigs(CommandInput commandInput) {
-        final StringJoiner joiner = new StringJoiner(" ").add(commandInput.line());
-        Optional.ofNullable(commandInput.args()).ifPresent(args -> args.forEach(joiner::add));
-        CommandInput shellCommand = CommandInput.builder()
-                .workingDirectory(commandInput.workingDirectory())
-                .line("sh")
-                .addArgs("-c", joiner.toString())
-                .input(commandInput.input())
-                .timeout(commandInput.timeout())
-                .build();
-        return new String(device.execute(shellCommand), StandardCharsets.UTF_8);
+        return platform.commands().executeToString(commandInput);
     }
 
     /**
@@ -290,6 +280,7 @@ public class DeploymentSteps {
         }
 
         try {
+
             String response = platform.commands().executeToString(CommandInput.builder()
                     .line(formLineOfGgCli())
                     .addAllArgs(commandArgs)
