@@ -46,6 +46,8 @@ You can also run features provided by this test framework. Here are the provided
   - [ml.feature](../aws-greengrass-testing-features/aws-greengrass-testing-features-ml/src/main/resources/greengrass/features/ml.feature): Validates that the device can perform ML inference using the Deep Learning Runtime and TensorFlow Lite ML frameworks.
 
 Here is an example on running the end to end test for OTFStable tag:
+
+
 ```
 java \
 -Dggc.archive=greengrass-nucleus-latest.zip \
@@ -58,6 +60,11 @@ There are also additional parameters can be configured when executing the jar:
 - [FeatureParameters](../aws-greengrass-testing-features/aws-greengrass-testing-features-api/src/main/java/com/aws/greengrass/testing/modules/FeatureParameters.java)
 - [HsmParameters](../aws-greengrass-testing-features/aws-greengrass-testing-features-api/src/main/java/com/aws/greengrass/testing/modules/HsmParameters.java)
 - [ModuleParameters](../aws-greengrass-testing-modules/src/main/java/com/aws/greengrass/testing/modules/ModuleParameters.java)
+
+**Note:** 
+- Windows has a path length limitation of 260 characters. Please keep your paths under the 260 character limit when using above parameters.
+- For running the aws-greengrass-testing-standlone.jar on Windows devices, you have to configure user credentials. (See *Configure user credentials for Windows devices* section in [README](../README.md))
+
 
 [1]: https://docs.aws.amazon.com/greengrass/v2/developerguide/create-components.html#develop-component
 [2]: https://d2s8p88vqu9w66.cloudfront.net/releases/greengrass-nucleus-latest.zip

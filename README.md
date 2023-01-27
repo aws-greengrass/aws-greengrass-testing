@@ -93,7 +93,7 @@ curl https://d2s8p88vqu9w66.cloudfront.net/releases/greengrass-nucleus-latest.zi
   - Set the AWS profile for your environment
 
 
-- Configure user on Windows device
+- Configure user credentials for Windows devices
     - Open the Windows Command Prompt (cmd.exe) as an administrator.
     - Create user in the LocalSystem account on the Windows device. Replace **user-name** with the same name of your current system user. Replace **password** with a secure password.
       - ```net user /add user-name password```
