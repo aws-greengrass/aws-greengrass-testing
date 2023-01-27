@@ -6,7 +6,6 @@
 package com.aws.greengrass.testing.features;
 
 import com.aws.greengrass.testing.api.ComponentPreparationService;
-import com.aws.greengrass.testing.api.device.Device;
 import com.aws.greengrass.testing.api.device.model.CommandInput;
 import com.aws.greengrass.testing.api.model.ComponentOverrideNameVersion;
 import com.aws.greengrass.testing.api.model.ComponentOverrideVersion;
@@ -38,6 +37,7 @@ import software.amazon.awssdk.services.iot.model.GroupNameAndArn;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -49,7 +49,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.StringJoiner;
 import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 
@@ -70,6 +69,7 @@ public class DeploymentSteps {
     private final WaitSteps waits;
     private final ObjectMapper mapper;
     private final ScenarioContext scenarioContext;
+    private final Path configFilePath;
 
     @VisibleForTesting
     GreengrassDeploymentSpec deployment;
@@ -99,6 +99,7 @@ public class DeploymentSteps {
         this.platform = platform;
         this.artifactPath = testContext.installRoot().resolve(LOCAL_STORE).resolve(ARTIFACTS_DIR);;
         this.recipePath = testContext.installRoot().resolve(LOCAL_STORE).resolve(RECIPE_DIR);
+        this.configFilePath = Paths.get(testContext.testDirectory().toString(), "update_config.json");
     }
 
     /**
@@ -191,9 +192,10 @@ public class DeploymentSteps {
         for (Map.Entry<String, ComponentDeploymentSpecification> entry : components.entrySet()) {
             String componentName = entry.getKey();
             commandArgs.add(String.format("--merge %s=%s", componentName, entry.getValue().componentVersion()));
-            String updateConfigArgs = getCliUpdateConfigArgs(componentName, configuration);
-            if (!updateConfigArgs.isEmpty()) {
-                commandArgs.add("--update-config '" + updateConfigArgs + "'");
+            String configurationUpdate = getCliUpdateConfigArgs(componentName, configuration);
+            if (!configurationUpdate.isEmpty()) {
+                Files.write(configFilePath, configurationUpdate.getBytes(StandardCharsets.UTF_8));
+                commandArgs.add("--update-config " + configFilePath);
             }
         }
         return CommandInput.builder()
