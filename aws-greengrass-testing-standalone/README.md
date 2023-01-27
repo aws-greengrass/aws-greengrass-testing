@@ -63,7 +63,9 @@ There are also additional parameters can be configured when executing the jar:
 
 **Note:** 
 - Windows has a path length limitation of 260 characters. Please keep your paths under the 260 character limit when using above parameters.
-- For running the aws-greengrass-testing-standlone.jar on Windows devices, you have to configure user credentials. (See *Configure user credentials for Windows devices* section in [README](../README.md))
+- For running the aws-greengrass-testing-standlone.jar on Windows devices: 
+  - You have to configure user credentials; (See *Configure user credentials for Windows devices* section in [README](../README.md))
+  - Open Windows Command Prompt (cmd.exe) as an administrator;
 
 
 [1]: https://docs.aws.amazon.com/greengrass/v2/developerguide/create-components.html#develop-component
