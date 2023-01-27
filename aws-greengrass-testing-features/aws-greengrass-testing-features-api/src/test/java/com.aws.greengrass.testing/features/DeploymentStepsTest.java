@@ -6,6 +6,7 @@
 package com.aws.greengrass.testing.features;
 
 import com.aws.greengrass.testing.api.ComponentPreparationService;
+import com.aws.greengrass.testing.api.device.Device;
 import com.aws.greengrass.testing.api.model.*;
 import com.aws.greengrass.testing.model.ScenarioContext;
 import com.aws.greengrass.testing.model.TestContext;
@@ -72,6 +73,7 @@ public class DeploymentStepsTest {
 
     @Mock
     Platform platform;
+
 
     @Mock
     IotThing iotThing;
