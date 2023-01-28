@@ -16,13 +16,17 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ ubuntu-latest ]
+        os: [ ubuntu-latest, windows-latest]
     steps:
+      - name: Enable core.longpaths
+        run: git config --global core.longpaths true
+        if: matrix.os == 'windows-latest'
       - uses: actions/checkout@v2
         with:
           submodules: recursive
           fetch-depth: 0
       - uses: wagoid/commitlint-github-action@v2
+        if: matrix.os == 'ubuntu-latest'
       - name: Set up JDK 1.8
         uses: actions/setup-java@v1
         with:
@@ -37,34 +41,38 @@ jobs:
         uses: actions/upload-artifact@v1.0.0
         if: failure()
         with:
-          name: Failed Test Report
+          name: Failed Test Report ${{ matrix.os }}
           path: aws-greengrass-testing-features/aws-greengrass-testing-features-api/target/surefire-reports
       - name: Upload Failed Test Report for aws-greengrass-testing-launcher
         uses: actions/upload-artifact@v1.0.0
         if: failure()
         with:
-          name: Failed Test Report
+          name: Failed Test Report ${{ matrix.os }}
           path: aws-greengrass-testing-launcher/target/surefire-reports
       - name: Upload Failed Test Report for aws-greengrass-testing-platform-api
         uses: actions/upload-artifact@v1.0.0
         if: failure()
         with:
-          name: Failed Test Report
+          name: Failed Test Report ${{ matrix.os }}
           path: aws-greengrass-testing-platform/aws-greengrass-testing-platform-api/target/surefire-reports
       - name: Upload Failed Test Report for aws-greengrass-testing-platform-pillbox
         uses: actions/upload-artifact@v1.0.0
         if: failure()
         with:
-          name: Failed Test Report
+          name: Failed Test Report ${{ matrix.os }}
           path: aws-greengrass-testing-platform/aws-greengrass-testing-platform-pillbox/target/surefire-reports
       - name: Convert Jacoco unit test report to Cobertura for aws-greengrass-testing-features-api
         run: python3 .github/scripts/cover2cover.py aws-greengrass-testing-features/aws-greengrass-testing-features-api/target/jacoco-report/jacoco.xml src/main/java > aws-greengrass-testing-features/aws-greengrass-testing-features-api/target/jacoco-report/cobertura.xml
+        if: matrix.os == 'ubuntu-latest'
       - name: Convert Jacoco unit test report to Cobertura for aws-greengrass-testing-launcher
         run: python3 .github/scripts/cover2cover.py aws-greengrass-testing-launcher/target/jacoco-report/jacoco.xml src/main/java > aws-greengrass-testing-launcher/target/jacoco-report/cobertura.xml
+        if: matrix.os == 'ubuntu-latest'
       - name: Convert Jacoco unit test report to Cobertura for aws-greengrass-testing-platform-api
         run: python3 .github/scripts/cover2cover.py aws-greengrass-testing-platform/aws-greengrass-testing-platform-api/target/jacoco-report/jacoco.xml src/main/java > aws-greengrass-testing-platform/aws-greengrass-testing-platform-api/target/jacoco-report/cobertura.xml
+        if: matrix.os == 'ubuntu-latest'
       - name: Convert Jacoco unit test report to Cobertura for aws-greengrass-testing-platform-pillbox
         run: python3 .github/scripts/cover2cover.py aws-greengrass-testing-platform/aws-greengrass-testing-platform-pillbox/target/jacoco-report/jacoco.xml src/main/java > aws-greengrass-testing-platform/aws-greengrass-testing-platform-pillbox/target/jacoco-report/cobertura.xml
+        if: matrix.os == 'ubuntu-latest'
       - name: Upload Coverage for aws-greengrass-testing-features-api
         uses: actions/upload-artifact@v1.0.0
         if: matrix.os == 'ubuntu-latest'
@@ -170,6 +178,7 @@ jobs:
           # Use a unique name for the report and comment
           report_name: Unit Tests Coverage Report for aws-greengrass-testing-platform-pillbox
 
+
   check-binary-compatability:
     runs-on: ubuntu-latest
     steps:
@@ -216,6 +225,29 @@ jobs:
           name: Binary Compatibility Report
           path: aws-greengrass-testing-standalone/target/japicmp/default-cli.html
         if: github.event_name == 'pull_request'
+
+  scan-for-secrets:
+    name: Scan for secrets
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Git Secrets
+        run: |
+          cd ~
+          git clone https://github.com/awslabs/git-secrets.git && cd git-secrets
+          sudo make install
+          echo "Git-secrets installation completed"
+          git secrets --register-aws --global
+          echo "Added aws secret templates"
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Run Git Secrets
+        run: |
+          git secrets --scan
+          echo "Repository scan completed"
+      - name: Print remediation message
+        if: failure()
+        run: echo "git secrets found potential leaked credentials. If ANY credentials were committed, they MUST be immediately revoked."
+
 
   uat-linux:
     if: ${{ github.event.pull_request.head.repo.full_name == github.repository || github.event_name == 'push'}}
