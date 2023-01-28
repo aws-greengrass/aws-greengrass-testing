@@ -178,6 +178,27 @@ jobs:
           # Use a unique name for the report and comment
           report_name: Unit Tests Coverage Report for aws-greengrass-testing-platform-pillbox
 
+  scan-for-secrets:
+    name: Scan for secrets
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Git Secrets
+        run: |
+          cd ~
+          git clone https://github.com/awslabs/git-secrets.git && cd git-secrets
+          sudo make install
+          echo "Git-secrets installation completed"
+          git secrets --register-aws --global
+          echo "Added aws secret templates"
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Run Git Secrets
+        run: |
+          git secrets --scan
+          echo "Repository scan completed"
+      - name: Print remediation message
+        if: failure()
+        run: echo "git secrets found potential leaked credentials. If ANY credentials were committed, they MUST be immediately revoked."
 
   uat-linux:
     if: ${{ github.event.pull_request.head.repo.full_name == github.repository || github.event_name == 'push'}}
