@@ -32,16 +32,22 @@ java \
 The results of the run can be found in `hello_world/test-results`.
 
 ## Run provided features
-You can also run features provided by this test framework.
-Here are the provided features: 
-- [cloudComponent.feature](../aws-greengrass-testing-features/aws-greengrass-testing-features-cloudcomponent/src/main/resources/greengrass/features/cloudComponent.feature)
-- [docker.feature](../aws-greengrass-testing-features/aws-greengrass-testing-features-docker/src/main/resources/greengrass/features/docker.feature)
-- [localdeployment.feature](../aws-greengrass-testing-features/aws-greengrass-testing-features-localdeployment/src/main/resources/greengrass/features/localdeployment.feature)
-- [ml.feature](../aws-greengrass-testing-features/aws-greengrass-testing-features-ml/src/main/resources/greengrass/features/ml.feature)
-- [mqtt.feature](../aws-greengrass-testing-features/aws-greengrass-testing-features-mqtt/src/main/resources/greengrass/features/mqtt.feature)
-- [streammanager.feature](../aws-greengrass-testing-features/aws-greengrass-testing-features-streammanager/src/main/resources/greengrass/features/streammanager.feature)
+You can also run features provided by this test framework. Here are the provided test features: 
+- Basic test features:
+  - [cloudComponent.feature](../aws-greengrass-testing-features/aws-greengrass-testing-features-cloudcomponent/src/main/resources/greengrass/features/cloudComponent.feature): Validates device capability for cloud components. 
+  - [localdeployment.feature](../aws-greengrass-testing-features/aws-greengrass-testing-features-localdeployment/src/main/resources/greengrass/features/localdeployment.feature): Validates device capability for local components.
+  - [mqtt.feature](../aws-greengrass-testing-features/aws-greengrass-testing-features-mqtt/src/main/resources/greengrass/features/mqtt.feature): Validates that the device can subscribe and publish to AWS IoT Core MQTT topics.
+
+
+
+- Below test features are only supported for Linux-based Greengrass core devices.
+  - [streammanager.feature](../aws-greengrass-testing-features/aws-greengrass-testing-features-streammanager/src/main/resources/greengrass/features/streammanager.feature): Validates that the device can download, install, and run the AWS IoT Greengrass stream manager.
+  - [docker.feature](../aws-greengrass-testing-features/aws-greengrass-testing-features-docker/src/main/resources/greengrass/features/docker.feature): Validates that the device can download a Docker container image from Amazon ECR.
+  - [ml.feature](../aws-greengrass-testing-features/aws-greengrass-testing-features-ml/src/main/resources/greengrass/features/ml.feature): Validates that the device can perform ML inference using the Deep Learning Runtime and TensorFlow Lite ML frameworks.
 
 Here is an example on running the end to end test for OTFStable tag:
+
+
 ```
 java \
 -Dggc.archive=greengrass-nucleus-latest.zip \
@@ -54,6 +60,13 @@ There are also additional parameters can be configured when executing the jar:
 - [FeatureParameters](../aws-greengrass-testing-features/aws-greengrass-testing-features-api/src/main/java/com/aws/greengrass/testing/modules/FeatureParameters.java)
 - [HsmParameters](../aws-greengrass-testing-features/aws-greengrass-testing-features-api/src/main/java/com/aws/greengrass/testing/modules/HsmParameters.java)
 - [ModuleParameters](../aws-greengrass-testing-modules/src/main/java/com/aws/greengrass/testing/modules/ModuleParameters.java)
+
+**Note:** 
+- Windows has a path length limitation of 260 characters. Please keep your paths under the 260 character limit when using above parameters.
+- For running the aws-greengrass-testing-standlone.jar on Windows devices: 
+  - You have to configure user credentials; (See *Configure user credentials for Windows devices* section in [README](../README.md))
+  - Open Windows Command Prompt (cmd.exe) as an administrator;
+
 
 [1]: https://docs.aws.amazon.com/greengrass/v2/developerguide/create-components.html#develop-component
 [2]: https://d2s8p88vqu9w66.cloudfront.net/releases/greengrass-nucleus-latest.zip

@@ -36,6 +36,11 @@ public class LocalDevice implements Device {
     private static final Logger LOGGER = LogManager.getLogger(LocalDevice.class);
     public static final String TYPE = "LOCAL";
     private static final int BUFFER = 100_000;
+
+    private static final String WINDOWS_CMD = "cmd.exe";
+
+    private static final String WINDOWS_CMD_SLASH_C = "/c";
+
     private final TimeoutMultiplier multiplier;
     private final String id = UUID.randomUUID().toString();
 
@@ -59,7 +64,13 @@ public class LocalDevice implements Device {
 
     @Override
     public byte[] execute(CommandInput input) throws CommandExecutionException {
-        final ProcessBuilder builder = new ProcessBuilder().command(input.line());
+        // Temporary fix for running UATs on Windows locally
+        String windowsExecuteCommand = String.format("%s %s", WINDOWS_CMD, WINDOWS_CMD_SLASH_C);
+        final ProcessBuilder builder = new ProcessBuilder(input.line());
+        if ((windowsExecuteCommand).equals(input.line())) {
+            builder.command(WINDOWS_CMD);
+            builder.command().add(WINDOWS_CMD_SLASH_C);
+        }
         Optional.ofNullable(input.args()).ifPresent(args -> {
             args.forEach(builder.command()::add);
         });
