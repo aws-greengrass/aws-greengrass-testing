@@ -142,6 +142,10 @@
             <version>2.13.0</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>utils</artifactId>
+        </dependency>
     </dependencies>
 
 </project>

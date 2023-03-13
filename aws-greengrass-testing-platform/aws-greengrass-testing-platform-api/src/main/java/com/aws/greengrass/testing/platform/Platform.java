@@ -9,4 +9,10 @@ public interface Platform {
     Commands commands();
 
     PlatformFiles files();
+
+    default NetworkUtils getNetworkUtils() {
+        throw new UnsupportedOperationException("Not yet implemented");
+    }
+
 }
+
