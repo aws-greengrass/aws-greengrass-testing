@@ -11,7 +11,7 @@ recipe template. The only difference being the URI portion:
 ``` yaml
 Manifests:
   - Artifacts:
-      - URI: "file:target/aws-greengrass-testing-examples-component-1.0.0-SNAPSHOT.jar"
+      - URI: "file:target/aws-greengrass-testing-examples-component-1.2.0-SNAPSHOT.jar"
 ```
 
 ### Integration Test Definition
