@@ -65,7 +65,7 @@ public class LoggerSteps {
 
     private String getOTFVersionLogContent() {
         final String otfVersion = Optional.ofNullable(LoggerSteps.class.getPackage().getImplementationVersion())
-                .orElse("1.0.0-SNAPSHOT");
+                .orElse("1.2.0-SNAPSHOT");
         return String.format("%s-%s", OTF_VERSION_PREFIX, otfVersion);
     }
 }
