@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.1.0
+### New features
+* Adds the ability to install a custom component with configuration. This requires recipe for the custom component.
+* Adds the ability to update a local deployment with a custom configuration.
+
+### Bug fixes and improvements
+* Fix log context OTF version inconsistence issue.
+
+
 ## v1.0.0
 
 
