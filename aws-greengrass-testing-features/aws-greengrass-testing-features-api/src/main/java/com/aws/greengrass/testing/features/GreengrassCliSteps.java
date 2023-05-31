@@ -6,6 +6,7 @@
 package com.aws.greengrass.testing.features;
 
 import com.aws.greengrass.testing.api.ComponentPreparationService;
+import com.aws.greengrass.testing.api.device.exception.CommandExecutionException;
 import com.aws.greengrass.testing.api.device.model.CommandInput;
 import com.aws.greengrass.testing.model.ScenarioContext;
 import com.aws.greengrass.testing.model.TestContext;
@@ -96,15 +97,20 @@ public class GreengrassCliSteps {
 
     @VisibleForTesting
     String getLocalDeploymentStatus() {
-        String deploymentId = scenarioContext.get(LOCAL_DEPLOYMENT_ID);
-        String response = platform.commands().executeToString(CommandInput.builder()
-                .line(testContext.installRoot().resolve("bin").resolve("greengrass-cli").toString())
-                .addAllArgs(Arrays.asList("deployment", "status", "--deploymentId", deploymentId))
-                .build());
-        LOGGER.debug(String.format("deployment status response received for deployment ID %s is %s",
-                deploymentId, response));
-        String[] responseArray = response.split(":");
-        return responseArray[responseArray.length - 1].trim();
+        try {
+            String deploymentId = scenarioContext.get(LOCAL_DEPLOYMENT_ID);
+            String response = platform.commands().executeToString(CommandInput.builder()
+                    .line(testContext.installRoot().resolve("bin").resolve("greengrass-cli").toString())
+                    .addAllArgs(Arrays.asList("deployment", "status", "--deploymentId", deploymentId))
+                    .build());
+            LOGGER.debug(String.format("deployment status response received for deployment ID %s is %s",
+                    deploymentId, response));
+            String[] responseArray = response.split(":");
+            return responseArray[responseArray.length - 1].trim();
+        } catch (CommandExecutionException e) {
+            LOGGER.info("Exception occurred while getting the deployment status. Will try again", e);
+        }
+        return "";
     }
 
     private boolean isComponentInState(String componentName, String componentStatus) {
