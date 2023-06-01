@@ -203,20 +203,24 @@ public class FileSteps {
      * Copy logs for the {@link Scenario} from the {@link Device} to the host.
      *
      * @param scenario the unique {@link Scenario}
+     * @throws IOException io exception
      */
     @After(order = 99899)
-    public void copyLogs(final Scenario scenario) {
+    public void copyLogs(final Scenario scenario) throws IOException {
         Path logFolder = testContext.installRoot().resolve("logs");
         if (testContext.cleanupContext().persistInstalledSoftware()) {
             LOGGER.info("Stopping Greengrass service..");
             platform.commands().stopGreengrassService();
         }
         if (platform.files().exists(logFolder)) {
+            Path testCaseResultDir = testContext.testResultsPath()
+                    .resolve(testContext.testId().prefix() + "-" + testContext.testId().id());
+            Files.createDirectories(testCaseResultDir);
             platform.files().listContents(logFolder).forEach(logFile -> {
                 byte[] bytes = platform.files().readBytes(logFile);
                 scenario.attach(bytes, "text/plain", logFile.getFileName().toString());
                 try {
-                    Files.write(testContext.testResultsPath().resolve(logFile.getFileName()), bytes);
+                    Files.write(testCaseResultDir.resolve(logFile.getFileName()), bytes);
                     if (testContext.initializationContext().persistInstalledSoftware()) {
                         if (logFiles.contains(logFile)) {
                             platform.files().delete(logFile);
