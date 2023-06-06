@@ -10,14 +10,12 @@ import com.aws.greengrass.testing.api.device.exception.CommandExecutionException
 import com.aws.greengrass.testing.api.device.model.CommandInput;
 import com.aws.greengrass.testing.platform.Commands;
 import com.aws.greengrass.testing.platform.NucleusInstallationParameters;
-import com.google.common.annotations.VisibleForTesting;
 
 import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.StringJoiner;
@@ -82,6 +80,12 @@ public class WindowsCommands implements Commands {
                 .build());
         // Command to remove it as System service
         execute(CommandInput.of("sc delete greengrass"));
+    }
+
+    @Override
+    public void sigterm(List<Integer> processIds) throws CommandExecutionException {
+        execute(CommandInput.builder().line("taskkill /PID " + processIds.stream().map(i -> Integer.toString(i))
+                .collect(Collectors.joining(" /PID "))).build());
     }
 
     @Override

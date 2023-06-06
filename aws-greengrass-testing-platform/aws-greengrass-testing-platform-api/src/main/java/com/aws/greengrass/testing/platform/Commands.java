@@ -7,12 +7,10 @@ package com.aws.greengrass.testing.platform;
 
 import com.aws.greengrass.testing.api.device.exception.CommandExecutionException;
 import com.aws.greengrass.testing.api.device.model.CommandInput;
-import com.aws.greengrass.testing.platform.NucleusInstallationParameters;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Map;
 
 public interface Commands {
     byte[] execute(CommandInput input) throws CommandExecutionException;
@@ -27,6 +25,12 @@ public interface Commands {
 
     default void killAll(int pid) throws CommandExecutionException {
         kill(findDescendants(pid));
+    }
+
+    void sigterm(List<Integer> processIds) throws CommandExecutionException;
+
+    default void sigtermAll(int pid) throws CommandExecutionException {
+        sigterm(findDescendants(pid));
     }
 
     void installNucleus(NucleusInstallationParameters installationParameters) throws CommandExecutionException;

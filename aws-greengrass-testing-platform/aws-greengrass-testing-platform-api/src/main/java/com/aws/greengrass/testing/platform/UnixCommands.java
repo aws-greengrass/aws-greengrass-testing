@@ -11,7 +11,6 @@ import com.aws.greengrass.testing.api.device.local.LocalDevice;
 import com.aws.greengrass.testing.api.device.model.CommandInput;
 import com.aws.greengrass.testing.api.device.model.PlatformOS;
 import com.aws.greengrass.testing.api.model.PillboxContext;
-import com.aws.greengrass.testing.platform.NucleusInstallationParameters;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -23,7 +22,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.StringJoiner;
@@ -109,6 +107,16 @@ public abstract class UnixCommands implements Commands, UnixPathsMixin {
                     .map(i -> Integer.toString(i))
                     .collect(Collectors.joining(" ")))
             .build());
+        LOGGER.debug("Output of kill command : " + output);
+    }
+
+    @Override
+    public void sigterm(List<Integer> processIds) throws CommandExecutionException {
+        String output = executeToString(CommandInput.builder()
+                .line("kill -15 " + processIds.stream()
+                        .map(i -> Integer.toString(i))
+                        .collect(Collectors.joining(" ")))
+                .build());
         LOGGER.debug("Output of kill command : " + output);
     }
 
