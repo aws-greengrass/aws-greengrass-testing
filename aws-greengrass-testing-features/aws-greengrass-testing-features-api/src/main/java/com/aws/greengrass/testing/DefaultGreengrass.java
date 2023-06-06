@@ -19,7 +19,6 @@ import com.google.common.annotations.VisibleForTesting;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
@@ -145,9 +144,12 @@ public class DefaultGreengrass implements Greengrass {
                 greengrassProcess = 0;
             }
             if (greengrassProcess > 0) {
-                platform.commands().killAll(greengrassProcess);
+                platform.commands().sigtermAll(greengrassProcess);
                 if (!waits.untilTrue(() -> platform.commands().findDescendants(greengrassProcess).size() == 1,
-                        30, TimeUnit.SECONDS)) {
+                        120, TimeUnit.SECONDS)) {
+                    LOGGER.warn("Greengrass did not shutdown all child processes in response to SIGTERM within 120 "
+                            + "seconds");
+                    platform.commands().killAll(greengrassProcess);
                     LOGGER.error("The pids of descendants of greengrass process still active are "
                             + platform.commands().findDescendants(greengrassProcess));
                     throw new IllegalStateException("Failed to successfully remove the Greengrass process "
