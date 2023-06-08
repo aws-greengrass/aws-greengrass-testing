@@ -5,7 +5,6 @@
 
 package com.aws.greengrass.testing.features;
 
-import com.aws.greengrass.testing.DefaultGreengrass;
 import com.aws.greengrass.testing.api.ParameterValues;
 import com.aws.greengrass.testing.api.model.ProxyConfig;
 import com.aws.greengrass.testing.model.RegistrationContext;
@@ -17,6 +16,7 @@ import com.aws.greengrass.testing.modules.exception.ModuleProvisionException;
 import com.aws.greengrass.testing.modules.model.AWSResourcesContext;
 import com.aws.greengrass.testing.platform.Platform;
 import com.aws.greengrass.testing.resources.AWSResources;
+import com.aws.greengrass.testing.resources.greengrass.GreengrassCoreDeviceSpec;
 import com.aws.greengrass.testing.resources.iam.IamLifecycle;
 import com.aws.greengrass.testing.resources.iam.IamRole;
 import com.aws.greengrass.testing.resources.iam.IamRoleSpec;
@@ -32,8 +32,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import io.cucumber.guice.ScenarioScoped;
 import io.cucumber.java.en.Given;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import software.amazon.awssdk.utils.IoUtils;
 
 import java.io.IOException;
@@ -158,6 +156,7 @@ public class RegistrationSteps {
     IotThingSpec getThingSpec(String csrPath, String thingGroupName,
                               Optional<IamRole> optionalIamRole) throws IOException {
         // TODO: move this into iot steps.
+        resources.create(GreengrassCoreDeviceSpec.builder().thingName(testContext.coreThingName()).build());
         return resources.create(IotThingSpec.builder()
                 .thingName(testContext.coreThingName())
                 .addThingGroups(IotThingGroupSpec.of(thingGroupName))

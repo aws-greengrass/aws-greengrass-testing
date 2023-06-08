@@ -30,7 +30,7 @@ import javax.inject.Inject;
 public class GreengrassV2Lifecycle extends AbstractAWSResourceLifecycle<GreengrassV2Client> {
     @Inject
     public GreengrassV2Lifecycle(GreengrassV2Client client) {
-        super(client, GreengrassComponentSpec.class, GreengrassDeploymentSpec.class);
+        super(client, GreengrassComponentSpec.class, GreengrassDeploymentSpec.class, GreengrassCoreDeviceSpec.class);
     }
 
     public GreengrassV2Lifecycle() {
