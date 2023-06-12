@@ -20,6 +20,7 @@ import com.aws.greengrass.testing.resources.greengrass.GreengrassCoreDeviceSpec;
 import com.aws.greengrass.testing.resources.iam.IamLifecycle;
 import com.aws.greengrass.testing.resources.iam.IamRole;
 import com.aws.greengrass.testing.resources.iam.IamRoleSpec;
+import com.aws.greengrass.testing.resources.iot.IotCertificate;
 import com.aws.greengrass.testing.resources.iot.IotCertificateSpec;
 import com.aws.greengrass.testing.resources.iot.IotLifecycle;
 import com.aws.greengrass.testing.resources.iot.IotPolicySpec;
@@ -32,25 +33,42 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import io.cucumber.guice.ScenarioScoped;
 import io.cucumber.java.en.Given;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import software.amazon.awssdk.http.HttpExecuteRequest;
+import software.amazon.awssdk.http.HttpExecuteResponse;
+import software.amazon.awssdk.http.SdkHttpClient;
+import software.amazon.awssdk.http.SdkHttpMethod;
+import software.amazon.awssdk.http.SdkHttpRequest;
+import software.amazon.awssdk.http.apache.ApacheHttpClient;
 import software.amazon.awssdk.utils.IoUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.KeyStore;
+import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.net.ssl.KeyManagerFactory;
 
 import static com.aws.greengrass.testing.modules.HsmParameters.ROOT_CA_PATH;
+import static com.aws.greengrass.testing.util.EncryptionUtils.loadPrivateKeyPair;
+import static com.aws.greengrass.testing.util.EncryptionUtils.loadX509Certificates;
 
 @ScenarioScoped
 public class RegistrationSteps {
+    private static final Logger LOGGER = LogManager.getLogger(RegistrationSteps.class);
     private static final String DEFAULT_CONFIG = "/nucleus/configs/basic_config.yaml";
     private static final String DEFAULT_HSM_CONFIG = "/nucleus/configs/basic_hsm_config.yaml";
     private final TestContext testContext;
@@ -97,9 +115,10 @@ public class RegistrationSteps {
      *
      * @param configName the config name to use for the base config
      * @throws IOException thrown when failing to read the config
+     * @throws InterruptedException thread interrupted
      */
     @Given("my device is registered as a Thing using config {word}")
-    public void registerAsThing(String configName) throws IOException {
+    public void registerAsThing(String configName) throws IOException, InterruptedException {
         // Already registered ... already installed
         if (!testContext.initializationContext().persistInstalledSoftware()) {
             registerAsThing(configName, testContext.testId().idFor("ggc-group"));
@@ -109,10 +128,11 @@ public class RegistrationSteps {
     /**
      * Doesn't register for PreInstalled case, registers device otherwise.
      * @throws IOException thrown when failing to read the config
+     * @throws InterruptedException thread interrupted
      */
     @Given("my device is registered as a Thing")
     @SuppressWarnings("MissingJavadocMethod")
-    public void registerAsThing() throws IOException {
+    public void registerAsThing() throws IOException, InterruptedException {
         if (!testContext.initializationContext().persistInstalledSoftware()) {
             registerAsThing(null);
         }
@@ -124,7 +144,7 @@ public class RegistrationSteps {
     }
 
     @VisibleForTesting
-    void registerAsThing(String configName, String thingGroupName) throws IOException {
+    void registerAsThing(String configName, String thingGroupName) throws IOException, InterruptedException {
         final String configFile = Optional.ofNullable(configName).orElse(getDefaultConfigName());
         String tesRoleNameName = testContext.tesRoleName();
         Optional<IamRole> optionalIamRole = Optional.empty();
@@ -138,7 +158,58 @@ public class RegistrationSteps {
         }
         String csrPath = parameterValues.getString(FeatureParameters.CSR_PATH).orElse("");
         IotThingSpec thingSpec = getThingSpec(csrPath, thingGroupName, optionalIamRole);
+        waitForRoleAliasUsable(thingSpec, resources.lifecycle(IotLifecycle.class).credentialsEndpoint());
         setupConfigWithConfigFile(configFile, thingSpec);
+    }
+
+    private void waitForRoleAliasUsable(IotThingSpec thingSpec, String credentialEndpoint)
+            throws InterruptedException, IOException {
+        if (thingSpec.roleAliasSpec() == null) {
+            LOGGER.error("Cannot wait for role alias, spec was null");
+            return;
+        }
+        String ra = thingSpec.roleAliasSpec().resource().roleAlias();
+        IotCertificate certRes = thingSpec.resource().certificate();
+        if (certRes == null) {
+            LOGGER.error("Cannot wait for role alias, certificate was null");
+            return;
+        }
+
+        try (SdkHttpClient client = ApacheHttpClient.builder().tlsKeyManagersProvider(() -> {
+            try {
+                KeyStore keyStore = KeyStore.getInstance("PKCS12");
+                keyStore.load(null);
+
+                List<X509Certificate> certificateChain = loadX509Certificates(certRes.certificatePem());
+                keyStore.setKeyEntry("private-key", loadPrivateKeyPair(certRes.keyPair().privateKey()).getPrivate(),
+                        null, certificateChain.toArray(new Certificate[0]));
+
+                KeyManagerFactory keyManagerFactory =
+                        KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+                keyManagerFactory.init(keyStore, null);
+                return keyManagerFactory.getKeyManagers();
+            } catch (Exception e) {
+                LOGGER.error("Failed to load key", e);
+                throw new RuntimeException(e);
+            }
+        }).build()) {
+            for (int i = 0; i < 20; i++) {
+                HttpExecuteResponse res = client.prepareRequest(HttpExecuteRequest.builder().request(
+                        SdkHttpRequest.builder().appendHeader("x-amzn-iot-thingname", thingSpec.thingName())
+                                .method(SdkHttpMethod.GET).uri(URI.create(
+                                        String.format("https://%s/role-aliases/%s/credentials", credentialEndpoint, ra)))
+                                .build()).build()).call();
+                if (res.httpResponse().statusCode() == 200) {
+                    LOGGER.info("IoT Role alias returned 200, credentials should be good to go!");
+                    return;
+                } else {
+                    LOGGER.info("IoT Role alias not ready yet, got {}: {}", res.httpResponse().statusCode(),
+                            res.responseBody().isPresent() ? IoUtils.toUtf8String(res.responseBody().get()) : null);
+                }
+                Thread.sleep(6000);
+            }
+            throw new RuntimeException("Role alias never returned credentials, fail!");
+        }
     }
 
     @VisibleForTesting
