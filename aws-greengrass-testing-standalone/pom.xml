@@ -104,6 +104,7 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
                             <finalName>aws-greengrass-testing-without-awssdk</finalName>
                             <artifactSet>
                                 <excludes>
@@ -129,6 +130,7 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
                             <artifactSet>
                                 <excludes>
                                     <exclude>io.netty:*</exclude>
