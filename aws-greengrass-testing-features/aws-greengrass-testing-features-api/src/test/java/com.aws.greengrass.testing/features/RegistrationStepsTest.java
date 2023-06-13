@@ -9,40 +9,43 @@ import com.aws.greengrass.testing.api.ParameterValues;
 import com.aws.greengrass.testing.api.model.CleanupContext;
 import com.aws.greengrass.testing.api.model.InitializationContext;
 import com.aws.greengrass.testing.api.model.TestId;
+import com.aws.greengrass.testing.api.util.FileUtils;
 import com.aws.greengrass.testing.model.RegistrationContext;
 import com.aws.greengrass.testing.model.TestContext;
 import com.aws.greengrass.testing.modules.FeatureParameters;
 import com.aws.greengrass.testing.modules.model.AWSResourcesContext;
+import com.aws.greengrass.testing.platform.Commands;
 import com.aws.greengrass.testing.platform.Platform;
+import com.aws.greengrass.testing.platform.PlatformFiles;
 import com.aws.greengrass.testing.resources.AWSResources;
 import com.aws.greengrass.testing.resources.iam.IamLifecycle;
-import com.aws.greengrass.testing.resources.iot.IotThingSpec;
-import com.aws.greengrass.testing.api.util.FileUtils;
-import com.aws.greengrass.testing.platform.Commands;
-import com.aws.greengrass.testing.platform.PlatformFiles;
 import com.aws.greengrass.testing.resources.iam.IamRole;
-import com.aws.greengrass.testing.resources.iot.*;
+import com.aws.greengrass.testing.resources.iot.IotCertificate;
+import com.aws.greengrass.testing.resources.iot.IotLifecycle;
+import com.aws.greengrass.testing.resources.iot.IotRoleAlias;
+import com.aws.greengrass.testing.resources.iot.IotRoleAliasSpec;
+import com.aws.greengrass.testing.resources.iot.IotThing;
+import com.aws.greengrass.testing.resources.iot.IotThingSpec;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-
-
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.iot.model.KeyPair;
 import software.amazon.awssdk.utils.IoUtils;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashMap;
-import java.io.IOException;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class RegistrationStepsTest {
     private static final String MOCK_NUCLEUS_VERSION_IN_TEST_CONTENT = "1.0.0";
@@ -112,14 +115,16 @@ public class RegistrationStepsTest {
             testContext, registrationContext, resourcesContext, iamLifecycle, parameterValues, fileSteps, objectMapper));
 
     @Test
-    void GIVEN_only_the_config_name_WHEN_register_as_thing_is_invocated_THEN_it_works_as_expected() throws IOException {
+    void GIVEN_only_the_config_name_WHEN_register_as_thing_is_invocated_THEN_it_works_as_expected()
+            throws IOException, InterruptedException {
         Mockito.doNothing().when(registrationSteps).registerAsThing(Mockito.any(), Mockito.any());
         registrationSteps.registerAsThing(MOCK_CONFIG_NAME);
         Mockito.verify(registrationSteps, Mockito.times(1)).registerAsThing(Mockito.any(), Mockito.any());
     }
 
     @Test
-    void GIVEN_no_inputs_WHEN_register_as_thing_is_invocated_THEN_it_works_as_expected() throws IOException {
+    void GIVEN_no_inputs_WHEN_register_as_thing_is_invocated_THEN_it_works_as_expected()
+            throws IOException, InterruptedException {
         Mockito.doNothing().when(registrationSteps).registerAsThing(null);
         registrationSteps.registerAsThing();
         Mockito.verify(registrationSteps, Mockito.times(1)).registerAsThing(null);
@@ -127,12 +132,17 @@ public class RegistrationStepsTest {
     }
 
     @Test
-    void GIVEN_config_name_and_thing_group_name_as_inputs_WHEN_register_as_thing_is_invocated_THEN_it_works_as_expecte () throws IOException {
+    void GIVEN_config_name_and_thing_group_name_as_inputs_WHEN_register_as_thing_is_invocated_THEN_it_works_as_expecte ()
+            throws IOException, InterruptedException {
         Mockito.doReturn(Optional.of(MOCK_CSR_PATH)).when(parameterValues).getString(FeatureParameters.CSR_PATH);
         Mockito.doReturn(IotThingSpec.builder().thingName(MOCK_THING_NAME).resource(null).roleAliasSpec(null).build())
                 .when(registrationSteps).getThingSpec(Mockito.any(),Mockito.any(),Mockito.any());
         Mockito.doNothing().when(registrationSteps).setupConfigWithConfigFile(Mockito.any(), Mockito.any());
 
+        IotLifecycle mockIotLifecycle = Mockito.mock(IotLifecycle.class);
+        Mockito.doReturn(mockIotLifecycle).when(resources).lifecycle(IotLifecycle.class);
+        Mockito.doReturn(MOCK_IOT_CRED_ENDPOINT).when(mockIotLifecycle).credentialsEndpoint();
+        Mockito.doReturn(mockIotLifecycle).when(resources).lifecycle(IotLifecycle.class);
         registrationSteps.registerAsThing(null, MOCK_THING_GROUP_NAME);
         Mockito.verify(registrationSteps, Mockito.times(1)).setupConfigWithConfigFile(Mockito.any(), Mockito.any());
     }
