@@ -5,16 +5,17 @@
 
 package com.aws.greengrass.testing.platform.windows;
 
-import com.aws.greengrass.testing.api.device.model.CommandInput;
 import com.aws.greengrass.testing.api.device.Device;
+import com.aws.greengrass.testing.api.device.exception.CommandExecutionException;
+import com.aws.greengrass.testing.api.device.model.CommandInput;
 import com.aws.greengrass.testing.platform.NetworkUtils;
-import lombok.extern.log4j.Log4j2;
-import software.amazon.awssdk.utils.IoUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 
-@Log4j2
 public class WindowsNetworkUtils extends NetworkUtils {
+    private static final Logger LOGGER = LogManager.getLogger(WindowsNetworkUtils.class);
     private static final long TIMEOUT_IN_SECONDS = 10L;
 
     private static final String NETSH_ADD_RULE_FORMAT
@@ -65,8 +66,7 @@ public class WindowsNetworkUtils extends NetworkUtils {
         }
     }
 
-    private void blockPorts(String... ports) throws InterruptedException,
-            IOException {
+    private void blockPorts(String... ports) throws InterruptedException, IOException {
         for (String port : ports) {
             String ruleName = getRuleName(port);
             // Create 2 rules (can have same name) one for in and one for out
@@ -77,24 +77,23 @@ public class WindowsNetworkUtils extends NetworkUtils {
                 port);
 
             runCommandInTerminal(command, false);
-            }
         }
     }
 
     private void runCommandInTerminal(String command, boolean ignoreError) throws IOException, InterruptedException {
-        log.info("Running command: " + command);
-        CommandInput command = CommandInput.builder()
+        LOGGER.info("Running command: " + command);
+        CommandInput commandInput = CommandInput.builder()
                                 .line("cmd")
                                 .addArgs("/c")
                                 .addArgs(command)
                                 .timeout(TIMEOUT_IN_SECONDS)
                                 .build();
         try {
-            String result = commands.executeToString(command);
-            log.info("Command {} result: ", command, result);
+            String result = commands.executeToString(commandInput);
+            LOGGER.info("Command {} result: ", command, result);
         } catch (CommandExecutionException e) {
             final String errorString = String.format(COMMAND_FAILED_TO_RUN, command);
-            log.error(errorString, e);
+            LOGGER.error(errorString, e);
             if (!ignoreError) {
                 throw new RuntimeException(errorString, e);
             }
