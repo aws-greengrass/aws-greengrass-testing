@@ -18,4 +18,9 @@ public class LinuxPlatform extends AbstractPlatform {
     public LinuxCommands commands() {
         return new LinuxCommands(device, pillboxContext);
     }
+
+    @Override
+    public NetworkUtils networkUtils() {
+        return new LinuxNetworkUtils(device, pillboxContext);
+    }
 }

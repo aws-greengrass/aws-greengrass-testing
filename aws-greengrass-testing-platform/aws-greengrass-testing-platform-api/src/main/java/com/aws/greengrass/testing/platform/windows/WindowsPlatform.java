@@ -19,4 +19,9 @@ public class WindowsPlatform extends AbstractPlatform {
     public WindowsCommands commands() {
         return new WindowsCommands(device);
     }
+
+    @Override
+    public NetworkUtils networkUtils() {
+        return new WindowsNetworkUtils(device);
+    }
 }

@@ -9,4 +9,6 @@ public interface Platform {
     Commands commands();
 
     PlatformFiles files();
+
+    NetworkUtils networkUtils();
 }
