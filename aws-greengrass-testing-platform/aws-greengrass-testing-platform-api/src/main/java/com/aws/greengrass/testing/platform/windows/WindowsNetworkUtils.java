@@ -17,17 +17,16 @@ import java.io.IOException;
 public class WindowsNetworkUtils extends NetworkUtils {
     private static final Logger LOGGER = LogManager.getLogger(WindowsNetworkUtils.class);
     private static final long TIMEOUT_IN_SECONDS = 10L;
+    private static final String NETSH = "netsh";
 
-    private static final String NETSH_ADD_RULE_FORMAT
-            = "netsh advfirewall firewall add rule name='%s' protocol=tcp dir=in action=block localport=%s && "
-            + "netsh advfirewall firewall add rule name='%s' protocol=tcp dir=out action=block remoteport=%s";
-    private static final String NETSH_DELETE_RULE_FORMAT = "netsh advfirewall firewall delete rule name='%s'";
-    private static final String NETSH_GET_RULE_FORMAT = "netsh advfirewall firewall show rule name='%s'";
-    private static final String NO_RULE_FOUND_STRING = "No rules match the specified criteria.";
-    private static final String ADD_LOOPBACK_ADDR_FORMAT
-        = "netsh interface ipv4 add address LOOPBACK %s 255.255.255.255";
-    private static final String REMOVE_LOOPBACK_ADDR_FORMAT
-        = "netsh interface ipv4 delete address LOOPBACK %s 255.255.255.255";
+    private static final String[] NETSH_ADD_RULE_FORMAT_STRS = {
+        "advfirewall firewall add rule name='%s' protocol=tcp dir=in action=block localport=%s",
+        "advfirewall firewall add rule name='%s' protocol=tcp dir=out action=block remoteport=%s"
+    };
+
+    private static final String NETSH_DELETE_RULE_FORMAT_STR
+        = "advfirewall firewall delete rule name='%s'";
+
     private static final String COMMAND_FAILED_TO_RUN = "Command (%s) failed to run.";
 
     // Windows requires a name for every firewall name (can have duplicates)
@@ -60,9 +59,9 @@ public class WindowsNetworkUtils extends NetworkUtils {
     private void deleteRules(String... ports) throws InterruptedException, IOException {
         for (String port : ports) {
             String ruleName = getRuleName(port);
-            String command = String.format(NETSH_DELETE_RULE_FORMAT, ruleName);
+            String command = String.format(NETSH_DELETE_RULE_FORMAT_STR, ruleName);
 
-            runCommandInTerminal(command, true);
+            runNetshCommand(command, true);
         }
     }
 
@@ -70,22 +69,19 @@ public class WindowsNetworkUtils extends NetworkUtils {
         for (String port : ports) {
             String ruleName = getRuleName(port);
             // Create 2 rules (can have same name) one for in and one for out
-            String command = String.format(NETSH_ADD_RULE_FORMAT,
-                ruleName,
-                port,
-                ruleName,
-                port);
-
-            runCommandInTerminal(command, false);
+            for (String rule : NETSH_ADD_RULE_FORMAT_STRS) {
+                String command = String.format(rule, ruleName, port);
+                runNetshCommand(command, false);
+            }
         }
     }
 
-    private void runCommandInTerminal(String command, boolean ignoreError) throws IOException, InterruptedException {
-        LOGGER.info("Running command: " + command);
+    private void runNetshCommand(String command, boolean ignoreError) throws IOException, InterruptedException {
+        LOGGER.info("Running {} command: {}", NETSH, command);
+
         CommandInput commandInput = CommandInput.builder()
-                                .line("cmd")
-                                .addArgs("/c")
-                                .addArgs(command)
+                                .line(NETSH)
+                                .addArgs(command.split(" "))
                                 .timeout(TIMEOUT_IN_SECONDS)
                                 .build();
         try {

@@ -14,6 +14,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class LinuxNetworkUtils extends NetworkUtils {
@@ -22,11 +25,14 @@ public class LinuxNetworkUtils extends NetworkUtils {
 
     private static final String DISABLE_OPTION = "--delete";
     private static final String APPEND_OPTION = "-A";
-    private static final String IPTABLES_DROP_DPORT_EXTERNAL_ONLY_COMMAND_STR
-            = "iptables %s INPUT -p tcp -s localhost --dport %s -j ACCEPT && "
-            + "iptables %s INPUT -p tcp --dport %s -j DROP && "
-            + "iptables %s OUTPUT -p tcp -d localhost --dport %s -j ACCEPT && "
-            + "iptables %s OUTPUT -p tcp --dport %s -j DROP";
+    private static final String IPTABLES = "iptables";
+    private static final String[] TEMPLATES = {
+        "INPUT -p tcp -s 127.0.0.1 --dport %s -j ACCEPT",
+        "INPUT -p tcp --dport %s -j DROP",
+        "OUTPUT -p tcp -d 127.0.0.1 --dport %s -j ACCEPT",
+        "OUTPUT -p tcp --dport %s -j DROP"
+    };
+
     private static final String COMMAND_FAILED_TO_RUN = "Command (%s) failed to run.";
 
     private final LinuxCommands commands;
@@ -46,22 +52,21 @@ public class LinuxNetworkUtils extends NetworkUtils {
     }
 
     private void modifyMqttConnection(String action) throws IOException, InterruptedException {
-        for (String port : MQTT_PORTS) {
-            String command = String.format(IPTABLES_DROP_DPORT_EXTERNAL_ONLY_COMMAND_STR,
-                                            action, port, action, port, action, port, action, port);
-            CommandInput commandInput = CommandInput.builder()
-                                .line("sh")
-                                .addArgs("-c")
-                                .addArgs(command)
+        for (String template : TEMPLATES) {
+            for (String port : MQTT_PORTS) {
+                List<String> arguments = new ArrayList<>();
+                arguments.add(action);
+                String cmd = String.format(template, port);
+                LOGGER.info("Running {} command: {}", IPTABLES, cmd);
+                arguments.addAll(Arrays.asList(cmd.split(" ")));
+
+                CommandInput commandInput = CommandInput.builder()
+                                .line(IPTABLES)
+                                .addArgs(arguments.toArray(new String[0]))
                                 .timeout(TIMEOUT_IN_SECONDS)
                                 .build();
-            try {
-                String result = commands.executeToString(commandInput);
-                LOGGER.info("Command {} result: ", command, result);
-            } catch (CommandExecutionException e) {
-                final String errorString = String.format(COMMAND_FAILED_TO_RUN, command);
-                LOGGER.error(errorString, e);
-                throw new RuntimeException(errorString, e);
+
+                commands.execute(commandInput);
             }
         }
     }
