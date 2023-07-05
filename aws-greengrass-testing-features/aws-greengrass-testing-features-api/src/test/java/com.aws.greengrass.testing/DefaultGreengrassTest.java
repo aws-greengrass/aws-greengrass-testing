@@ -17,6 +17,7 @@ import com.aws.greengrass.testing.model.ScenarioContext;
 import com.aws.greengrass.testing.model.TestContext;
 import com.aws.greengrass.testing.modules.model.AWSResourcesContext;
 import com.aws.greengrass.testing.platform.Commands;
+import com.aws.greengrass.testing.platform.NetworkUtils;
 import com.aws.greengrass.testing.platform.Platform;
 import com.aws.greengrass.testing.platform.PlatformFiles;
 import com.aws.greengrass.testing.resources.AWSResources;
@@ -61,6 +62,8 @@ public class DefaultGreengrassTest {
 
     private PlatformFiles mockPlatformFiles = Mockito.mock(PlatformFiles.class);
 
+    private NetworkUtils mockNetworkUtils = Mockito.mock(NetworkUtils.class);
+
     private Platform platform = new Platform() {
         @Override
         public Commands commands() {
@@ -70,6 +73,11 @@ public class DefaultGreengrassTest {
         @Override
         public PlatformFiles files() {
             return mockPlatformFiles;
+        }
+
+        @Override
+        public NetworkUtils networkUtils() {
+            return mockNetworkUtils;
         }
     };
 

@@ -16,6 +16,7 @@ import com.aws.greengrass.testing.features.WaitSteps;
 import com.aws.greengrass.testing.model.ScenarioContext;
 import com.aws.greengrass.testing.model.TestContext;
 import com.aws.greengrass.testing.platform.Commands;
+import com.aws.greengrass.testing.platform.NetworkUtils;
 import com.aws.greengrass.testing.platform.Platform;
 import com.aws.greengrass.testing.platform.PlatformFiles;
 import com.aws.greengrass.testing.resources.AWSResources;
@@ -52,6 +53,11 @@ public class GreengrassCliStepsTest {
 
         @Override
         public PlatformFiles files() {
+            return null;
+        }
+
+        @Override
+        public NetworkUtils networkUtils() {
             return null;
         }
     });
