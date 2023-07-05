@@ -47,7 +47,6 @@
         <iotdevicesdk.version>1.10.3</iotdevicesdk.version>
         <picocli.version>4.6.1</picocli.version>
         <dagger.version>2.37</dagger.version>
-        <apache.commons.version>3.7</apache.commons.version>
     </properties>
 
     <build>

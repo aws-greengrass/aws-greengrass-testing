@@ -16,7 +16,6 @@ import io.cucumber.java.Scenario;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -116,29 +115,6 @@ public class FileSteps {
     }
 
     /**
-     * File contains content at least N times after a duration.
-     *
-     * @param file file on a {@link Device}
-     * @param contents file contents
-     * @param times how many times contents should be present in file
-     * @param value integer value for a duration
-     * @param unit {@link TimeUnit} duration
-     * @throws InterruptedException thread was interrupted while waiting
-     */
-    @Then("the file {word} on device contains {string} at least {int} times within {int} {word}")
-    public void containsTimeout(String file, String contents, int times, int value, String unit)
-                    throws InterruptedException {
-        checkFileExists(file);
-        TimeUnit timeUnit = TimeUnit.valueOf(unit.toUpperCase());
-        boolean found = waits.untilTrue(() ->
-                StringUtils.countMatches(platform.files().readString(testContext.installRoot().resolve(file)),
-                                            contents) >= times, value, timeUnit);
-        if (!found) {
-            throw new IllegalStateException("file " + file + " did not contain " + contents);
-        }
-    }
-
-    /**
      * Verifies that a component log file contains the contents within an interval.
      *
      * @param component name of the component log
@@ -157,24 +133,7 @@ public class FileSteps {
     }
 
     /**
-     * Verifies that a component log file contains the contents within an interval.
-     *
-     * @param component name of the component log
-     * @param line contents to validate
-     * @param times how many times contents should be present in file
-     * @param value number of units
-     * @param unit specific {@link TimeUnit}
-     * @throws InterruptedException throws when thread is interrupted
-     */
-    @Then("the {word} log on the device contains the line {string} at least {int} times within {int} {word}")
-    public void logContains(String component, String line, int times, int value, String unit)
-                    throws InterruptedException {
-        String componentPath = "logs/" + component + ".log";
-        containsTimeout(componentPath, line, times, value, unit);
-    }
-
-    /**
-     * Verifies that a component log does not contain a line.
+     * Verifies that a compoennt log does not contain a line.
      *
      * @param component name of the component log
      * @param line value the log file should not contain

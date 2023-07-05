@@ -83,18 +83,16 @@ public class GreengrassCliSteps {
     /**
      * Verify status of local deployment.
      * @param status desired status
-     * @param value integer value duration
-     * @param unit {@link TimeUnit} for the duration
+     * @param timeout timeout in seconds
      * @throws InterruptedException {@link InterruptedException}
      */
-    @And("the local Greengrass deployment is {word} on the device after {int} {word}")
-    public void verifyLocalDeployment(String status, int value, String unit) throws InterruptedException {
+    @And("the local Greengrass deployment is {word} on the device after {int} seconds")
+    public void verifyLocalDeployment(String status, int timeout) throws InterruptedException {
         List<String> terminalStatuses = new ArrayList<>();
         terminalStatuses.add("SUCCEEDED");
         terminalStatuses.add("FAILED");
-        TimeUnit timeUnit = TimeUnit.valueOf(unit.toUpperCase());
         waitSteps.untilTerminal(() -> this.getLocalDeploymentStatus(), status::equals,
-                terminalStatuses::contains, value, timeUnit);
+                terminalStatuses::contains, timeout, TimeUnit.SECONDS);
     }
 
     @VisibleForTesting
