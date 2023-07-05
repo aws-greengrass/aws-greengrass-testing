@@ -65,8 +65,8 @@ public class NetworkUtilsSteps {
      */
     @When("I set device mqtt connectivity to {connectivityValue}")
     public void setDeviceMqtt(final boolean connectivity) throws IOException, InterruptedException {
-        boolean oldConnectivity = mqttConnectivity.getAndSet(connectivity);
-        if (oldConnectivity != connectivity) {
+        boolean changed = mqttConnectivity.compareAndSet(!connectivity, connectivity);
+        if (changed) {
             if (connectivity) {
                 LOGGER.info("Unblocking MQTT connections");
                 platform.networkUtils().recoverMqtt();
@@ -85,8 +85,8 @@ public class NetworkUtilsSteps {
      */
     @After(order = Integer.MAX_VALUE)
     public void restoreDefaultSettings() throws IOException, InterruptedException {
-        boolean oldConnectivity = mqttConnectivity.getAndSet(true);
-        if (!oldConnectivity) {
+        boolean changed = mqttConnectivity.compareAndSet(false, true);
+        if (changed) {
             LOGGER.info("Automatically unblocking blocked MQTT connections");
             platform.networkUtils().recoverMqtt();
         }
