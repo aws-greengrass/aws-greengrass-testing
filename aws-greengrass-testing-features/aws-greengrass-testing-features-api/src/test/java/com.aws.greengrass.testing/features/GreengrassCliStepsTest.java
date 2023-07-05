@@ -82,10 +82,10 @@ public class GreengrassCliStepsTest {
     @Test
     void GIVEN_a_local_deployment_happened_WHEN_verify_it_THEN_it_reaches_the_expected_status_after_n_seconds() {
         Mockito.doReturn("SUCCEEDED").when(greengrassCliSteps).getLocalDeploymentStatus();
-        assertDoesNotThrow(() -> greengrassCliSteps.verifyLocalDeployment("SUCCEEDED", 30));
+        assertDoesNotThrow(() -> greengrassCliSteps.verifyLocalDeployment("SUCCEEDED", 30, "seconds"));
 
         Mockito.doReturn("FAILED").when(greengrassCliSteps).getLocalDeploymentStatus();
-        assertDoesNotThrow(() -> greengrassCliSteps.verifyLocalDeployment("FAILED", 30));
+        assertDoesNotThrow(() -> greengrassCliSteps.verifyLocalDeployment("FAILED", 30, "seconds"));
     }
 
     @Test
