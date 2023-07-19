@@ -32,12 +32,13 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
-public class RecipeComponentPreparationService implements ComponentPreparationService {
+public class RecipeComponentPreparationService extends PreparationServiceUtils implements ComponentPreparationService {
     private static final Logger LOGGER = LogManager.getLogger(RecipeComponentPreparationService.class);
     private static final String COMPONENT_VERSION = "ComponentVersion";
     private static final String MANIFESTS = "Manifests";
@@ -45,6 +46,7 @@ public class RecipeComponentPreparationService implements ComponentPreparationSe
     private static final String URI = "URI";
     private static final String COMPONENT_DEPENDENCIES = "ComponentDependencies";
     private static final String VERSION_REQUIREMENT = "VersionRequirement";
+
     private final ContentLoader loader;
     private final ObjectMapper mapper;
     private final TestContext testContext;
@@ -118,6 +120,7 @@ public class RecipeComponentPreparationService implements ComponentPreparationSe
         return s3Path;
     }
 
+
     @VisibleForTesting
     String getOrCreateBucket() {
         S3Lifecycle s3 = resources.lifecycle(S3Lifecycle.class);
@@ -169,13 +172,34 @@ public class RecipeComponentPreparationService implements ComponentPreparationSe
             }
 
             List<Map<String, Object>> manifests = (List<Map<String, Object>>) recipe.get(MANIFESTS);
+
+            // support for multi-platform recipe
+            //  implemented by removing Manifests item with artifacts couldn't be uploaded
+            List<Map<String, Object>> activeManifests = new ArrayList<>();
             for (Map<String, Object> manifest : manifests) {
+                boolean hasAllArtifacts = true;
                 List<Map<String, Object>> artifacts = (List<Map<String, Object>>) manifest.get(ARTIFACTS);
-                for (Map<String, Object> artifact : artifacts) {
-                    String uri = artifact.get(URI).toString();
-                    artifact.put(URI, uploadArtifact(overrideNameVersion.name(), uri, getOrCreateBucket()));
+                // Artifacts is optional
+                if (artifacts != null) {
+                    for (Map<String, Object> artifact : artifacts) {
+                        String uri = artifact.get(URI).toString();
+                        if (isArtifactExists(uri)) {
+                            artifact.put(URI, uploadArtifact(overrideNameVersion.name(), uri, getOrCreateBucket()));
+                        } else {
+                            hasAllArtifacts = false;
+                            LOGGER.warn("Artifact {} of component {} doesn't exists, corresponding Manifest will be "
+                                            + "removed from recipe", uri, overrideNameVersion.name());
+                        }
+                    }
+                }
+
+                if (hasAllArtifacts) {
+                    activeManifests.add(manifest);
                 }
             }
+            // finally update recipe to only manifests with all components exist
+            recipe.put(MANIFESTS, activeManifests);
+
             GreengrassComponentSpec component = resources.create(GreengrassComponentSpec.builder()
                     .inlineRecipe(SdkBytes.fromByteArray(mapper.writeValueAsBytes(recipe)))
                     .build());

@@ -1,0 +1,32 @@
+#
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+
+---
+RecipeFormatVersion: 2020-01-25
+ComponentName: com.aws.HelloWorldMultiplatform
+ComponentVersion: '1.0.0'
+ComponentDescription: Hello World Multiplatform Cloud Component.
+ComponentPublisher: Amazon
+Manifests:
+- Platform:
+    os: windows
+  Artifacts:
+    - URI: "file:C:/Windows/System32/cmd.exe"
+      Permission:
+        Read: ALL
+        Execute: ALL
+  Lifecycle:
+    run: |
+      cmd /c echo "Hello World!"
+- Platform:
+    os: linux
+  Artifacts:
+    - URI: file:/bin/bash
+      Permission:
+        Read: ALL
+        Execute: ALL
+  Lifecycle:
+    run: |
+      bash -c "echo -ne \"Hello World!\n\""
