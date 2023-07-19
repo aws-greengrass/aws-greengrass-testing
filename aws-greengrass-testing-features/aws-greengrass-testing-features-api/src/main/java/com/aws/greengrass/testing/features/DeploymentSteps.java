@@ -70,9 +70,11 @@ public class DeploymentSteps {
     private final ObjectMapper mapper;
     private final ScenarioContext scenarioContext;
     private final Path configFilePath;
+    private final Map<String, String> localComponentVersions = new HashMap<>();
 
     @VisibleForTesting
     GreengrassDeploymentSpec deployment;
+
 
     private Platform platform;
     private Path artifactPath;
@@ -97,7 +99,7 @@ public class DeploymentSteps {
         this.waits = waits;
         this.mapper = mapper;
         this.platform = platform;
-        this.artifactPath = testContext.installRoot().resolve(LOCAL_STORE).resolve(ARTIFACTS_DIR);;
+        this.artifactPath = testContext.installRoot().resolve(LOCAL_STORE).resolve(ARTIFACTS_DIR);
         this.recipePath = testContext.installRoot().resolve(LOCAL_STORE).resolve(RECIPE_DIR);
         this.configFilePath = Paths.get(testContext.testDirectory().toString(), "update_config.json");
     }
@@ -172,7 +174,13 @@ public class DeploymentSteps {
     public void updateLocalComponentWithConfiguration(final String componentName, final String configurationTable)
             throws InterruptedException, IOException {
         Map<String, Object> configurations = readConfiguration(configurationTable);
-        CommandInput command = getCliDeploymentCommand(componentName, null, configurations);
+        final String componentVersion = getComponentVersion(componentName);
+        if (componentVersion == null) {
+            throw new IllegalStateException("Couldn't get version of component " + componentName);
+        } else {
+            LOGGER.info("Updating configuration of component {}:{}", componentName, componentVersion);
+        }
+        CommandInput command = getCliDeploymentCommand(componentName, componentVersion, configurations);
         createLocalDeploymentWithConfigs(0, command);
     }
 
@@ -191,6 +199,7 @@ public class DeploymentSteps {
             String componentVersion = localComponentSpec.getValue().componentVersion();
             Map<String, Object> configurations = readConfiguration(configurationTable);
             CommandInput command = getCliDeploymentCommand(componentName, componentVersion, configurations);
+            localComponentVersions.put(componentName, componentVersion);
             createLocalDeploymentWithConfigs(0, command);
         }
     }
@@ -202,9 +211,17 @@ public class DeploymentSteps {
                 "create",
                 "--artifactDir " + artifactPath.toString(),
                 "--recipeDir " + recipePath.toString()));
+
+        Files.createDirectories(artifactPath);
+        Files.createDirectories(recipePath);
+
         if (StringUtils.isNotBlank(componentVersion)) {
             commandArgs.add("--merge " + componentName + "=" + componentVersion);
+        } else {
+            // 'deployment create' command without 'merge' or 'remove' is useless
+            throw new IllegalStateException("Unknown component version " + componentName);
         }
+
         if (!configuration.isEmpty()) {
             String configurationUpdate = getCliUpdateConfigArgs(componentName, configuration);
             if (!configurationUpdate.isEmpty()) {
@@ -235,7 +252,7 @@ public class DeploymentSteps {
             String response = executeCommandWithConfigs(command);
             LOGGER.debug("The response from executing gg-cli command is {}", response);
             String[] responseArray = response.split(":");
-            String deploymentId = responseArray[responseArray.length - 1];
+            String deploymentId = responseArray[responseArray.length - 1].trim();
             LOGGER.info("The local deployment response is " + deploymentId);
             scenarioContext.put(LOCAL_DEPLOYMENT_ID, deploymentId);
         } catch (Exception e) {
@@ -287,7 +304,7 @@ public class DeploymentSteps {
                     .build());
             LOGGER.debug("The response from executing gg-cli command is {}", response);
             String[] responseArray = response.split(":");
-            String deploymentId = responseArray[responseArray.length - 1];
+            String deploymentId = responseArray[responseArray.length - 1].trim();
             LOGGER.info("The local deployment response is " + deploymentId);
             scenarioContext.put(LOCAL_DEPLOYMENT_ID, deploymentId);
         } catch (Exception e) {
@@ -514,5 +531,33 @@ public class DeploymentSteps {
             LOGGER.warn("Empty deployment was interrupted");
             Thread.currentThread().interrupt();
         }
+    }
+
+    private String getComponentVersion(final String componentName) {
+        // at the first try to get component version from last deployment make from backend
+        String componentVersion = getComponentVersionFromBackendDeployment(componentName);
+        if (componentVersion == null) {
+            // it is possible component has been deployed locally
+            componentVersion = getComponentVersionOfLocallyDeployedComponents(componentName);
+        }
+
+        return componentVersion;
+    }
+
+    private String getComponentVersionFromBackendDeployment(final String componentName) {
+        String componentVersion = null;
+        final Map<String, ComponentDeploymentSpecification> components = deployment.components();
+        if (components != null) {
+            final ComponentDeploymentSpecification componentSpec = components.get(componentName);
+            if (componentSpec != null) {
+                 componentVersion = componentSpec.componentVersion();
+            }
+        }
+
+        return componentVersion;
+    }
+
+    private String getComponentVersionOfLocallyDeployedComponents(final String componentName) {
+        return localComponentVersions.get(componentName);
     }
 }
