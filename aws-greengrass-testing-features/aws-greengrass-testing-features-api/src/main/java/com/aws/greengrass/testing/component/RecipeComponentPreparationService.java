@@ -11,6 +11,7 @@ import com.aws.greengrass.testing.api.model.ComponentOverrideVersion;
 import com.aws.greengrass.testing.api.model.ComponentOverrides;
 import com.aws.greengrass.testing.model.GreengrassContext;
 import com.aws.greengrass.testing.model.TestContext;
+import com.aws.greengrass.testing.platform.PlatformResolver;
 import com.aws.greengrass.testing.resources.AWSResources;
 import com.aws.greengrass.testing.resources.greengrass.GreengrassComponent;
 import com.aws.greengrass.testing.resources.greengrass.GreengrassComponentSpec;
@@ -32,6 +33,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -45,6 +47,9 @@ public class RecipeComponentPreparationService implements ComponentPreparationSe
     private static final String URI = "URI";
     private static final String COMPONENT_DEPENDENCIES = "ComponentDependencies";
     private static final String VERSION_REQUIREMENT = "VersionRequirement";
+    private static final String COMPONENT_NAME = "ComponentName";
+
+    private final PlatformResolver platformResolver;
     private final ContentLoader loader;
     private final ObjectMapper mapper;
     private final TestContext testContext;
@@ -58,12 +63,14 @@ public class RecipeComponentPreparationService implements ComponentPreparationSe
     }
 
     RecipeComponentPreparationService(
+            PlatformResolver platformResolver,
             ContentLoader loader,
             AWSResources resources,
             ObjectMapper mapper,
             TestContext testContext,
             GreengrassContext greengrassContext,
             ComponentOverrides overrides) {
+        this.platformResolver = platformResolver;
         this.loader = loader;
         this.resources = resources;
         this.mapper = mapper;
@@ -169,7 +176,25 @@ public class RecipeComponentPreparationService implements ComponentPreparationSe
             }
 
             List<Map<String, Object>> manifests = (List<Map<String, Object>>) recipe.get(MANIFESTS);
+
+            // support for multi-platform recipe
+            if (manifests.size() > 1) {
+                Optional<Map<String, Object>> optionalPlatformSpecificManifest
+                        = GreengassPlatformHelper.findBestMatch(platformResolver.getCurrentPlatform(), manifests);
+                if (optionalPlatformSpecificManifest.isPresent()) {
+                    // limit manifests to single with best matched platform
+                    manifests = Collections.singletonList(optionalPlatformSpecificManifest.get());
+
+                    // remove all other manifests from recipe
+                    recipe.put(MANIFESTS, manifests);
+                    LOGGER.info("Manifests of {} has been filtered for current platform",
+                                    recipe.get(COMPONENT_NAME));
+                }
+            }
+            // else work as before
+
             for (Map<String, Object> manifest : manifests) {
+                // Note: probably mistake, "Artifacts" is optional
                 List<Map<String, Object>> artifacts = (List<Map<String, Object>>) manifest.get(ARTIFACTS);
                 for (Map<String, Object> artifact : artifacts) {
                     String uri = artifact.get(URI).toString();

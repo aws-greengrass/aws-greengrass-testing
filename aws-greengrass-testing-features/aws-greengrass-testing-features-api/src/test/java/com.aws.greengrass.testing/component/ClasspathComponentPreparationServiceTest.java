@@ -8,6 +8,7 @@ package com.aws.greengrass.testing.component;
 import com.aws.greengrass.testing.api.model.ComponentOverrides;
 import com.aws.greengrass.testing.model.GreengrassContext;
 import com.aws.greengrass.testing.model.TestContext;
+import com.aws.greengrass.testing.platform.PlatformResolver;
 import com.aws.greengrass.testing.resources.AWSResources;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -19,6 +20,10 @@ import org.mockito.Mockito;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ClasspathComponentPreparationServiceTest {
+
+    @Mock
+    PlatformResolver platformResolver;
+
     @Mock
     AWSResources resources;
 
@@ -35,7 +40,8 @@ public class ClasspathComponentPreparationServiceTest {
 
     @InjectMocks
     ClasspathComponentPreparationService classpathComponentPreparationService = Mockito.spy(
-            new ClasspathComponentPreparationService(resources, mapper, testContext, greengrassContext, overrides));
+            new ClasspathComponentPreparationService(platformResolver, resources, mapper, testContext,
+                                                        greengrassContext, overrides));
 
 
     @Test

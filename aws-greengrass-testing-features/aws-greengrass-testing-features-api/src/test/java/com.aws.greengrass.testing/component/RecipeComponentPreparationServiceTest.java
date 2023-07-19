@@ -12,6 +12,7 @@ import com.aws.greengrass.testing.api.model.ComponentOverrides;
 import com.aws.greengrass.testing.api.model.TestId;
 import com.aws.greengrass.testing.model.GreengrassContext;
 import com.aws.greengrass.testing.model.TestContext;
+import com.aws.greengrass.testing.platform.PlatformResolver;
 import com.aws.greengrass.testing.resources.AWSResources;
 import com.aws.greengrass.testing.resources.greengrass.GreengrassComponent;
 import com.aws.greengrass.testing.resources.greengrass.GreengrassComponentSpec;
@@ -52,6 +53,9 @@ public class RecipeComponentPreparationServiceTest {
     GreengrassV2Lifecycle greengrassV2Lifecycle = new GreengrassV2Lifecycle();
 
     @Mock
+    PlatformResolver platformResolver;
+
+    @Mock
     TestContext testContext;
 
     @Mock
@@ -77,7 +81,7 @@ public class RecipeComponentPreparationServiceTest {
     @BeforeEach
     public void setup() {
         resourceDirectory = Paths.get(System.getProperty("user.dir"),"src", "test", "resources");
-        this.componentPreparation = Mockito.spy(new RecipeComponentPreparationService(loader,
+        this.componentPreparation = Mockito.spy(new RecipeComponentPreparationService(platformResolver, loader,
                 resources, mapper, testContext, greengrassContext, overrides));
     }
 

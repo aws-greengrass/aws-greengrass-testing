@@ -22,4 +22,10 @@ public class PlatformModule extends AbstractModule {
     static Platform providesPlatform(final Device device, final PillboxContext pillboxContext) {
         return new PlatformResolver(device, pillboxContext).resolve();
     }
+
+    @Provides
+    @ScenarioScoped
+    static PlatformResolver providesPlatformResolver(final Device device, final PillboxContext pillboxContext) {
+        return new PlatformResolver(device, pillboxContext);
+    }
 }

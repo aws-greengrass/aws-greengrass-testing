@@ -1,0 +1,34 @@
+#
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+
+---
+RecipeFormatVersion: 2020-01-25
+ComponentName: com.aws.HelloWorld
+ComponentVersion: '1.0.2'
+ComponentDescription: Hello World Cloud Component.
+ComponentPublisher: Amazon
+Manifests:
+- Platform:
+    os: windows
+  Artifacts:
+    - URI: classpath:/greengrass/components/artifacts/aws-greengrass-testing-features-cloudcomponent.zip
+      Unarchive: ZIP
+      Permission:
+        Read: ALL
+        Execute: ALL
+  Lifecycle:
+    run: |
+      cmd /c echo "Hello World!"
+- Platform:
+    os: linux
+  Artifacts:
+    - URI: classpath:/greengrass/components/artifacts/aws-greengrass-testing-features-cloudcomponent.zip
+      Unarchive: ZIP
+      Permission:
+        Read: ALL
+        Execute: ALL
+  Lifecycle:
+    run: |
+      bash -c "echo -ne \"Hello World!\n\""
