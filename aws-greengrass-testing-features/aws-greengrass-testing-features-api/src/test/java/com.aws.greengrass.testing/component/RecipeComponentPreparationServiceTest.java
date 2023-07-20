@@ -95,6 +95,7 @@ public class RecipeComponentPreparationServiceTest {
         Mockito.doReturn(MOCK_TEST_ID).when(testId).id();
         Mockito.doReturn(testId).when(testContext).testId();
         Mockito.doReturn(greengrassV2Lifecycle).when(resources).lifecycle(GreengrassV2Lifecycle.class);
+        Mockito.doReturn(true).when(componentPreparation).isArtifactExists(Mockito.any());
         Mockito.doReturn(MOCK_BUCKET_NAME).when(componentPreparation).getOrCreateBucket();
         Mockito.doReturn(MOCK_ARTIFACT_URI).when(componentPreparation)
                 .uploadArtifact(Mockito.any(), Mockito.any(), Mockito.any());

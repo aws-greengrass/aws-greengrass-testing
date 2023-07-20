@@ -79,6 +79,7 @@ public class LocalComponentPreparationServiceTest {
                 .when(loader).load(Mockito.any());
         Mockito.doReturn(loader)
                 .when(componentPreparation).getLoader();
+        Mockito.doReturn(true).when(componentPreparation).isArtifactExists(Mockito.any());
         Mockito.doNothing()
                 .when(componentPreparation).copyArtifactToLocalStore(Mockito.any(), Mockito.any(), Mockito.any());
         Mockito.doNothing().when(componentPreparation).copyRecipeToLocalStore(Mockito.any(), Mockito.any(), Mockito.any());
