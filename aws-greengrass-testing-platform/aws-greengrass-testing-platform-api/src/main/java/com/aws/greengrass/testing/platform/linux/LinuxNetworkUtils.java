@@ -41,6 +41,10 @@ public class LinuxNetworkUtils extends NetworkUtils {
         this.commands = new LinuxCommands(device, pillboxContext);
     }
 
+    /**
+     * Disables incoming and outgoing MQTT connections.
+     * On Linux connections to/from 127.0.0.1 will still be allowed.
+     */
     @Override
     public void disconnectMqtt() throws InterruptedException, IOException {
         modifyMqttConnection(APPEND_OPTION);
