@@ -13,4 +13,8 @@ public abstract class NetworkUtils {
     public abstract void disconnectMqtt() throws InterruptedException, IOException;
 
     public abstract void recoverMqtt() throws InterruptedException, IOException;
+
+    public abstract void addLoopbackAddress(String address) throws IOException, InterruptedException;
+
+    public abstract void deleteLoopbackAddress(String address) throws IOException, InterruptedException;
 }

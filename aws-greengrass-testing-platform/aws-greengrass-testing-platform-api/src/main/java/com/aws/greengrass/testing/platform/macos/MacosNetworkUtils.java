@@ -19,4 +19,14 @@ public class MacosNetworkUtils extends NetworkUtils {
     public void recoverMqtt() throws InterruptedException, IOException {
         throw new UnsupportedOperationException("Operation not supported");
     }
+
+    @Override
+    public void addLoopbackAddress(String address) {
+        throw new UnsupportedOperationException("Operation not supported");
+    }
+
+    @Override
+    public void deleteLoopbackAddress(String address) {
+        throw new UnsupportedOperationException("Operation not supported");
+    }
 }

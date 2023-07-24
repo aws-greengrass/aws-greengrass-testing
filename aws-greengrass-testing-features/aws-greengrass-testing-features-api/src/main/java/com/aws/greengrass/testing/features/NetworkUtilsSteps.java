@@ -9,6 +9,7 @@ import com.aws.greengrass.testing.platform.Platform;
 import io.cucumber.guice.ScenarioScoped;
 import io.cucumber.java.After;
 import io.cucumber.java.ParameterType;
+import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -75,6 +76,32 @@ public class NetworkUtilsSteps {
                 platform.networkUtils().disconnectMqtt();
             }
         }
+    }
+
+    /**
+     * Add loop back address.
+     *
+     * @param address the value of loop back address
+     * @throws IOException on IO errors
+     * @throws InterruptedException when thread has been interrupted
+     */
+    @Then("I add loop back address {string}")
+    public void addLoopBackAddress(final String address) throws IOException, InterruptedException {
+        LOGGER.info("Adding loopback address {}", address);
+        platform.networkUtils().addLoopbackAddress(address);
+    }
+
+    /**
+     * Delete loop back address.
+     *
+     * @param address the value of loop back address
+     * @throws IOException on IO errors
+     * @throws InterruptedException when thread has been interrupted
+     */
+    @Then("I remove loop back address {string}")
+    public void deleteLoopBackAddress(final String address) throws IOException, InterruptedException {
+        LOGGER.info("Deleting loopback address {}", address);
+        platform.networkUtils().deleteLoopbackAddress(address);
     }
 
     /**
