@@ -79,27 +79,27 @@ public class NetworkUtilsSteps {
     }
 
     /**
-     * Add loop back address.
+     * Add IP address to loopback interface.
      *
      * @param address the value of loop back address
      * @throws IOException on IO errors
      * @throws InterruptedException when thread has been interrupted
      */
-    @Then("I add loop back address {string}")
+    @Then("I add IP address {string} to loopback interface")
     public void addLoopBackAddress(final String address) throws IOException, InterruptedException {
         LOGGER.info("Adding loopback address {}", address);
         platform.networkUtils().addLoopbackAddress(address);
     }
 
     /**
-     * Delete loop back address.
+     * Remove IP address from loopback interface.
      *
      * @param address the value of loop back address
      * @throws IOException on IO errors
      * @throws InterruptedException when thread has been interrupted
      */
-    @Then("I remove loop back address {string}")
-    public void deleteLoopBackAddress(final String address) throws IOException, InterruptedException {
+    @Then("I remove IP address {string} from loopback interface")
+    public void removeLoopBackAddress(final String address) throws IOException, InterruptedException {
         LOGGER.info("Deleting loopback address {}", address);
         platform.networkUtils().deleteLoopbackAddress(address);
     }
