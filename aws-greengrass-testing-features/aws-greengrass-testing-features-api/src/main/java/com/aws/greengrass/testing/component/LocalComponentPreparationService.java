@@ -26,6 +26,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -34,7 +35,7 @@ import java.util.Optional;
 import javax.inject.Inject;
 import javax.inject.Named;
 
-public class LocalComponentPreparationService implements ComponentPreparationService {
+public class LocalComponentPreparationService extends PreparationServiceUtils implements ComponentPreparationService {
 
     private static final Logger LOGGER = LogManager.getLogger(LocalComponentPreparationService.class);
 
@@ -93,27 +94,45 @@ public class LocalComponentPreparationService implements ComponentPreparationSer
             String componentVersion = recipe.get(COMPONENT_VERSION).toString();
             List<Map<String, Object>> manifests = (List<Map<String, Object>>) recipe.get(MANIFESTS);
 
+            // support for multi-platform recipe
+            //  implemented by removing Manifests item with artifacts couldn't be uploaded
+            List<Map<String, Object>> activeManifests = new ArrayList<>();
             for (Map<String, Object> manifest : manifests) {
+                boolean hasAllArtifacts = true;
                 List<Map<String, Object>> artifacts = (List<Map<String, Object>>) manifest.get(ARTIFACTS);
-                Iterator<Map<String, Object>> iterator = artifacts.iterator();
-                while (iterator.hasNext()) {
-                    Map<String, Object> artifact = iterator.next();
-                    String uri = artifact.get(URI).toString();
-                    if (uri.startsWith("file")) {
-                        iterator.remove();
-                        String filepath = uri.split(":")[1];
-                        copyArtifactToLocalStore(Paths.get(filepath),componentName,componentVersion);
-                    } else if (uri.startsWith("classpath")) {
-                        iterator.remove();
-                        String filepath = uri.split(":")[1];
-                        Path componentArtifact = writeFileContentToFilePath(filepath, componentName);
-                        copyArtifactToLocalStore(componentArtifact,componentName,componentVersion);
+                // Artifacts is optional
+                if (artifacts != null) {
+                    Iterator<Map<String, Object>> iterator = artifacts.iterator();
+                    while (iterator.hasNext()) {
+                        Map<String, Object> artifact = iterator.next();
+                        String uri = artifact.get(URI).toString();
+                        if (isArtifactExists(uri)) {
+                            if (uri.startsWith("file:")) {
+                                iterator.remove();
+                                String filepath = uri.split(":", 2)[1];
+                                copyArtifactToLocalStore(Paths.get(filepath),componentName,componentVersion);
+                            } else if (uri.startsWith("classpath:")) {
+                                iterator.remove();
+                                String filepath = uri.split(":", 2)[1];
+                                Path componentArtifact = writeFileContentToFilePath(filepath, componentName);
+                                copyArtifactToLocalStore(componentArtifact,componentName,componentVersion);
+                            }
+                        } else {
+                            hasAllArtifacts = false;
+                            LOGGER.warn("Artifact {} of component {} doesn't exists, corresponding Manifest will be "
+                                            + "removed from recipe", uri, overrideNameVersion.name());
+                        }
+                    }
+                    if (artifacts.isEmpty()) {
+                        manifest.remove(ARTIFACTS);
                     }
                 }
-                if (artifacts.isEmpty()) {
-                    manifest.remove(ARTIFACTS);
+                if (hasAllArtifacts) {
+                    activeManifests.add(manifest);
                 }
             }
+            // finally update recipe to only manifests with all components exist
+            recipe.put(MANIFESTS, activeManifests);
 
             copyRecipeToLocalStore(mapper.writeValueAsString(recipe), componentName,
                     componentVersion);

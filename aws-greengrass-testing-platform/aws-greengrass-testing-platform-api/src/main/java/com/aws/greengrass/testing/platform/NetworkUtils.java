@@ -8,10 +8,22 @@ package com.aws.greengrass.testing.platform;
 import java.io.IOException;
 
 public abstract class NetworkUtils {
-    protected static final String[] MQTT_PORTS = {"8883", "443"};
+    protected static final String[] MQTT_PORTS = {"8883"};
 
+    /**
+     * Disables incoming and outgoing MQTT connections by apply firewall rules.
+     *
+     * @throws InterruptedException then thread has been interrupted
+     * @throws IOException on errors
+     */
     public abstract void disconnectMqtt() throws InterruptedException, IOException;
 
+    /**
+     * Enables incoming and outgoing MQTT connections.
+     *
+     * @throws InterruptedException then thread has been interrupted
+     * @throws IOException on errors
+     */
     public abstract void recoverMqtt() throws InterruptedException, IOException;
 
     public abstract void addLoopbackAddress(String address) throws IOException, InterruptedException;
