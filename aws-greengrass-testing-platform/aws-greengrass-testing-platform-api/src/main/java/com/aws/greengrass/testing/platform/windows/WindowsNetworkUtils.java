@@ -13,16 +13,23 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 public class WindowsNetworkUtils extends NetworkUtils {
     private static final Logger LOGGER = LogManager.getLogger(WindowsNetworkUtils.class);
     private static final long TIMEOUT_IN_SECONDS = 10L;
     private static final String NETSH = "netsh";
 
-    private static final String[] NETSH_ADD_RULE_FORMAT_STRS = {
-        "advfirewall firewall add rule name='%s' protocol=tcp dir=in action=block localport=%s",
-        "advfirewall firewall add rule name='%s' protocol=tcp dir=out action=block remoteport=%s"
-    };
+
+    private static final Map<String, String> DIRECTIONS = new HashMap<String, String>() {{
+        put("in", "localport");
+        put("out", "remoteport");
+    }};
+
+
+    private static final String NETSH_ADD_RULE_FORMAT_STR
+        = "advfirewall firewall add rule name='%s' protocol=tcp dir=%s action=block %s=%s";
 
     private static final String NETSH_ADD_LOOPBACK_ADDRESS = "interface ipv4 add address loopback %s mask=255.0.0.0";
     private static final String NETSH_DELETE_LOOPBACK_ADDRESS = "interface ipv4 delete address loopback %s";
@@ -32,11 +39,11 @@ public class WindowsNetworkUtils extends NetworkUtils {
 
     private static final String COMMAND_FAILED_TO_RUN = "Command (%s) failed to run.";
 
-    // Windows requires a name for every firewall name (can have duplicates)
-    // Format: otf_uat_{PORT_NUMBER}
+    // Windows requires a name for every firewall name (CAN'T have duplicates !!!)
+    // Format: otf_uat_{PORT_NUMBER}_{DIRECTION}
     // Example:
-    // otf_uat_8883
-    private static final String FIREWALL_RULE_NAME_FORMAT = "otf_uat_%s";
+    // otf_uat_8883_in
+    private static final String FIREWALL_RULE_NAME_FORMAT = "otf_uat_%s_%s";
 
     private final WindowsCommands commands;
 
@@ -67,25 +74,30 @@ public class WindowsNetworkUtils extends NetworkUtils {
         runNetshCommand(command, false);
     }
 
-    private String getRuleName(String port) {
-        return String.format(FIREWALL_RULE_NAME_FORMAT, port);
+    private String getRuleName(String port, String direction) {
+        return String.format(FIREWALL_RULE_NAME_FORMAT, port, direction);
     }
 
     private void deleteRules(String... ports) throws InterruptedException, IOException {
         for (String port : ports) {
-            String ruleName = getRuleName(port);
-            String command = String.format(NETSH_DELETE_RULE_FORMAT_STR, ruleName);
+            for (String direction : DIRECTIONS.keySet()) {
+                String ruleName = getRuleName(port, direction);
+                String command = String.format(NETSH_DELETE_RULE_FORMAT_STR, ruleName);
 
-            runNetshCommand(command, true);
+                runNetshCommand(command, true);
+            }
         }
     }
 
     private void blockPorts(String... ports) throws InterruptedException, IOException {
         for (String port : ports) {
-            String ruleName = getRuleName(port);
-            // Create 2 rules (can have same name) one for in and one for out
-            for (String rule : NETSH_ADD_RULE_FORMAT_STRS) {
-                String command = String.format(rule, ruleName, port);
+            for (Map.Entry<String, String> entry : DIRECTIONS.entrySet()) {
+                String direction = entry.getKey();
+                String portDirection = entry.getValue();
+
+                String ruleName = getRuleName(port, direction);
+                String command = String.format(NETSH_ADD_RULE_FORMAT_STR, ruleName, direction, portDirection, port);
+
                 runNetshCommand(command, false);
             }
         }
