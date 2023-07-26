@@ -24,6 +24,9 @@ public class WindowsNetworkUtils extends NetworkUtils {
         "advfirewall firewall add rule name='%s' protocol=tcp dir=out action=block remoteport=%s"
     };
 
+    private static final String NETSH_ADD_LOOPBACK_ADDRESS = "interface ipv4 add address loopback %s mask=255.0.0.0";
+    private static final String NETSH_DELETE_LOOPBACK_ADDRESS = "interface ipv4 delete address loopback %s";
+
     private static final String NETSH_DELETE_RULE_FORMAT_STR
         = "advfirewall firewall delete rule name='%s'";
 
@@ -50,6 +53,18 @@ public class WindowsNetworkUtils extends NetworkUtils {
     @Override
     public void recoverMqtt() throws InterruptedException, IOException {
         deleteRules(MQTT_PORTS);
+    }
+
+    @Override
+    public void addLoopbackAddress(String address) throws IOException, InterruptedException {
+        String command = String.format(NETSH_ADD_LOOPBACK_ADDRESS, address);
+        runNetshCommand(command, false);
+    }
+
+    @Override
+    public void deleteLoopbackAddress(String address) throws IOException, InterruptedException {
+        String command = String.format(NETSH_DELETE_LOOPBACK_ADDRESS, address);
+        runNetshCommand(command, false);
     }
 
     private String getRuleName(String port) {

@@ -25,4 +25,8 @@ public abstract class NetworkUtils {
      * @throws IOException on errors
      */
     public abstract void recoverMqtt() throws InterruptedException, IOException;
+
+    public abstract void addLoopbackAddress(String address) throws IOException, InterruptedException;
+
+    public abstract void deleteLoopbackAddress(String address) throws IOException, InterruptedException;
 }
