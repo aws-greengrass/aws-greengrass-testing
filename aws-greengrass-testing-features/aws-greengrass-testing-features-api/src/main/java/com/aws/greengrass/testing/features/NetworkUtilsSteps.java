@@ -15,6 +15,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.inject.Inject;
 
@@ -24,6 +26,7 @@ public class NetworkUtilsSteps {
 
     private final Platform platform;
     private final AtomicBoolean mqttConnectivity = new AtomicBoolean(true);
+    private final Set<String> addedIPs = new HashSet<>();
 
     @Inject
     public NetworkUtilsSteps(final Platform platform) {
@@ -89,6 +92,7 @@ public class NetworkUtilsSteps {
     public void addLoopBackAddress(final String address) throws IOException, InterruptedException {
         LOGGER.info("Adding loopback address {}", address);
         platform.networkUtils().addLoopbackAddress(address);
+        addedIPs.add(address);
     }
 
     /**
@@ -102,6 +106,7 @@ public class NetworkUtilsSteps {
     public void removeLoopBackAddress(final String address) throws IOException, InterruptedException {
         LOGGER.info("Deleting loopback address {}", address);
         platform.networkUtils().deleteLoopbackAddress(address);
+        addedIPs.remove(address);
     }
 
     /**
@@ -112,10 +117,17 @@ public class NetworkUtilsSteps {
      */
     @After(order = Integer.MAX_VALUE)
     public void restoreDefaultSettings() throws IOException, InterruptedException {
+        // rollback firewall changes
         boolean changed = mqttConnectivity.compareAndSet(false, true);
         if (changed) {
             LOGGER.info("Automatically unblocking blocked MQTT connections");
             platform.networkUtils().recoverMqtt();
+        }
+
+        // rollback lo interface changes
+        Set<String> ipsToRemove = new HashSet<>(addedIPs);
+        for (String ip : ipsToRemove) {
+            removeLoopBackAddress(ip);
         }
     }
 }
