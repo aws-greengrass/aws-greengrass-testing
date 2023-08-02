@@ -26,9 +26,9 @@ public class LinuxNetworkUtils extends NetworkUtils {
     private static final String IPTABLES = "iptables";
     private static final String IP = "ip";
     private static final String[] TEMPLATES = {
-        "INPUT -p tcp -s 127.0.0.1 --dport %s -j ACCEPT",
+        "INPUT -p tcp -s localhost --dport %s -j ACCEPT",
         "INPUT -p tcp --dport %s -j DROP",
-        "OUTPUT -p tcp -d 127.0.0.1 --dport %s -j ACCEPT",
+        "OUTPUT -p tcp -d localhost --dport %s -j ACCEPT",
         "OUTPUT -p tcp --dport %s -j DROP"
     };
 
