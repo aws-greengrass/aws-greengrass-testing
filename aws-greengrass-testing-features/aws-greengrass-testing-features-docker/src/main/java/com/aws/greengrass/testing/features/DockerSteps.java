@@ -5,6 +5,7 @@
 
 package com.aws.greengrass.testing.features;
 
+import com.aws.greengrass.testing.api.device.exception.CommandExecutionException;
 import com.aws.greengrass.testing.api.device.model.CommandInput;
 import com.aws.greengrass.testing.platform.Platform;
 import io.cucumber.guice.ScenarioScoped;
@@ -81,8 +82,17 @@ public class DockerSteps {
         }
     }
 
+    /**
+     * Cleanup after executing steps.
+     */
     @After
     public void removeCreatedImages() {
-        createdImages.forEach(this::removeDockerImage);
+        for (String createdImage : createdImages) {
+            try {
+                removeDockerImage(createdImage);
+            } catch (CommandExecutionException e) {
+                LOGGER.debug("Could not remove docker image {}", createdImage, e);
+            }
+        }
     }
 }
