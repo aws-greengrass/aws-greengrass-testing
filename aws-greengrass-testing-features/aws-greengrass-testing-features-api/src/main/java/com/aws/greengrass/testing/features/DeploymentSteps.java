@@ -347,7 +347,7 @@ public class DeploymentSteps {
                 if (componentVersion == null) {
                     throw new IllegalStateException("Couldn't get version of component " + componentName);
                 }
-                LOGGER.info("Assume component {} has current version {}", componentName, componentVersion);
+                LOGGER.debug("Assume component {} has current version {}", componentName, componentVersion);
                 builder.componentVersion(componentVersion);
             } else {
                 componentPreparation.prepare(overrideNameVersion.build()).ifPresent(nameVersion -> {
