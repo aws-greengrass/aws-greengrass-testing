@@ -40,7 +40,7 @@ Feature: Testing Cloud component in Greengrass
     Then the Greengrass deployment is COMPLETED on the device after 180 seconds
     And the com.aws.HelloWorldMultiplatform log on the device contains the line "Hello World!" within 20 seconds
 
-  @CloudDeployment @IDT @OTFStable
+  @OTFStable
   Scenario: As a developer, I can create use CURRENT keyword as version of the component
     When I create a Greengrass deployment with components
       | com.aws.HelloWorld | classpath:/greengrass/components/recipes/hello_world_recipe.yaml |
