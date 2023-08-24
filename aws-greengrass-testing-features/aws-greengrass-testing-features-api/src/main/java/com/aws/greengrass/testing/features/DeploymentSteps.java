@@ -60,6 +60,7 @@ import static com.aws.greengrass.testing.features.GreengrassCliSteps.LOCAL_DEPLO
 @ScenarioScoped
 public class DeploymentSteps {
     private static final Logger LOGGER = LogManager.getLogger(DeploymentSteps.class);
+    private static final String CURRENT = "CURRENT";
     private static final String IOT_JOB_EXECUTION_STATUS_SUCCEEDED = "SUCCEEDED";
     private static final String LOCAL_STORE_RECIPES = "local:/local-store/recipes/";
     private final AWSResources resources;
@@ -177,9 +178,8 @@ public class DeploymentSteps {
         final String componentVersion = getComponentVersion(componentName);
         if (componentVersion == null) {
             throw new IllegalStateException("Couldn't get version of component " + componentName);
-        } else {
-            LOGGER.info("Updating configuration of component {}:{}", componentName, componentVersion);
         }
+        LOGGER.info("Updating configuration of component {}:{}", componentName, componentVersion);
         CommandInput command = getCliDeploymentCommand(componentName, componentVersion, configurations);
         createLocalDeploymentWithConfigs(0, command);
     }
@@ -340,10 +340,23 @@ public class DeploymentSteps {
             }
             overrides.component(name).ifPresent(overrideNameVersion::from);
             ComponentDeploymentSpecification.Builder builder = ComponentDeploymentSpecification.builder();
-            componentPreparation.prepare(overrideNameVersion.build()).ifPresent(nameVersion -> {
-                builder.componentVersion(nameVersion.version().value());
-            });
+
+            if (CURRENT.equals(value)) {
+                final String componentName = overrideNameVersion.build().name();
+                String componentVersion = getComponentVersionFromBackendDeployment(componentName);
+                if (componentVersion == null) {
+                    throw new IllegalStateException("Couldn't get version of component " + componentName);
+                }
+                LOGGER.debug("Assume component {} has current version {}", componentName, componentVersion);
+                builder.componentVersion(componentVersion);
+            } else {
+                componentPreparation.prepare(overrideNameVersion.build()).ifPresent(nameVersion -> {
+                    builder.componentVersion(nameVersion.version().value());
+                });
+            }
+
             components.put(name, builder.build());
+
         });
         return components;
     }
