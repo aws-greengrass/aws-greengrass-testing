@@ -12,7 +12,6 @@ import com.aws.greengrass.testing.platform.NetworkUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -20,7 +19,6 @@ import java.util.List;
 public class LinuxNetworkUtils extends NetworkUtils {
     private static final Logger LOGGER = LogManager.getLogger(LinuxNetworkUtils.class);
     private static final long TIMEOUT_IN_SECONDS = 2L;
-
     private static final String DISABLE_OPTION = "--delete";
     private static final String APPEND_OPTION = "-A";
     private static final String IPTABLES = "iptables";
@@ -31,11 +29,8 @@ public class LinuxNetworkUtils extends NetworkUtils {
         "OUTPUT -p tcp -d localhost --dport %s -j ACCEPT",
         "OUTPUT -p tcp --dport %s -j DROP"
     };
-
     private static final String ADD_LOOPBACK_ADDRESS_TEMPLATE = "addr add %s/32 dev lo";
     private static final String DELETE_LOOPBACK_ADDRESS_TEMPLATE = "addr delete %s/32 dev lo";
-    private static final String COMMAND_FAILED_TO_RUN = "Command (%s) failed to run.";
-
     private final LinuxCommands commands;
 
     LinuxNetworkUtils(final Device device, final PillboxContext pillboxContext) {
@@ -47,13 +42,13 @@ public class LinuxNetworkUtils extends NetworkUtils {
      * On Linux connections to/from 127.0.0.1 will still be allowed.
      */
     @Override
-    public void disconnectMqtt() throws InterruptedException, IOException {
-        modifyMqttConnection(APPEND_OPTION);
+    public void disconnectMqtt() {
+        modifyConnection(APPEND_OPTION, MQTT_PORTS);
     }
 
     @Override
-    public void recoverMqtt() throws InterruptedException, IOException {
-        modifyMqttConnection(DISABLE_OPTION);
+    public void recoverMqtt() {
+        modifyConnection(DISABLE_OPTION, MQTT_PORTS);
     }
 
     @Override
@@ -81,13 +76,13 @@ public class LinuxNetworkUtils extends NetworkUtils {
         commands.execute(commandInput);
     }
 
-    private void modifyMqttConnection(String action) throws IOException, InterruptedException {
+    private void modifyConnection(String action, String[] ports) {
         for (String template : TEMPLATES) {
-            for (String port : MQTT_PORTS) {
+            for (String port : ports) {
                 List<String> arguments = new ArrayList<>();
                 arguments.add(action);
                 String cmd = String.format(template, port);
-                LOGGER.info("Running {} command: {}", IPTABLES, cmd);
+                LOGGER.debug("Running {} command: {}", IPTABLES, cmd);
                 arguments.addAll(Arrays.asList(cmd.split(" ")));
 
                 CommandInput commandInput = CommandInput.builder()
@@ -99,5 +94,15 @@ public class LinuxNetworkUtils extends NetworkUtils {
                 commands.execute(commandInput);
             }
         }
+    }
+
+    @Override
+    public void disconnectNetwork() {
+        modifyConnection(APPEND_OPTION, NETWORK_PORTS);
+    }
+
+    @Override
+    public void recoverNetwork() {
+        modifyConnection(DISABLE_OPTION, NETWORK_PORTS);
     }
 }

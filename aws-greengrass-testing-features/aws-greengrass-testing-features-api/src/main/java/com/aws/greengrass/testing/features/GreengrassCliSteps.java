@@ -14,6 +14,7 @@ import com.aws.greengrass.testing.platform.Platform;
 import com.google.common.annotations.VisibleForTesting;
 import io.cucumber.guice.ScenarioScoped;
 import io.cucumber.java.en.And;
+import io.cucumber.java.en.When;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -74,10 +75,15 @@ public class GreengrassCliSteps {
      * @param componentName name of the component
      * @param status        {RUNNING, BROKEN, FINISHED}
      * @throws InterruptedException {@link InterruptedException}
+     * @throws IllegalStateException {@link IllegalStateException}
      */
     @And("I verify the {word} component is {word} using the greengrass-cli")
     public void verifyComponentIsRunning(String componentName, String status) throws InterruptedException {
-        waitSteps.untilTrue(() -> this.isComponentInState(componentName, status), 30, TimeUnit.SECONDS);
+        if (!waitSteps.untilTrue(() -> this.isComponentInState(componentName, status),
+                60,
+                TimeUnit.SECONDS)) {
+            throw new IllegalStateException("Component status is not in " + status + " status");
+        }
     }
 
     /**
@@ -95,6 +101,28 @@ public class GreengrassCliSteps {
         TimeUnit timeUnit = TimeUnit.valueOf(unit.toUpperCase());
         waitSteps.untilTerminal(() -> this.getLocalDeploymentStatus(), status::equals,
                 terminalStatuses::contains, value, timeUnit);
+    }
+
+    /**
+     * Use greengrass-cli to start or stop the component.
+     *
+     * @param componentName Name of the component
+     * @param action Action to take: stop or restart
+     * @throws UnsupportedOperationException if action word is other than stop or restart
+     */
+    @When("I use greengrass-cli to {word} the component {word}")
+    public void restartOrStopComponent(String action, String componentName) {
+        if (action.matches("stop|restart")) {
+            platform.commands().executeToString(CommandInput.builder()
+                    .line(testContext.installRoot().resolve("bin").resolve("greengrass-cli").toString())
+                    .addAllArgs(Arrays.asList("component", action, "--names", componentName))
+                    .build());
+            LOGGER.debug("Performing {} on component {}", action, componentName);
+        } else {
+            throw new UnsupportedOperationException("Invalid action: "
+                    + action + ". Please use restart or stop action words.");
+        }
+
     }
 
     @VisibleForTesting

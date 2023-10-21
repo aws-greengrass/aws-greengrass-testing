@@ -23,6 +23,6 @@ public class MacosPlatform extends AbstractPlatform {
 
     @Override
     public NetworkUtils networkUtils() {
-        return new MacosNetworkUtils();
+        return new MacosNetworkUtils(device, pillboxContext);
     }
 }
