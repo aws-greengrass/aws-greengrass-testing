@@ -103,7 +103,7 @@ public class WindowsNetworkUtils extends NetworkUtils {
         }
     }
 
-    private void runNetshCommand(String command, boolean ignoreError) throws IOException, InterruptedException {
+    private void runNetshCommand(String command, boolean ignoreError) {
         LOGGER.info("Running {} command: {}", NETSH, command);
 
         CommandInput commandInput = CommandInput.builder()
@@ -121,5 +121,15 @@ public class WindowsNetworkUtils extends NetworkUtils {
                 throw new RuntimeException(errorString, e);
             }
         }
+    }
+
+    @Override
+    public void disconnectNetwork() {
+        throw new UnsupportedOperationException("Operation not supported");
+    }
+
+    @Override
+    public void recoverNetwork() {
+        throw new UnsupportedOperationException("Operation not supported");
     }
 }

@@ -9,6 +9,7 @@ import java.io.IOException;
 
 public abstract class NetworkUtils {
     protected static final String[] MQTT_PORTS = {"8883"};
+    protected static final String[] NETWORK_PORTS = {"443"};
 
     /**
      * Disables incoming and outgoing MQTT connections by apply firewall rules.
@@ -29,4 +30,8 @@ public abstract class NetworkUtils {
     public abstract void addLoopbackAddress(String address) throws IOException, InterruptedException;
 
     public abstract void deleteLoopbackAddress(String address) throws IOException, InterruptedException;
+
+    public abstract void disconnectNetwork() throws InterruptedException, IOException;
+
+    public abstract void recoverNetwork() throws InterruptedException, IOException;
 }

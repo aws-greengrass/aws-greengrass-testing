@@ -26,6 +26,7 @@ public class NetworkUtilsSteps {
 
     private final Platform platform;
     private final AtomicBoolean mqttConnectivity = new AtomicBoolean(true);
+    private final AtomicBoolean networkConnectivity = new AtomicBoolean(true);
     private final Set<String> addedIPs = new HashSet<>();
 
     @Inject
@@ -61,7 +62,7 @@ public class NetworkUtilsSteps {
     }
 
     /**
-     * Disables or dnables device MQTT connectivity to IoT Core by blocking traffic on ports 8883 and 443.
+     * Disables or enables device MQTT connectivity to IoT Core by blocking traffic on ports 8883.
      *
      * @param connectivity the value of connectivity to set
      * @throws IOException on IO errors
@@ -110,6 +111,27 @@ public class NetworkUtilsSteps {
     }
 
     /**
+     * Disables or enables device internet connectivity by blocking traffic on ports 443.
+     *
+     * @param connectivity the value of connectivity to set
+     * @throws IOException on IO errors
+     * @throws InterruptedException when thread has been interrupted
+     */
+    @When("I set device network connectivity to {connectivityValue}")
+    public void setDeviceNetwork(final boolean connectivity) throws IOException, InterruptedException {
+        boolean changed = networkConnectivity.compareAndSet(!connectivity, connectivity);
+        if (changed) {
+            if (connectivity) {
+                LOGGER.info("Restoring Network connection");
+                platform.networkUtils().recoverNetwork();
+            } else {
+                LOGGER.info("Disconnecting Network connection");
+                platform.networkUtils().disconnectNetwork();
+            }
+        }
+    }
+
+    /**
      * Restore settings to defaults.
      *
      * @throws IOException on IO errors
@@ -118,10 +140,16 @@ public class NetworkUtilsSteps {
     @After(order = Integer.MAX_VALUE)
     public void restoreDefaultSettings() throws IOException, InterruptedException {
         // rollback firewall changes
-        boolean changed = mqttConnectivity.compareAndSet(false, true);
-        if (changed) {
+        boolean mqttChange = mqttConnectivity.compareAndSet(false, true);
+        if (mqttChange) {
             LOGGER.info("Automatically unblocking blocked MQTT connections");
             platform.networkUtils().recoverMqtt();
+        }
+
+        boolean networkChange = networkConnectivity.compareAndSet(false, true);
+        if (networkChange) {
+            LOGGER.info("Automatically unblocking blocked Network connection");
+            platform.networkUtils().recoverNetwork();
         }
 
         // rollback lo interface changes
