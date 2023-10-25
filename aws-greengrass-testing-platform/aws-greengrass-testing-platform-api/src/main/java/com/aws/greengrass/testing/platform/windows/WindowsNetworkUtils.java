@@ -124,12 +124,12 @@ public class WindowsNetworkUtils extends NetworkUtils {
     }
 
     @Override
-    public void disconnectNetwork() {
-        throw new UnsupportedOperationException("Operation not supported");
+    public void disconnectNetwork() throws InterruptedException, IOException {
+        blockPorts(NETWORK_PORTS);
     }
 
     @Override
-    public void recoverNetwork() {
-        throw new UnsupportedOperationException("Operation not supported");
+    public void recoverNetwork() throws InterruptedException, IOException {
+        deleteRules(NETWORK_PORTS);
     }
 }
