@@ -39,12 +39,12 @@ public class SystemSteps {
         switch (stat) {
             case "CPU":
                 double cpuLoad = cpu.getSystemCpuLoad(500) * 100;
-                LOGGER.info("System CPU load recorded as: " + cpuLoad + "%");
+                LOGGER.debug("System CPU load recorded as: " + cpuLoad + "%");
                 cpuList.add(0, cpuLoad);
                 break;
             case "RAM":
                 double usedRam = (ram.getTotal() - ram.getAvailable()) / (1024 * 1024);
-                LOGGER.info("Used RAM recorded as: " + usedRam + " MB");
+                LOGGER.debug("Used RAM recorded as: " + usedRam + " MB");
                 ramList.add(0, usedRam);
                 break;
             default:
@@ -57,11 +57,12 @@ public class SystemSteps {
      *
      * @param stat the statistic to record, must be CPU or RAM
      * @param threshold the threshold to assert the difference is under, % for CPU and MB for RAM
+     * @param units dummy parameter so that the step is picked up, always % for CPU and MB for RAM
      * @throws Exception when step fails due to exceeding the provided threshold or sample steps haven't run twice
      * @throws IllegalArgumentException when stat param is not CPU or RAM
      */
-    @Then("the difference in the last two {word} samples is less than {int}")
-    public void checkSampleDiff(String stat, int threshold) throws Exception, IllegalArgumentException {
+    @Then("the difference in the last two {word} samples is less than {int} {word}")
+    public void checkSampleDiff(String stat, int threshold, String units) throws Exception, IllegalArgumentException {
         switch (stat) {
             case "CPU":
                 if (cpuList.size() < 2) {
