@@ -46,12 +46,13 @@ public class SystemMetricSteps {
      *
      * @param stat the statistic to record, must be CPU or RAM
      * @param statKey the key to store the statistic under in scenario context
-     * @throws IllegalArgumentException when parameter is not CPU or RAM
+     * @throws IllegalArgumentException when parameter is not CPU or RAM, or when the units do not match
      */
     @When("I record the device's {word} usage statistic as {word}")
     public void recordCpuOrRamInContext(String stat, String statKey) throws IllegalArgumentException {
         switch (stat) {
             case "CPU":
+                // 500 is the time delay in millis that we record CPU load with. Can be changed to a better default.
                 double cpuLoad = cpu.getSystemCpuLoad(500) * 100;
                 LOGGER.debug("System CPU load recorded as: " + cpuLoad + "%");
                 scenarioContext.put(statKey, Double.toString(cpuLoad));
@@ -70,14 +71,14 @@ public class SystemMetricSteps {
      * Check difference between last two records and verify it is below a threshold.
      *
      * @param stat the statistic to record, must be CPU or RAM
-     * @param statKey1 the first key to check in scenarioContext, the one sampled earlier in time
-     * @param statKey2 the second key to check in scenarioContext, the one sampled later in time
+     * @param statKey1 the first key to check in scenarioContext, the sample expected to be lesser
+     * @param statKey2 the second key to check in scenarioContext, the sample expected to be greater
      * @param threshold the threshold to assert the difference is under, % for CPU and MB for RAM
      * @param units dummy parameter so that the step is picked up, always % for CPU and MB for RAM
      * @throws Exception when step fails due to exceeding the provided threshold or sample steps haven't run twice
-     * @throws IllegalArgumentException when stat param is not CPU or RAM
+     * @throws IllegalArgumentException when stat param is not CPU or RAM, or when the units do not match
      */
-    @Then("the difference between {word} usage samples {word} and {word} is less than {int} {word}")
+    @Then("the increase from {word} usage sample {word} to sample {word} is less than {int} {word}")
     public void checkSampleDiff(String stat,
                                 String statKey1,
                                 String statKey2,
