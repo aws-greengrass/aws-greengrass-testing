@@ -54,12 +54,12 @@ public class SystemMetricSteps {
             case "CPU":
                 // 500 is the time delay in millis that we record CPU load with. Can be changed to a better default.
                 double cpuLoad = cpu.getSystemCpuLoad(500) * 100;
-                LOGGER.debug("System CPU load recorded as: " + cpuLoad + "%");
+                LOGGER.debug("System CPU load recorded as: {}%", cpuLoad);
                 scenarioContext.put(statKey, Double.toString(cpuLoad));
                 break;
             case "RAM":
                 double usedRam = (double) (ram.getTotal() - ram.getAvailable()) / (1024 * 1024);
-                LOGGER.debug("Used RAM recorded as: " + usedRam + " MB");
+                LOGGER.debug("Used RAM recorded as: {} MB", usedRam);
                 scenarioContext.put(statKey, Double.toString(usedRam));
                 break;
             default:
@@ -78,7 +78,7 @@ public class SystemMetricSteps {
      * @throws Exception when step fails due to exceeding the provided threshold or sample steps haven't run twice
      * @throws IllegalArgumentException when stat param is not CPU or RAM, or when the units do not match
      */
-    @Then("the increase from {word} usage sample {word} to sample {word} is less than {int} {word}")
+    @Then("the increase in the {word} usage from {word} to {word} is less than {int} {word}")
     public void checkSampleDiff(String stat,
                                 String statKey1,
                                 String statKey2,
