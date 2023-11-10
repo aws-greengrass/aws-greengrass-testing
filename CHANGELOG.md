@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.2.0
+### New features
+* Added network related steps to configure MQTT and internet network connectivity during tests.
+* Added system metric steps to monitor device RAM and CPU use.
+
+### Bug fixes and improvements
+* Greengrass local CLI deployment step will retry until it succeeds.
+* Tests gracefully stop Nucleus instead of killing it.
+* Polls the IoT Credential endpoint until credentials are retrievable for the thing and role alias.
+* Fixed bugs relating to missing artifacts and recipe directories, and missing component versions.
+* No longer fails during docker image cleanup if the docker image does not exist.
+* Add CURRENT keyword as version of component.
+
 ## v1.1.0
 ### New features
 * Adds the ability to install a custom component with configuration. This requires recipe for the custom component.
