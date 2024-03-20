@@ -23,10 +23,10 @@ Manifests:
 - Platform:
     os: linux
   Artifacts:
-    - URI: file:/bin/bash
+    - URI: file:/bin/sh
       Permission:
         Read: ALL
         Execute: ALL
   Lifecycle:
     run: |
-      bash -c "echo -ne \"Hello World!\n\""
+      sh -c "echo -ne \"Hello World!\n\""
