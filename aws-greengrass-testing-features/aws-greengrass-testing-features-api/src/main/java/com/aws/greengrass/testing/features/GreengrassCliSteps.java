@@ -135,8 +135,13 @@ public class GreengrassCliSteps {
                     .build());
             LOGGER.debug(String.format("deployment status response received for deployment ID %s is %s",
                     deploymentId, response));
-            String[] responseArray = response.split(":");
-            return responseArray[responseArray.length - 1].trim();
+            // compatible with CLI <2.11.0 where deployment status output is just one line
+            return Arrays.stream(response.split("\n"))
+                    .filter(line -> line.contains(":"))
+                    .findFirst() // status is the first line
+                    .map(statusLine -> statusLine.split(": "))
+                    .map(statusParts -> statusParts.length == 2 ? statusParts[1] : null)
+                    .orElse("UNKNOWN");
         } catch (CommandExecutionException e) {
             LOGGER.info("Exception occurred while getting the deployment status. Will try again", e);
         }

@@ -11,8 +11,6 @@ import com.aws.greengrass.testing.api.model.CleanupContext;
 import com.aws.greengrass.testing.api.model.InitializationContext;
 import com.aws.greengrass.testing.api.model.TestId;
 import com.aws.greengrass.testing.api.model.TimeoutMultiplier;
-import com.aws.greengrass.testing.features.GreengrassCliSteps;
-import com.aws.greengrass.testing.features.WaitSteps;
 import com.aws.greengrass.testing.model.ScenarioContext;
 import com.aws.greengrass.testing.model.TestContext;
 import com.aws.greengrass.testing.platform.Commands;
@@ -109,6 +107,11 @@ public class GreengrassCliStepsTest {
         Mockito.doReturn(String.format("%s: SUCCEEDED", MOCK_DEPLOYMENT_ID)).when(mockedCommands)
                 .executeToString(expectedCommandInput);
 
+        assertEquals("SUCCEEDED", greengrassCliSteps.getLocalDeploymentStatus());
+
+        // simulate response for cli version >=2.11.0 that has multiple lines
+        Mockito.doReturn(String.format("%s: SUCCEEDED\nCreated on: 1/1/1 11:11 AM", MOCK_DEPLOYMENT_ID))
+                .when(mockedCommands).executeToString(expectedCommandInput);
         assertEquals("SUCCEEDED", greengrassCliSteps.getLocalDeploymentStatus());
     }
 
