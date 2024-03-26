@@ -78,8 +78,8 @@ public class DeploymentSteps {
 
 
     private Platform platform;
-    private Path artifactPath;
-    private Path recipePath;
+    private final Path artifactPath;
+    private final Path recipePath;
 
     @Inject
     @SuppressWarnings("MissingJavadocMethod")
@@ -274,13 +274,15 @@ public class DeploymentSteps {
      * Create a local deployment using greengrass cli.
      * @param componentNames map of component name to source of the component
      * @throws InterruptedException Task interrupted
+     * @throws IOException if required directories cannot be made
      */
     @When("I create a local deployment with components")
-    public void createLocalDeployment(List<List<String>> componentNames) throws InterruptedException {
+    public void createLocalDeployment(List<List<String>> componentNames) throws InterruptedException, IOException {
         createLocalDeployment(componentNames, 0);
     }
 
-    private void createLocalDeployment(List<List<String>> componentNames, int retryCount) throws InterruptedException {
+    private void createLocalDeployment(List<List<String>> componentNames, int retryCount)
+            throws InterruptedException, IOException {
         // find the component artifacts and copy into a local store
         final Map<String, ComponentDeploymentSpecification> components = parseComponentNamesAndPrepare(componentNames);
 
@@ -290,6 +292,9 @@ public class DeploymentSteps {
         commandArgs.addAll(Arrays.asList("deployment", "create",
                 "--artifactDir "  + artifactPath.toString(),
                 "--recipeDir " + recipePath.toString()));
+
+        Files.createDirectories(artifactPath);
+        Files.createDirectories(recipePath);
 
         for (Map.Entry<String, ComponentDeploymentSpecification> entry : components.entrySet()) {
             commandArgs.add(" --merge ");

@@ -25,24 +25,18 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 
-import static com.aws.greengrass.testing.component.LocalComponentPreparationService.ARTIFACTS_DIR;
-import static com.aws.greengrass.testing.component.LocalComponentPreparationService.LOCAL_STORE;
-import static com.aws.greengrass.testing.component.LocalComponentPreparationService.RECIPE_DIR;
-
 @ScenarioScoped
 public class GreengrassCliSteps {
 
     public static final String LOCAL_DEPLOYMENT_ID = "localDeploymentId";
 
-    private Platform platform;
-    private Path artifactPath;
-    private Path recipePath;
-    private TestContext testContext;
-    private ScenarioContext scenarioContext;
-    private ComponentPreparationService componentPreparation;
-    private WaitSteps waitSteps;
+    private final Platform platform;
+    private final TestContext testContext;
+    private final ScenarioContext scenarioContext;
+    private final ComponentPreparationService componentPreparation;
+    private final WaitSteps waitSteps;
 
-    private static Logger LOGGER = LogManager.getLogger(GreengrassCliSteps.class);
+    private static final Logger LOGGER = LogManager.getLogger(GreengrassCliSteps.class);
 
     @Inject
     @SuppressWarnings("MissingJavadocMethod")
@@ -54,8 +48,6 @@ public class GreengrassCliSteps {
         this.componentPreparation = componentPreparation;
         this.scenarioContext = scenarioContext;
         this.waitSteps = waitSteps;
-        this.artifactPath = testContext.testDirectory().resolve(LOCAL_STORE).resolve(ARTIFACTS_DIR);;
-        this.recipePath = testContext.testDirectory().resolve(LOCAL_STORE).resolve(RECIPE_DIR);
     }
 
     /**
@@ -99,7 +91,7 @@ public class GreengrassCliSteps {
         terminalStatuses.add("SUCCEEDED");
         terminalStatuses.add("FAILED");
         TimeUnit timeUnit = TimeUnit.valueOf(unit.toUpperCase());
-        waitSteps.untilTerminal(() -> this.getLocalDeploymentStatus(), status::equals,
+        waitSteps.untilTerminal(this::getLocalDeploymentStatus, status::equals,
                 terminalStatuses::contains, value, timeUnit);
     }
 
