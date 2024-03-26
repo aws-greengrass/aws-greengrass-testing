@@ -12,21 +12,11 @@ ComponentPublisher: Amazon
 Manifests:
 - Platform:
     os: windows
-  Artifacts:
-    - URI: "file:C:/Windows/System32/cmd.exe"
-      Permission:
-        Read: ALL
-        Execute: ALL
   Lifecycle:
     run: |
       cmd /c echo "Hello World!"
 - Platform:
     os: linux
-  Artifacts:
-    - URI: file:/bin/bash
-      Permission:
-        Read: ALL
-        Execute: ALL
   Lifecycle:
     run: |
-      bash -c "echo -ne \"Hello World!\n\""
+      echo "Hello World!"
