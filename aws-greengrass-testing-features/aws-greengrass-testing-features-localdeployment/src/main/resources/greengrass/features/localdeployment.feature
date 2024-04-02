@@ -16,7 +16,7 @@ Feature: Testing local deployment using CLI in Greengrass
     Then the local Greengrass deployment is SUCCEEDED on the device after 120 seconds
     And the aws.greengrass.LocalHelloWorld log on the device contains the line "Hello World!!" within 20 seconds
 
-  @LocalDeployment @IDT @OTFStable
+  @LocalDeployment @OTFStable
   Scenario: A multi-platform component is deployed locally using CLI
     When I create a Greengrass deployment with components
       | aws.greengrass.Cli | GG_CLI_VERSION |
