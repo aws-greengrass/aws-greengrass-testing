@@ -32,7 +32,7 @@ Feature: Testing Cloud component in Greengrass
     Then the Greengrass deployment is COMPLETED on the device after 180 seconds
     And the com.aws.HelloWorld log on the device contains the line "Hello World Updated!!" within 20 seconds
 
-  @CloudDeployment @IDT @OTFStable
+  @CloudDeployment @OTFStable
   Scenario: As a developer, I can create a multi-platform component in Cloud and deploy it on my device
     When I create a Greengrass deployment with components
       | com.aws.HelloWorldMultiplatform | classpath:/greengrass/components/recipes/hello_world_recipe_multiplatform.yaml |
