@@ -4,7 +4,7 @@ Feature: Greengrass V2 Machine Learning
     Given my device is registered as a Thing
     And my device is running Greengrass
 
-  @ML @DLR @MQTT @IDT
+  @ML @DLR @MQTT
   Scenario: I can receive inference results on an MQTT topic after installing aws.greengrass.DLRImageClassification
     Given I subscribe to the following IoT MQTT topics
       | image/classification |
@@ -33,7 +33,7 @@ Feature: Greengrass V2 Machine Learning
     And I receive messages on the following IoT MQTT topics after 30 seconds
       | image/classification | image-classification
 
-  @ML @DLR @Log @IDT
+  @ML @DLR @Log
   Scenario: I can install and run aws.greengrass.DLRImageClassification on my device
     When I create a Greengrass deployment with components
       | aws.greengrass.DLRImageClassification | LATEST |
@@ -59,7 +59,7 @@ Feature: Greengrass V2 Machine Learning
     Then the Greengrass deployment is COMPLETED on the device after 5 minutes
     And the aws.greengrass.DLRImageClassification log on the device contains the line "image-classification" within 30 seconds
 
-  @ML @TensorFlow @MQTT @IDT
+  @ML @TensorFlow @MQTT
   Scenario: I can receive inference results on an MQTT topic after installing aws.greengrass.TensorFlowLiteImageClassification
     Given I subscribe to the following IoT MQTT topics
       | image/classification |
@@ -88,7 +88,7 @@ Feature: Greengrass V2 Machine Learning
     And I receive messages on the following IoT MQTT topics after 30 seconds
       | image/classification | image-classification
 
-  @ML @TensorFlow @Log @IDT
+  @ML @TensorFlow @Log
   Scenario: I can install and run aws.greengrass.TensorFlowLiteImageClassification on my device
     When I create a Greengrass deployment with components
       | aws.greengrass.TensorFlowLiteImageClassification | LATEST |
@@ -114,7 +114,7 @@ Feature: Greengrass V2 Machine Learning
     Then the Greengrass deployment is COMPLETED on the device after 5 minutes
     And the aws.greengrass.TensorFlowLiteImageClassification log on the device contains the line "image-classification" within 30 seconds
 
-  @ML @SageMakerEdgeManager @IDT
+  @ML @SageMakerEdgeManager
   Scenario: I can install SageMaker Edge Manager agent using aws.greengrass.SageMakerEdgeManager component
     When I create a Greengrass deployment with components
       | aws.greengrass.SageMakerEdgeManager | LATEST |
