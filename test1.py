@@ -13,8 +13,40 @@ S3_ARTIFACT_DIR = "artifacts"
 
 class SystemInterface:
 
-    def __init__(self):
-        pass
+    def check_systemctl_status_for_component(self, component_name):
+        try:
+            cmd = [
+                "sudo",
+                "systemctl",
+                "status",
+                f"ggl.{component_name}.service",
+            ]
+
+            # Run the command and stream output
+            process = subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                universal_newlines=True,
+            )
+
+            output = process.stdout.read()
+            if output:
+                if len(output.split("\n")) > 2:
+                    if "Active: active (running)" in output.split(
+                            "\n")[2].strip():
+                        print(f"Process is active")
+                        return "RUNNING"
+
+            process.terminate()
+
+        except KeyboardInterrupt:
+            print("\nStopping monitor...")
+            process.terminate()
+            return "NOT_RUNNING"
+        except Exception as e:
+            print(f"Error: {e}")
+            return "NOT_RUNNING"
 
     def monitor_journalctl_for_message(self, service_name, message, timeout):
         try:
@@ -36,6 +68,9 @@ class SystemInterface:
 
             print(f"Monitoring logs for {service_name}...")
             timeout = time.time() + timeout
+
+            # Call the readline is blocking, set it to non-blocking mode.
+            os.set_blocking(process.stdout.fileno(), False)
 
             while True:
                 # Check timeout
@@ -86,6 +121,18 @@ class GGTestUtils:
         self._ggS3ObjToDelete = []
         self._ggServiceList = []
 
+    def get_thing_group(self):
+        return self._thing_group
+
+    def get_aws_account(self):
+        return self._account
+
+    def get_s3_artifact_bucket(self):
+        return self._bucket
+
+    def get_region(self):
+        return self._region
+
     def _get_things_in_thing_group(self, thing_group_name):
         """
         Retrieves a list of things in a given thing group.
@@ -96,9 +143,8 @@ class GGTestUtils:
         Returns:
             list: A list of thing names in the thing group, or None if an error occurs.
         """
-        client = boto3.client("iot", region_name=self._region)
         try:
-            response = client.list_things_in_thing_group(
+            response = self._iotClient.list_things_in_thing_group(
                 thingGroupName=thing_group_name)
             things = [thing for thing in response.get("things", [])]
             return things
@@ -236,8 +282,8 @@ class GGTestUtils:
             recipe_name = yaml.safe_load(recipe_content)["ComponentName"]
 
             cloud_recipe_name = recipe_name + cloud_addition
-            modified_content = recipe_content.replace("$bucketName$",
-                                                      self._bucket)
+            modified_content = recipe_content.replace(
+                "$bucketName$", self.get_s3_artifact_bucket())
             modified_content = modified_content.replace(
                 "$testArtifactsDirectory$", S3_ARTIFACT_DIR)
             modified_content = modified_content.replace(
@@ -266,22 +312,41 @@ class GGTestUtils:
                 raise
 
     def upload_component_with_version(self, component_name, version):
-        component_artifact_dir = "./" + component_name + "/" + version + "/artifacts/"
-        artifact_files = os.listdir(component_artifact_dir)
-        artifact_files_full_paths = [
-            os.path.abspath(os.path.join(component_artifact_dir, file))
-            for file in artifact_files
-        ]
-        self._upload_files_to_s3(artifact_files_full_paths, self._bucket)
+        try:
+            component_artifact_dir = "./" + component_name + "/" + version + "/artifacts/"
+            artifact_files = os.listdir(component_artifact_dir)
+            artifact_files_full_paths = [
+                os.path.abspath(os.path.join(component_artifact_dir, file))
+                for file in artifact_files
+            ]
+            self._upload_files_to_s3(artifact_files_full_paths,
+                                     self.get_s3_artifact_bucket())
+        except FileNotFoundError:
+            print(
+                f"No artifact directory found for {component_name}-{version}.")
+        except PermissionError:
+            print(
+                f"Cannot access the directory with artifacts for {component_name}-{version}."
+            )
+            return None
 
-        component_recipe_dir = "./" + component_name + "/" + version + "/recipe/"
-        recipes = os.listdir(component_recipe_dir)
-        recipes_full_paths = [
-            os.path.abspath(os.path.join(component_recipe_dir, file))
-            for file in recipes
-        ]
-        print(recipes_full_paths)
-        return self._upload_component_to_gg(recipes_full_paths[0])
+        try:
+            component_recipe_dir = "./" + component_name + "/" + version + "/recipe/"
+            recipes = os.listdir(component_recipe_dir)
+            recipes_full_paths = [
+                os.path.abspath(os.path.join(component_recipe_dir, file))
+                for file in recipes
+            ]
+
+            return self._upload_component_to_gg(recipes_full_paths[0])
+        except FileNotFoundError:
+            print(f"No recipe directory found for {component_name}-{version}.")
+            return None
+        except PermissionError:
+            print(
+                f"Cannot access the directory with recipe for {component_name}-{version}."
+            )
+            return None
 
     def _create_corrupt_file(self, file_path):
         try:
@@ -320,13 +385,15 @@ class GGTestUtils:
             assert corrupt_file_list is not None
             corrupt_file_list.append(corrupt_file_path)
 
-        return self._upload_files_to_s3(corrupt_file_list, self._bucket)
+        return self._upload_files_to_s3(corrupt_file_list,
+                                        self.get_s3_artifact_bucket())
 
     def cleanup(self):
         for componentArn in self._ggComponentToDeleteArn:
             self._ggClient.delete_component(arn=componentArn)
         for artifact in self._ggS3ObjToDelete:
-            self._s3Client.delete_object(Bucket=self._bucket, Key=artifact)
+            self._s3Client.delete_object(Bucket=self.get_s3_artifact_bucket(),
+                                         Key=artifact)
 
         # Reset the lists.
         self._ggComponentToDeleteArn = []
@@ -401,7 +468,7 @@ def test_Component_12_T1(gg_util_obj, system_interface):
     #   | MultiPlatform | 1.0.0 |
     # And   I deploy the deployment configuration
     deployment_id = gg_util_obj.create_deployment(
-        f"arn:aws:iot:{gg_util_obj._region}:{gg_util_obj._account}:thinggroup/{gg_util_obj._thing_group}",
+        f"arn:aws:iot:{gg_util_obj.get_region()}:{gg_util_obj.get_aws_account()}:thinggroup/{gg_util_obj.get_thing_group()}",
         component_cloud_name,
         "1.0.0",
     )["deploymentId"]
@@ -417,7 +484,7 @@ def test_Component_12_T1(gg_util_obj, system_interface):
     assert (system_interface.monitor_journalctl_for_message(
         "ggl." + component_cloud_name + ".service",
         "Hello world! World",
-        timeout=20) == True)
+        timeout=20) is True)
 
 
 # GC developer can create a component with recipes containing s3 artifact. GGC operator can deploy it and artifact can be run.
@@ -433,7 +500,7 @@ def test_Component_16_T1(gg_util_obj, system_interface):
     #        | HelloWorld | 1.0.0 |
     # And I deploy the deployment configuration
     deployment_id = gg_util_obj.create_deployment(
-        f"arn:aws:iot:{gg_util_obj._region}:{gg_util_obj._account}:thinggroup/{gg_util_obj._thing_group}",
+        f"arn:aws:iot:{gg_util_obj.get_region()}:{gg_util_obj.get_aws_account()}:thinggroup/{gg_util_obj.get_thing_group()}",
         component_cloud_name,
         "1.0.0",
     )["deploymentId"]
@@ -450,7 +517,7 @@ def test_Component_16_T1(gg_util_obj, system_interface):
         "ggl." + component_cloud_name + ".service",
         "Evergreen's dev experience is great!",
         timeout=20,
-    ) == True)
+    ) is True)
 
 
 # As a component developer, I expect kernel to fail the deployment if the checksum of downloaded artifacts does not match with the checksum in the recipe.
@@ -467,13 +534,13 @@ def test_Component_27_T1(gg_util_obj, system_interface):
 
     # When I corrupt the contents of the component HelloWorld version 1.0.0 in the S3 bucket
     assert gg_util_obj.upload_corrupt_artifacts_to_s3("HelloWorld",
-                                                      "1.0.0") == True
+                                                      "1.0.0") is True
 
     # When I create a deployment configuration with components
     #        | HelloWorld | 1.0.0 |
     # And I deploy the deployment configuration
     deployment_id = gg_util_obj.create_deployment(
-        f"arn:aws:iot:{gg_util_obj._region}:{gg_util_obj._account}:thinggroup/{gg_util_obj._thing_group}",
+        f"arn:aws:iot:{gg_util_obj.get_region()}:{gg_util_obj.get_aws_account()}:thinggroup/{gg_util_obj.get_thing_group()}",
         component_cloud_name,
         "1.0.0",
     )["deploymentId"]
@@ -488,7 +555,7 @@ def test_Component_27_T1(gg_util_obj, system_interface):
         "ggl.core.ggdeploymentd.service",
         "Failed to verify digest.",
         timeout=30,
-    ) == True)
+    ) is True)
 
 
 # Scenario: FleetStatus-1-T1: As a customer I can get thing information with components whose statuses have changed after an IoT Jobs deployment succeeds
@@ -504,7 +571,7 @@ def test_FleetStatus_1_T1(gg_util_obj):
     #        | HelloWorld | 1.0.0 |
     # And I deploy the configuration for deployment FirstDeployment
     deployment_id = gg_util_obj.create_deployment(
-        f"arn:aws:iot:{gg_util_obj._region}:{gg_util_obj._account}:thinggroup/{gg_util_obj._thing_group}",
+        f"arn:aws:iot:{gg_util_obj.get_region()}:{gg_util_obj.get_aws_account()}:thinggroup/{gg_util_obj.get_thing_group()}",
         component_cloud_name,
         "1.0.0",
         "FirstDeployment",
@@ -517,4 +584,54 @@ def test_FleetStatus_1_T1(gg_util_obj):
     # And I can get the thing status as "HEALTHY" with all uploaded components within 60 seconds with groups
     #      | FssThingGroup |
     assert (gg_util_obj.get_ggcore_device_status(
-        60, f"{gg_util_obj._thing_group}") == "HEALTHY")
+        60, f"{gg_util_obj.get_thing_group()}") == "HEALTHY")
+
+
+#As a device application owner, I can deploy configuration with updated components to a thing group.
+def test_Deployment_3_T1(gg_util_obj, system_interface):
+    # I upload component "HelloWorld" version "1.0.0" from the local store
+    component_cloud_name = gg_util_obj.upload_component_with_version(
+        "HelloWorld", "1.0.0")
+
+    # Give 5 sec for cloud to calculate artifact checksum and make it "DEPLOYABLE"
+    time.sleep(5)
+
+    # When I create a deployment configuration for deployment Deployment1 with components
+    #   | HelloWorld | 1.0.0 |
+    # And I deploy the configuration for deployment Deployment1
+    deployment_id_1 = gg_util_obj.create_deployment(
+        f"arn:aws:iot:{gg_util_obj.get_region()}:{gg_util_obj.get_aws_account()}:thinggroup/{gg_util_obj.get_thing_group()}",
+        component_cloud_name, "1.0.0", "Deployment1")["deploymentId"]
+
+    # Then the deployment Deployment1 completes with SUCCEEDED within 180 seconds
+    assert (gg_util_obj.wait_for_deployment_till_timeout(
+        180, deployment_id_1) == "SUCCEEDED")
+
+    # And I can check the cli to see the status of component HelloWorld is RUNNING
+    assert (system_interface.check_systemctl_status_for_component(
+        component_cloud_name) == "RUNNING")
+
+    # And I can check the cli to see the component HelloWorld is running with version 1.0.0
+    # GG_LITE CLI doesn't support this yet.
+
+    # I upload component "HelloWorld" version "1.0.1" from the local store
+    component_cloud_name1 = gg_util_obj.upload_component_with_version(
+        "HelloWorld", "1.0.1")
+
+    # Give 5 sec for cloud to calculate artifact checksum and make it "DEPLOYABLE"
+    time.sleep(5)
+
+    # When I create a deployment configuration for deployment Deployment1 with components
+    #   | HelloWorld | 1.0.1 |
+    # And I deploy the configuration for deployment Deployment2
+    deployment_id_2 = gg_util_obj.create_deployment(
+        f"arn:aws:iot:{gg_util_obj.get_region()}:{gg_util_obj.get_aws_account()}:thinggroup/{gg_util_obj.get_thing_group()}",
+        component_cloud_name1, "1.0.1", "Deployment2")["deploymentId"]
+
+    # Then the deployment Deployment2 completes with SUCCEEDED within 180 seconds
+    assert (gg_util_obj.wait_for_deployment_till_timeout(
+        180, deployment_id_2) == "SUCCEEDED")
+
+    # And I can check the cli to see the status of component HelloWorld is RUNNING
+    assert (system_interface.check_systemctl_status_for_component(
+        component_cloud_name1) == "RUNNING")
