@@ -322,6 +322,7 @@ class GGTestUtils:
     def upload_component_with_version(self, component_name, version):
         try:
             component_artifact_dir = "./components/" + component_name + "/" + version + "/artifacts/"
+
             artifact_files = os.listdir(component_artifact_dir)
             artifact_files_full_paths = [
                 os.path.abspath(os.path.join(component_artifact_dir, file))
@@ -340,6 +341,7 @@ class GGTestUtils:
 
         try:
             component_recipe_dir = "./components/" + component_name + "/" + version + "/recipe/"
+
             recipes = os.listdir(component_recipe_dir)
             recipes_full_paths = [
                 os.path.abspath(os.path.join(component_recipe_dir, file))
@@ -380,6 +382,7 @@ class GGTestUtils:
 
     def upload_corrupt_artifacts_to_s3(self, component_name, version):
         component_artifact_dir = "./components/" + component_name + "/" + version + "/artifacts/"
+
         artifact_files = os.listdir(component_artifact_dir)
         artifact_files_full_paths = [
             os.path.abspath(os.path.join(component_artifact_dir, file))
@@ -616,8 +619,8 @@ def test_Deployment_3_T1(gg_util_obj, system_interface):
     deployment_id_1 = gg_util_obj.create_deployment(
         gg_util_obj.get_thing_group_arn(), [component_cloud_name],
         "Deployment1")["deploymentId"]
-
     assert deployment_id_1 is not None
+
 
     # Then the deployment Deployment1 completes with SUCCEEDED within 180 seconds
     assert (gg_util_obj.wait_for_deployment_till_timeout(
@@ -643,8 +646,8 @@ def test_Deployment_3_T1(gg_util_obj, system_interface):
     deployment_id_2 = gg_util_obj.create_deployment(
         gg_util_obj.get_thing_group_arn(), [component_cloud_name1],
         "Deployment2")["deploymentId"]
-
     assert deployment_id_2 is not None
+
 
     # Then the deployment Deployment2 completes with SUCCEEDED within 180 seconds
     assert (gg_util_obj.wait_for_deployment_till_timeout(
@@ -675,7 +678,6 @@ def test_Deployment_3_T2(gg_util_obj, system_interface):
         gg_util_obj.get_thing_group_arn(),
         [hello_world_cloud_name, sample_component_cloud_name],
         "Deployment1")["deploymentId"]
-
     assert deployment_id_1 is not None
 
     # Then the deployment Deployment1 completes with SUCCEEDED within 180 seconds
@@ -703,7 +705,6 @@ def test_Deployment_3_T2(gg_util_obj, system_interface):
     deployment_id_2 = gg_util_obj.create_deployment(
         gg_util_obj.get_thing_group_arn(), [hello_world_cloud_name_1],
         "Deployment2")["deploymentId"]
-
     assert deployment_id_2 is not None
 
     # Then the deployment Deployment2 completes with SUCCEEDED within 180 seconds
@@ -769,3 +770,4 @@ def test_Deployment_3_T3(gg_util_obj, system_interface):
     # And I can check the cli to see the status of component BrokenComponent is RUNNING
     assert (system_interface.check_systemctl_status_for_component(
         broken_component_v2_cloud_name) == "RUNNING")
+
