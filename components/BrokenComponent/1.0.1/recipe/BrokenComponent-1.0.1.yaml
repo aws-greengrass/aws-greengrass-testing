@@ -1,0 +1,20 @@
+---
+RecipeFormatVersion: "2020-01-25"
+ComponentName: _BrokenComponent_
+ComponentVersion: "1.0.1"
+ComponentDescription: Broken Component App for Evergreen that is still broken
+ComponentPublisher: Amazon
+Manifests:
+  - Platform:
+      os: "windows"
+    Lifecycle:
+      Startup: >-
+        powershell -command "& { echo \"Broken Component Still Broken\"; exit
+        1}"
+  - Platform:
+      os: "*"
+      runtime: "*"
+    Lifecycle:
+      Startup: |-
+        echo 'Broken Component Still Broken'
+        exit 1
