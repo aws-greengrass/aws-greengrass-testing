@@ -135,6 +135,9 @@ class GGTestUtils:
     def get_region(self):
         return self._region
 
+    def get_thing_group_arn(self):
+        return f"arn:aws:iot:{self.get_region()}:{self.get_aws_account()}:thinggroup/{self.get_thing_group()}"
+
     def _get_things_in_thing_group(self, thing_group_name):
         """
         Retrieves a list of things in a given thing group.
@@ -216,8 +219,8 @@ class GGTestUtils:
         )
 
         if result is not None:
-            for component in component_list:
-                self._ggServiceList.append(component[0])
+            self._ggServiceList.extend(
+                [component[0] for component in component_list])
 
         return result
 
@@ -318,7 +321,7 @@ class GGTestUtils:
 
     def upload_component_with_version(self, component_name, version):
         try:
-            component_artifact_dir = "./" + component_name + "/" + version + "/artifacts/"
+            component_artifact_dir = "./components/" + component_name + "/" + version + "/artifacts/"
             artifact_files = os.listdir(component_artifact_dir)
             artifact_files_full_paths = [
                 os.path.abspath(os.path.join(component_artifact_dir, file))
@@ -336,7 +339,7 @@ class GGTestUtils:
             return None
 
         try:
-            component_recipe_dir = "./" + component_name + "/" + version + "/recipe/"
+            component_recipe_dir = "./components/" + component_name + "/" + version + "/recipe/"
             recipes = os.listdir(component_recipe_dir)
             recipes_full_paths = [
                 os.path.abspath(os.path.join(component_recipe_dir, file))
@@ -376,7 +379,7 @@ class GGTestUtils:
             return None
 
     def upload_corrupt_artifacts_to_s3(self, component_name, version):
-        component_artifact_dir = "./" + component_name + "/" + version + "/artifacts/"
+        component_artifact_dir = "./components/" + component_name + "/" + version + "/artifacts/"
         artifact_files = os.listdir(component_artifact_dir)
         artifact_files_full_paths = [
             os.path.abspath(os.path.join(component_artifact_dir, file))
@@ -423,7 +426,7 @@ class GGTestUtils:
                 coreDeviceThingName=things_in_group["things"][0]
             )
 
-            if return_val == None or return_val["status"] != "HEALTHY":
+            if return_val is None or return_val["status"] != "HEALTHY":
                 time.sleep(1)
                 timeout -= 1
             else:
@@ -474,9 +477,10 @@ def test_Component_12_T1(gg_util_obj, system_interface):
     #   | MultiPlatform | 1.0.0 |
     # And   I deploy the deployment configuration
     deployment_id = gg_util_obj.create_deployment(
-        f"arn:aws:iot:{gg_util_obj.get_region()}:{gg_util_obj.get_aws_account()}:thinggroup/{gg_util_obj.get_thing_group()}",
+        gg_util_obj.get_thing_group_arn(),
         [component_cloud_name],
     )["deploymentId"]
+    assert deployment_id is not None
 
     # Then the deployment completes with SUCCEEDED within 180 seconds
     assert (
@@ -507,9 +511,10 @@ def test_Component_16_T1(gg_util_obj, system_interface):
     #        | HelloWorld | 1.0.0 |
     # And I deploy the deployment configuration
     deployment_id = gg_util_obj.create_deployment(
-        f"arn:aws:iot:{gg_util_obj.get_region()}:{gg_util_obj.get_aws_account()}:thinggroup/{gg_util_obj.get_thing_group()}",
+        gg_util_obj.get_thing_group_arn(),
         [component_cloud_name],
     )["deploymentId"]
+    assert deployment_id is not None
 
     # Then the deployment completes with SUCCEEDED within 120 seconds
     assert (
@@ -548,9 +553,10 @@ def test_Component_27_T1(gg_util_obj, system_interface):
     #        | HelloWorld | 1.0.0 |
     # And I deploy the deployment configuration
     deployment_id = gg_util_obj.create_deployment(
-        f"arn:aws:iot:{gg_util_obj.get_region()}:{gg_util_obj.get_aws_account()}:thinggroup/{gg_util_obj.get_thing_group()}",
+        gg_util_obj.get_thing_group_arn(),
         [component_cloud_name],
     )["deploymentId"]
+    assert deployment_id is not None
 
     # Greengrass retries 10 times with a 1 minute interval
     # Then the deployment completes with FAILED within 630 seconds
@@ -578,10 +584,11 @@ def test_FleetStatus_1_T1(gg_util_obj):
     #        | HelloWorld | 1.0.0 |
     # And I deploy the configuration for deployment FirstDeployment
     deployment_id = gg_util_obj.create_deployment(
-        f"arn:aws:iot:{gg_util_obj.get_region()}:{gg_util_obj.get_aws_account()}:thinggroup/{gg_util_obj.get_thing_group()}",
+        gg_util_obj.get_thing_group_arn(),
         [component_cloud_name],
         "FirstDeployment",
     )["deploymentId"]
+    assert deployment_id is not None
 
     # Then the deployment FirstDeployment completes with SUCCEEDED within 180 seconds
     assert (
@@ -607,8 +614,10 @@ def test_Deployment_3_T1(gg_util_obj, system_interface):
     #   | HelloWorld | 1.0.0 |
     # And I deploy the configuration for deployment Deployment1
     deployment_id_1 = gg_util_obj.create_deployment(
-        f"arn:aws:iot:{gg_util_obj.get_region()}:{gg_util_obj.get_aws_account()}:thinggroup/{gg_util_obj.get_thing_group()}",
-        [component_cloud_name], "Deployment1")["deploymentId"]
+        gg_util_obj.get_thing_group_arn(), [component_cloud_name],
+        "Deployment1")["deploymentId"]
+
+    assert deployment_id_1 is not None
 
     # Then the deployment Deployment1 completes with SUCCEEDED within 180 seconds
     assert (gg_util_obj.wait_for_deployment_till_timeout(
@@ -632,8 +641,10 @@ def test_Deployment_3_T1(gg_util_obj, system_interface):
     #   | HelloWorld | 1.0.1 |
     # And I deploy the configuration for deployment Deployment2
     deployment_id_2 = gg_util_obj.create_deployment(
-        f"arn:aws:iot:{gg_util_obj.get_region()}:{gg_util_obj.get_aws_account()}:thinggroup/{gg_util_obj.get_thing_group()}",
-        [component_cloud_name1], "Deployment2")["deploymentId"]
+        gg_util_obj.get_thing_group_arn(), [component_cloud_name1],
+        "Deployment2")["deploymentId"]
+
+    assert deployment_id_2 is not None
 
     # Then the deployment Deployment2 completes with SUCCEEDED within 180 seconds
     assert (gg_util_obj.wait_for_deployment_till_timeout(
@@ -661,9 +672,11 @@ def test_Deployment_3_T2(gg_util_obj, system_interface):
     #    | SampleComponent | 1.0.0 |
     # And I deploy the configuration for deployment Deployment1
     deployment_id_1 = gg_util_obj.create_deployment(
-        f"arn:aws:iot:{gg_util_obj.get_region()}:{gg_util_obj.get_aws_account()}:thinggroup/{gg_util_obj.get_thing_group()}",
+        gg_util_obj.get_thing_group_arn(),
         [hello_world_cloud_name, sample_component_cloud_name],
         "Deployment1")["deploymentId"]
+
+    assert deployment_id_1 is not None
 
     # Then the deployment Deployment1 completes with SUCCEEDED within 180 seconds
     assert (gg_util_obj.wait_for_deployment_till_timeout(
@@ -688,8 +701,10 @@ def test_Deployment_3_T2(gg_util_obj, system_interface):
     #    | HelloWorld | 1.0.1 |
     # And I deploy the configuration for deployment Deployment2
     deployment_id_2 = gg_util_obj.create_deployment(
-        f"arn:aws:iot:{gg_util_obj.get_region()}:{gg_util_obj.get_aws_account()}:thinggroup/{gg_util_obj.get_thing_group()}",
-        [hello_world_cloud_name_1], "Deployment2")["deploymentId"]
+        gg_util_obj.get_thing_group_arn(), [hello_world_cloud_name_1],
+        "Deployment2")["deploymentId"]
+
+    assert deployment_id_2 is not None
 
     # Then the deployment Deployment2 completes with SUCCEEDED within 180 seconds
     assert (gg_util_obj.wait_for_deployment_till_timeout(
@@ -704,3 +719,53 @@ def test_Deployment_3_T2(gg_util_obj, system_interface):
     # And I can check the cli to see the component SampleComponent is not listed
     assert (system_interface.check_systemctl_status_for_component(
         sample_component_cloud_name) == "NOT_RUNNING")
+
+
+# Scenario: Deployment-3-T3: As a device application owner, if a component is broken and I deploy a fix it should succeed
+def test_Deployment_3_T3(gg_util_obj, system_interface):
+    # When I upload component "BrokenComponent" version "1.0.0" from the local store
+    # Then I ensure component "BrokenComponent" version "1.0.0" exists on cloud within 60 seconds
+    broken_component_cloud_name = gg_util_obj.upload_component_with_version(
+        "BrokenComponent", "1.0.0")
+
+    # And I create a deployment configuration for deployment FirstDeployment with components
+    #     | BrokenComponent | 1.0.0 |
+    # And I deploy the configuration for deployment FirstDeployment
+    deployment_id = gg_util_obj.create_deployment(
+        gg_util_obj.get_thing_group_arn(), [broken_component_cloud_name],
+        "FirstDeployment")["deploymentId"]
+
+    assert deployment_id is not None
+
+    # Then the deployment FirstDeployment completes with FAILED within 180 seconds
+    assert (gg_util_obj.wait_for_deployment_till_timeout(
+        180, deployment_id) == "FAILED")
+
+    # And I wait for 10 seconds
+    time.sleep(10)
+
+    # And I can check the cli to see the status of component BrokenComponent is BROKEN
+    # GG LITE CLI cannot yet do this, so we rely on systemctl.
+    assert (system_interface.check_systemctl_status_for_component(
+        broken_component_cloud_name) == "NOT_RUNNING")
+
+    # When I upload component "BrokenComponent" version "1.0.2" from the local store
+    # Then I ensure component "BrokenComponent" version "1.0.2" exists on cloud within 60 seconds
+    broken_component_v2_cloud_name = gg_util_obj.upload_component_with_version(
+        "BrokenComponent", "1.0.2")
+
+    # And I create a deployment configuration for deployment SecondDeployment with components
+    #     | BrokenComponent | 1.0.2 |
+    # And I deploy the configuration for deployment SecondDeployment
+    deployment_id_2 = gg_util_obj.create_deployment(
+        gg_util_obj.get_thing_group_arn(), [broken_component_v2_cloud_name],
+        "SecondDeployment")["deploymentId"]
+    assert deployment_id_2 is not None
+
+    # Then the deployment SecondDeployment completes with SUCCEEDED within 60 seconds
+    assert (gg_util_obj.wait_for_deployment_till_timeout(
+        60, deployment_id_2) == "SUCCEEDED")
+
+    # And I can check the cli to see the status of component BrokenComponent is RUNNING
+    assert (system_interface.check_systemctl_status_for_component(
+        broken_component_v2_cloud_name) == "RUNNING")
