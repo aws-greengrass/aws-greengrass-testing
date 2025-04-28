@@ -1,0 +1,20 @@
+---
+RecipeFormatVersion: "2020-01-25"
+ComponentName: _BrokenComponent_
+ComponentVersion: "1.0.0"
+ComponentDescription:
+  Broken Component App for Evergreen that will fail a deployment
+ComponentPublisher: Amazon
+Manifests:
+  - Platform:
+      os: "windows"
+    Lifecycle:
+      Startup: >-
+        powershell -command "& { echo \"This is a broken component\"; exit 1}"
+  - Platform:
+      os: "*"
+      runtime: "*"
+    Lifecycle:
+      Startup: |-
+        echo 'This is a broken component'
+        exit 1

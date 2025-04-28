@@ -1,0 +1,21 @@
+---
+RecipeFormatVersion: "2020-01-25"
+ComponentName: _BrokenComponent_
+ComponentVersion: "1.0.2"
+ComponentDescription: Broken Component App for Evergreen that has been fixed
+ComponentPublisher: Amazon
+Manifests:
+  - Platform:
+      os: "windows"
+    Lifecycle:
+      Run: >-
+        powershell -command "& { while(1) { echo \"Broken component that has
+        been fixed\" } }"
+  - Platform:
+      os: "*"
+      runtime: "*"
+    Lifecycle:
+      run: |-
+        while true; do
+        echo Broken component that has been fixed
+        done
