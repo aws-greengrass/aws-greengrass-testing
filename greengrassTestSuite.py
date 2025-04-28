@@ -19,7 +19,7 @@ class SystemInterface:
                 "sudo",
                 "systemctl",
                 "status",
-                f"ggl.{component_name}.service",
+                f"ggl.{component_name[0]}.service",
             ]
 
             # Run the command and stream output
@@ -39,6 +39,8 @@ class SystemInterface:
                         return "RUNNING"
 
             process.terminate()
+
+            return "NOT_RUNNING"
 
         except KeyboardInterrupt:
             print("\nStopping monitor...")
@@ -161,16 +163,14 @@ class GGTestUtils:
         """
         try:
             # Get the deployment status
-            response = self._ggClient.get_deployment(
-                deploymentId=deployment_id)
+            response = self._ggClient.get_deployment(deploymentId=deployment_id)
 
             # Extract relevant information
             deployment_status = response["deploymentStatus"]
             target_arn = response["targetArn"]
             creation_timestamp = response["creationTimestamp"]
 
-            things_list = self._get_things_in_thing_group(
-                target_arn.split("/")[-1])
+            things_list = self._get_things_in_thing_group(target_arn.split("/")[-1])
 
             statistics_list = []
 
@@ -178,7 +178,8 @@ class GGTestUtils:
                 try:
                     # Get deployment statistics
                     statistic = self._ggClient.list_effective_deployments(
-                        coreDeviceThingName=thing)["effectiveDeployments"]
+                        coreDeviceThingName=thing
+                    )["effectiveDeployments"]
                     if statistic:
                         statistics_list.append({thing: statistic})
                 except Exception as e:
@@ -200,42 +201,46 @@ class GGTestUtils:
 
     def create_deployment(self,
                           thingArn,
-                          component_name,
-                          component_version,
+                          component_list,
                           deployment_name="UATinPython"):
+        component_parsed_dict = {}
+        for component in component_list:
+            component_parsed_dict[component[0]] = {
+                "componentVersion": component[1]
+            }
+
         result = self._ggClient.create_deployment(
             targetArn=thingArn,
             deploymentName=deployment_name,
-            components={
-                component_name: {
-                    "componentVersion": component_version
-                }
-            },
+            components=component_parsed_dict,
         )
 
         if result is not None:
-            self._ggServiceList.append(component_name)
+            for component in component_list:
+                self._ggServiceList.append(component[0])
 
         return result
 
     def wait_for_deployment_till_timeout(self, timeout, deployment_id) -> str:
         while timeout > 0:
-            result = self._check_greengrass_group_deployment_status(
-                deployment_id)
+            result = self._check_greengrass_group_deployment_status(deployment_id)
             if result:
                 if result["statistics"]:
                     for entry in result["statistics"]:
                         for thing in entry:
                             for deployment in entry[thing]:
                                 if str(deployment["deploymentId"]) == str(
-                                        deployment_id):
-                                    if (str(deployment[
-                                            "coreDeviceExecutionStatus"]) ==
-                                            "SUCCEEDED"):
+                                    deployment_id
+                                ):
+                                    if (
+                                        str(deployment["coreDeviceExecutionStatus"])
+                                        == "SUCCEEDED"
+                                    ):
                                         return "SUCCEEDED"
-                                    elif (str(deployment[
-                                            "coreDeviceExecutionStatus"]) ==
-                                          "FAILED"):
+                                    elif (
+                                        str(deployment["coreDeviceExecutionStatus"])
+                                        == "FAILED"
+                                    ):
                                         return "FAILED"
                                     else:
                                         pass
@@ -259,8 +264,9 @@ class GGTestUtils:
 
             try:
                 # Upload the file
-                response = self._s3Client.upload_file(file_path, bucket_name,
-                                                      object_name)
+                response = self._s3Client.upload_file(
+                    file_path, bucket_name, object_name
+                )
                 self._ggS3ObjToDelete.append(object_name)
             except Exception as e:
                 print(f"Error uploading file: {e}")
@@ -285,9 +291,9 @@ class GGTestUtils:
             modified_content = recipe_content.replace(
                 "$bucketName$", self.get_s3_artifact_bucket())
             modified_content = modified_content.replace(
-                "$testArtifactsDirectory$", S3_ARTIFACT_DIR)
-            modified_content = modified_content.replace(
-                recipe_name, cloud_recipe_name)
+                "$testArtifactsDirectory$", S3_ARTIFACT_DIR
+            )
+            modified_content = modified_content.replace(recipe_name, cloud_recipe_name)
 
             # Parse the modified content as YAML and convert it to JSON.
             recipe_yaml = yaml.safe_load(modified_content)
@@ -296,11 +302,10 @@ class GGTestUtils:
             try:
                 # Create component version using the recipe
                 response = self._ggClient.create_component_version(
-                    inlineRecipe=recipe_json)
-
-                print(
-                    f"Successfully uploaded component with ARN: {response['arn']}"
+                    inlineRecipe=recipe_json
                 )
+
+                print(f"Successfully uploaded component with ARN: {response['arn']}")
                 self._ggComponentToDeleteArn.append(response["arn"])
                 return cloud_recipe_name
 
@@ -338,7 +343,8 @@ class GGTestUtils:
                 for file in recipes
             ]
 
-            return self._upload_component_to_gg(recipes_full_paths[0])
+            return (self._upload_component_to_gg(recipes_full_paths[0]),
+                    version)
         except FileNotFoundError:
             print(f"No recipe directory found for {component_name}-{version}.")
             return None
@@ -355,12 +361,10 @@ class GGTestUtils:
             os.makedirs(output_dir, exist_ok=True)
 
             # Construct the new file path
-            new_file_path = os.path.join(output_dir,
-                                         os.path.basename(file_path))
+            new_file_path = os.path.join(output_dir, os.path.basename(file_path))
 
             # Read the original file and write the corrupted version
-            with open(file_path, "rb") as f_in, open(new_file_path,
-                                                     "wb") as f_out:
+            with open(file_path, "rb") as f_in, open(new_file_path, "wb") as f_out:
                 content = f_in.read()
                 f_out.write(content)
                 f_out.write(b"#corruption comment")
@@ -416,7 +420,8 @@ class GGTestUtils:
 
         while timeout > 0:
             return_val = self._ggClient.get_core_device(
-                coreDeviceThingName=things_in_group["things"][0])
+                coreDeviceThingName=things_in_group["things"][0]
+            )
 
             if return_val == None or return_val["status"] != "HEALTHY":
                 time.sleep(1)
@@ -462,27 +467,28 @@ def system_interface(pytestconfig):
 def test_Component_12_T1(gg_util_obj, system_interface):
     # I upload component "MultiPlatform" version "1.0.0" from the local store
     component_cloud_name = gg_util_obj.upload_component_with_version(
-        "MultiPlatform", "1.0.0")
+        "MultiPlatform", "1.0.0"
+    )
 
     # And  I create a deployment configuration with components and configuration
     #   | MultiPlatform | 1.0.0 |
     # And   I deploy the deployment configuration
     deployment_id = gg_util_obj.create_deployment(
         f"arn:aws:iot:{gg_util_obj.get_region()}:{gg_util_obj.get_aws_account()}:thinggroup/{gg_util_obj.get_thing_group()}",
-        component_cloud_name,
-        "1.0.0",
+        [component_cloud_name],
     )["deploymentId"]
 
     # Then the deployment completes with SUCCEEDED within 180 seconds
-    assert (gg_util_obj.wait_for_deployment_till_timeout(
-        180, deployment_id) == "SUCCEEDED")
+    assert (
+        gg_util_obj.wait_for_deployment_till_timeout(180, deployment_id) == "SUCCEEDED"
+    )
 
     # And  I can check the cli to see the status of component MultiPlatform is RUNNING
     """ GG LITE CLI DOESN"T SUPPORT THIS YET. """
 
     # And  the MultiPlatform log eventually contains the line "Hello world!" within 20 seconds
     assert (system_interface.monitor_journalctl_for_message(
-        "ggl." + component_cloud_name + ".service",
+        "ggl." + component_cloud_name[0] + ".service",
         "Hello world! World",
         timeout=20) is True)
 
@@ -491,7 +497,8 @@ def test_Component_12_T1(gg_util_obj, system_interface):
 def test_Component_16_T1(gg_util_obj, system_interface):
     # I upload component "HelloWorld" version "1.0.0" from the local store
     component_cloud_name = gg_util_obj.upload_component_with_version(
-        "HelloWorld", "1.0.0")
+        "HelloWorld", "1.0.0"
+    )
 
     # Give 5 sec for cloud to calculate artifact checksum and make it "DEPLOYABLE"
     time.sleep(5)
@@ -501,20 +508,20 @@ def test_Component_16_T1(gg_util_obj, system_interface):
     # And I deploy the deployment configuration
     deployment_id = gg_util_obj.create_deployment(
         f"arn:aws:iot:{gg_util_obj.get_region()}:{gg_util_obj.get_aws_account()}:thinggroup/{gg_util_obj.get_thing_group()}",
-        component_cloud_name,
-        "1.0.0",
+        [component_cloud_name],
     )["deploymentId"]
 
     # Then the deployment completes with SUCCEEDED within 120 seconds
-    assert (gg_util_obj.wait_for_deployment_till_timeout(
-        120, deployment_id) == "SUCCEEDED")
+    assert (
+        gg_util_obj.wait_for_deployment_till_timeout(120, deployment_id) == "SUCCEEDED"
+    )
 
     # Then I can check the cli to see the status of component HelloWorld is RUNNING
     """ GG LITE CLI DOESN"T SUPPORT THIS YET. """
 
     # Then the HelloWorld log contains the line "Evergreen's dev experience is great!"
     assert (system_interface.monitor_journalctl_for_message(
-        "ggl." + component_cloud_name + ".service",
+        "ggl." + component_cloud_name[0] + ".service",
         "Evergreen's dev experience is great!",
         timeout=20,
     ) is True)
@@ -527,7 +534,8 @@ def test_Component_27_T1(gg_util_obj, system_interface):
     # And kernel registered as a Thing
     # And my device is running the evergreen-kernel
     component_cloud_name = gg_util_obj.upload_component_with_version(
-        "HelloWorld", "1.0.0")
+        "HelloWorld", "1.0.0"
+    )
 
     # Give 5 sec for cloud to calculate artifact checksum and make it "DEPLOYABLE"
     time.sleep(5)
@@ -541,14 +549,12 @@ def test_Component_27_T1(gg_util_obj, system_interface):
     # And I deploy the deployment configuration
     deployment_id = gg_util_obj.create_deployment(
         f"arn:aws:iot:{gg_util_obj.get_region()}:{gg_util_obj.get_aws_account()}:thinggroup/{gg_util_obj.get_thing_group()}",
-        component_cloud_name,
-        "1.0.0",
+        [component_cloud_name],
     )["deploymentId"]
 
     # Greengrass retries 10 times with a 1 minute interval
     # Then the deployment completes with FAILED within 630 seconds
-    assert gg_util_obj.wait_for_deployment_till_timeout(
-        630, deployment_id) == "FAILED"
+    assert gg_util_obj.wait_for_deployment_till_timeout(630, deployment_id) == "FAILED"
 
     # the greengrass log eventually contains the line "Failed to verify digest." within 30 seconds
     assert (system_interface.monitor_journalctl_for_message(
@@ -562,7 +568,8 @@ def test_Component_27_T1(gg_util_obj, system_interface):
 def test_FleetStatus_1_T1(gg_util_obj):
     # When I upload component "HelloWorld" version "1.0.0" from the local store
     component_cloud_name = gg_util_obj.upload_component_with_version(
-        "HelloWorld", "1.0.0")
+        "HelloWorld", "1.0.0"
+    )
 
     # Give 5 sec for cloud to calculate artifact checksum and make it "DEPLOYABLE"
     time.sleep(5)
@@ -572,14 +579,14 @@ def test_FleetStatus_1_T1(gg_util_obj):
     # And I deploy the configuration for deployment FirstDeployment
     deployment_id = gg_util_obj.create_deployment(
         f"arn:aws:iot:{gg_util_obj.get_region()}:{gg_util_obj.get_aws_account()}:thinggroup/{gg_util_obj.get_thing_group()}",
-        component_cloud_name,
-        "1.0.0",
+        [component_cloud_name],
         "FirstDeployment",
     )["deploymentId"]
 
     # Then the deployment FirstDeployment completes with SUCCEEDED within 180 seconds
-    assert (gg_util_obj.wait_for_deployment_till_timeout(
-        180, deployment_id) == "SUCCEEDED")
+    assert (
+        gg_util_obj.wait_for_deployment_till_timeout(180, deployment_id) == "SUCCEEDED"
+    )
 
     # And I can get the thing status as "HEALTHY" with all uploaded components within 60 seconds with groups
     #      | FssThingGroup |
@@ -601,7 +608,7 @@ def test_Deployment_3_T1(gg_util_obj, system_interface):
     # And I deploy the configuration for deployment Deployment1
     deployment_id_1 = gg_util_obj.create_deployment(
         f"arn:aws:iot:{gg_util_obj.get_region()}:{gg_util_obj.get_aws_account()}:thinggroup/{gg_util_obj.get_thing_group()}",
-        component_cloud_name, "1.0.0", "Deployment1")["deploymentId"]
+        [component_cloud_name], "Deployment1")["deploymentId"]
 
     # Then the deployment Deployment1 completes with SUCCEEDED within 180 seconds
     assert (gg_util_obj.wait_for_deployment_till_timeout(
@@ -626,7 +633,7 @@ def test_Deployment_3_T1(gg_util_obj, system_interface):
     # And I deploy the configuration for deployment Deployment2
     deployment_id_2 = gg_util_obj.create_deployment(
         f"arn:aws:iot:{gg_util_obj.get_region()}:{gg_util_obj.get_aws_account()}:thinggroup/{gg_util_obj.get_thing_group()}",
-        component_cloud_name1, "1.0.1", "Deployment2")["deploymentId"]
+        [component_cloud_name1], "Deployment2")["deploymentId"]
 
     # Then the deployment Deployment2 completes with SUCCEEDED within 180 seconds
     assert (gg_util_obj.wait_for_deployment_till_timeout(
@@ -635,3 +642,65 @@ def test_Deployment_3_T1(gg_util_obj, system_interface):
     # And I can check the cli to see the status of component HelloWorld is RUNNING
     assert (system_interface.check_systemctl_status_for_component(
         component_cloud_name1) == "RUNNING")
+
+
+# Scenario: Deployment-3-T2: As a device application owner, I can deploy configuration to a thing group which removes a component.
+def test_Deployment_3_T2(gg_util_obj, system_interface):
+    # When I upload component "HelloWorld" version "1.0.0" from the local store
+    # Then I ensure component "HelloWorld" version "1.0.0" exists on cloud within 60 seconds
+    hello_world_cloud_name = gg_util_obj.upload_component_with_version(
+        "HelloWorld", "1.0.0")
+
+    # When I upload component "SampleComponent" version "1.0.0" from the local store
+    # Then I ensure component "SampleComponent" version "1.0.0" exists on cloud within 60 seconds
+    sample_component_cloud_name = gg_util_obj.upload_component_with_version(
+        "SampleComponent", "1.0.0")
+
+    # When I create a deployment configuration for deployment Deployment1 with components
+    #    | HelloWorld      | 1.0.0 |
+    #    | SampleComponent | 1.0.0 |
+    # And I deploy the configuration for deployment Deployment1
+    deployment_id_1 = gg_util_obj.create_deployment(
+        f"arn:aws:iot:{gg_util_obj.get_region()}:{gg_util_obj.get_aws_account()}:thinggroup/{gg_util_obj.get_thing_group()}",
+        [hello_world_cloud_name, sample_component_cloud_name],
+        "Deployment1")["deploymentId"]
+
+    # Then the deployment Deployment1 completes with SUCCEEDED within 180 seconds
+    assert (gg_util_obj.wait_for_deployment_till_timeout(
+        180, deployment_id_1) == "SUCCEEDED")
+
+    # And I can check the cli to see the status of component HelloWorld is RUNNING
+    # And I can check the cli to see the component HelloWorld is running with version 1.0.0
+    assert (system_interface.check_systemctl_status_for_component(
+        hello_world_cloud_name) == "RUNNING")
+
+    # And I can check the cli to see the status of component SampleComponent is RUNNING
+    # And I can check the cli to see the component SampleComponent is running with version 1.0.0
+    assert (system_interface.check_systemctl_status_for_component(
+        sample_component_cloud_name) == "RUNNING")
+
+    # When I upload component "HelloWorld" version "1.0.1" from the local store
+    # Then I ensure component "HelloWorld" version "1.0.1" exists on cloud within 60 seconds
+    hello_world_cloud_name_1 = gg_util_obj.upload_component_with_version(
+        "HelloWorld", "1.0.1")
+
+    # When I create a deployment configuration for deployment Deployment2 with components
+    #    | HelloWorld | 1.0.1 |
+    # And I deploy the configuration for deployment Deployment2
+    deployment_id_2 = gg_util_obj.create_deployment(
+        f"arn:aws:iot:{gg_util_obj.get_region()}:{gg_util_obj.get_aws_account()}:thinggroup/{gg_util_obj.get_thing_group()}",
+        [hello_world_cloud_name_1], "Deployment2")["deploymentId"]
+
+    # Then the deployment Deployment2 completes with SUCCEEDED within 180 seconds
+    assert (gg_util_obj.wait_for_deployment_till_timeout(
+        180, deployment_id_2) == "SUCCEEDED")
+
+    # And I can check the cli to see the status of component HelloWorld is RUNNING
+    assert (system_interface.check_systemctl_status_for_component(
+        hello_world_cloud_name_1) == "RUNNING")
+    # And I can check the cli to see the component HelloWorld is running with version 1.0.1
+    # GG CLI doesn't yet support this.
+
+    # And I can check the cli to see the component SampleComponent is not listed
+    assert (system_interface.check_systemctl_status_for_component(
+        sample_component_cloud_name) == "NOT_RUNNING")
