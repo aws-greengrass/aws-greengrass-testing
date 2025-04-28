@@ -13,3 +13,4 @@ cucumber.json
 *DS_Store
 *__pycache__
 env
+*ggtest
