@@ -10,7 +10,9 @@ python3 -m venv env
 
 You will now be switched to the virtual environment.
 
-Run the following command to install all the required libraries to run the test suite.
+Run the following command to install all the required libraries to run the test
+suite.
+
 ```shell
 pip install -r requirements.txt
 ```
