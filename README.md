@@ -14,7 +14,7 @@ Run the following command to install all the required libraries to run the test
 suite.
 
 ```shell
-pip install -r requirements.txt
+pip install .
 ```
 
 ## How to run the tests?

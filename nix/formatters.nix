@@ -4,5 +4,6 @@ let
 in
 {
   "*.py" = "${yapf}/bin/yapf -i";
-  ".clang*" = fmt-yaml;
+  "*.yaml" = fmt-yaml;
+  "*.yml" = fmt-yaml;
 }

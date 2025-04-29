@@ -1,4 +1,17 @@
-# pyproject.toml
+[project]
+name = "aws-greengrass-testing"
+version = "0.1.0"
+description = ""
+license = "Apache-2.0"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "boto3>=1.38.4",
+    "pytest>=8.3.5",
+    "pyyaml>=6.0.2",
+]
+
+
 [tool.pytest.ini_options]
 testpaths = [
     "./src/*",
