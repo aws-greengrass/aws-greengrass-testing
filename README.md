@@ -19,7 +19,7 @@ pip install .
 
 ## How to run the tests?
 
-These tests assume that you have greengrass-lite installled and running.
+These tests assume that you have greengrass-lite installed and running.
 
 You need to provide details of the AWS account, the S3 bucket etc in the
 [config](./config/config.py) file before running the tests.
