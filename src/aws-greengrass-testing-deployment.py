@@ -234,6 +234,7 @@ def test_Deployment_1_T2(gg_util_obj, system_interface):
     # GG_LITE CLI doesn't support this yet.
 
 # As a developer, I can use the local cli to deploy a single component with component configuration to a device locally without cloud intervention.
+# TODO: Update test when merge/reset is supported for local deployments.
 # Test is modified to read default config instead of the merge config, since merge/reset configuration is not supported for local deployment yet in GG_LITE
 def test_Deployment_1_T3(gg_util_obj, system_interface):
     # I install the component SampleComponentWithConfiguration version 1.0.0 from local store with configuration
