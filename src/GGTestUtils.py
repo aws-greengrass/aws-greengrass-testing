@@ -5,7 +5,7 @@ import boto3
 from botocore.exceptions import ClientError
 import time
 import yaml
-import subprocess
+from subprocess import run
 
 S3_ARTIFACT_DIR = "artifacts"
 
@@ -111,7 +111,7 @@ class GGTestUtils:
         if recipe_dir is not None:
             cli_cmd.extend(["--recipe-dir", recipe_dir])
         cli_cmd.append(f"--add-component={component_details}")
-        process = subprocess.run(cli_cmd, capture_output=True, text=True)
+        process = run(cli_cmd, capture_output=True, text=True)
         if process.returncode == 0:
             print("CLI call to create local deployment succeeded:")
             print(process.stdout)
