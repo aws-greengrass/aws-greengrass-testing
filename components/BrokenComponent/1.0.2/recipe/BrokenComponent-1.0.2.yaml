@@ -8,7 +8,7 @@ Manifests:
   - Platform:
       os: "windows"
     Lifecycle:
-      Run: >-
+      run: >-
         powershell -command "& { while(1) { echo \"Broken component that has
         been fixed\" } }"
   - Platform:

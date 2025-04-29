@@ -9,12 +9,12 @@ Manifests:
   - Platform:
       os: "windows"
     Lifecycle:
-      Startup: >-
+      startup: >-
         powershell -command "& { echo \"This is a broken component\"; exit 1}"
   - Platform:
       os: "*"
       runtime: "*"
     Lifecycle:
-      Startup: |-
+      startup: |-
         echo 'This is a broken component'
         exit 1

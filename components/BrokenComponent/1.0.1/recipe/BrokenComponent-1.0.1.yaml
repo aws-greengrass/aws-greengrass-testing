@@ -8,13 +8,13 @@ Manifests:
   - Platform:
       os: "windows"
     Lifecycle:
-      Startup: >-
+      startup: >-
         powershell -command "& { echo \"Broken Component Still Broken\"; exit
         1}"
   - Platform:
       os: "*"
       runtime: "*"
     Lifecycle:
-      Startup: |-
+      startup: |-
         echo 'Broken Component Still Broken'
         exit 1
