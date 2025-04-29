@@ -11,20 +11,16 @@ S3_ARTIFACT_DIR = "artifacts"
 
 class GGTestUtils:
 
-    def __init__(self, account, bucket, region, thing_group):
+    def __init__(self, account, bucket, region):
         self._region = region
         self._account = account
         self._bucket = bucket
-        self._thing_group = thing_group
         self._ggClient = boto3.client("greengrassv2", region_name=self._region)
         self._iotClient = boto3.client("iot", region_name=self._region)
         self._s3Client = boto3.client("s3", region_name=self._region)
         self._ggComponentToDeleteArn = []
         self._ggS3ObjToDelete = []
         self._ggServiceList = []
-
-    def get_thing_group(self):
-        return self._thing_group
 
     def get_aws_account(self):
         return self._account
@@ -35,8 +31,8 @@ class GGTestUtils:
     def get_region(self):
         return self._region
 
-    def get_thing_group_arn(self):
-        return f"arn:aws:iot:{self.get_region()}:{self.get_aws_account()}:thinggroup/{self.get_thing_group()}"
+    def get_thing_group_arn(self, thing_group):
+        return f"arn:aws:iot:{self.get_region()}:{self.get_aws_account()}:thinggroup/{thing_group}"
 
     def _get_things_in_thing_group(self, thing_group_name):
         """

@@ -21,10 +21,14 @@ pip install .
 
 These tests assume that you have greengrass-lite installled and running.
 
-The tests can be run by executing the following command.
+You need to provide details of the AWS account, the S3 bucket etc in the
+[config](./config/config.py) file before running the tests.
+
+Once you have added the configuration, the tests can be run by executing the
+following command.
 
 ```
-pytest -q -s -v --ggTestAccount=<YOUR_AWS_ACCOUNT_NUMBER> --ggTestBucket=<YOUR_TEST_BUCKET> --ggTestRegion=<TEST_REGION> --ggTestThingGroup=<YOUR_THING_GROUP>
+pytest -q -s -v
 ```
 
 ### How to run a specific test(s)?
@@ -36,7 +40,7 @@ If you want to run a specific test (e.g. `test_Deployment_3_T3`), the command
 will be as follows:
 
 ```
-pytest -q -s -v --ggTestAccount=<YOUR_AWS_ACCOUNT_NUMBER> --ggTestBucket=<YOUR_TEST_BUCKET> --ggTestRegion=<TEST_REGION> --ggTestThingGroup=<YOUR_THING_GROUP> ./src/aws-greengrass-testing-deployment.py  -k "test_Deployment_3_T3"
+pytest -q -s -v ./src/aws-greengrass-testing-deployment.py  -k "test_Deployment_3_T3"
 ```
 
 More documentation on the above option can be found

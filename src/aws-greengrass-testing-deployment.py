@@ -1,18 +1,18 @@
 import time
 import pytest
-from GGTestUtils import GGTestUtils
-from SystemInterface import SystemInterface
+from src.GGTestUtils import GGTestUtils
+from src.SystemInterface import SystemInterface
+from config import config
 
 
 @pytest.fixture(scope="function")  # Runs for each test function
-def gg_util_obj(pytestconfig):
+def gg_util_obj():
     # Setup an instance of the GGUtils class. It is then passed to the
     # test functions.
     gg_util = GGTestUtils(
-        pytestconfig.getoption("ggTestAccount"),
-        pytestconfig.getoption("ggTestBucket"),
-        pytestconfig.getoption("ggTestRegion"),
-        pytestconfig.getoption("ggTestThingGroup"),
+        config.aws_account,
+        config.s3_bucket_name,
+        config.region,
     )
 
     # yield the instance of the class to the tests.
@@ -25,7 +25,7 @@ def gg_util_obj(pytestconfig):
 
 
 @pytest.fixture(scope="function")  # Runs for each test function
-def system_interface(pytestconfig):
+def system_interface():
     interface = SystemInterface()
 
     # yield the instance of the class to the tests.
@@ -45,7 +45,7 @@ def test_Component_12_T1(gg_util_obj, system_interface):
     #   | MultiPlatform | 1.0.0 |
     # And   I deploy the deployment configuration
     deployment_id = gg_util_obj.create_deployment(
-        gg_util_obj.get_thing_group_arn(),
+        gg_util_obj.get_thing_group_arn(config.thing_group_1),
         [component_cloud_name],
     )["deploymentId"]
     assert deployment_id is not None
@@ -77,7 +77,7 @@ def test_Component_16_T1(gg_util_obj, system_interface):
     #        | HelloWorld | 1.0.0 |
     # And I deploy the deployment configuration
     deployment_id = gg_util_obj.create_deployment(
-        gg_util_obj.get_thing_group_arn(),
+        gg_util_obj.get_thing_group_arn(config.thing_group_1),
         [component_cloud_name],
     )["deploymentId"]
     assert deployment_id is not None
@@ -117,7 +117,7 @@ def test_Component_27_T1(gg_util_obj, system_interface):
     #        | HelloWorld | 1.0.0 |
     # And I deploy the deployment configuration
     deployment_id = gg_util_obj.create_deployment(
-        gg_util_obj.get_thing_group_arn(),
+        gg_util_obj.get_thing_group_arn(config.thing_group_1),
         [component_cloud_name],
     )["deploymentId"]
     assert deployment_id is not None
@@ -148,7 +148,7 @@ def test_FleetStatus_1_T1(gg_util_obj):
     #        | HelloWorld | 1.0.0 |
     # And I deploy the configuration for deployment FirstDeployment
     deployment_id = gg_util_obj.create_deployment(
-        gg_util_obj.get_thing_group_arn(),
+        gg_util_obj.get_thing_group_arn(config.thing_group_1),
         [component_cloud_name],
         "FirstDeployment",
     )["deploymentId"]
@@ -161,7 +161,7 @@ def test_FleetStatus_1_T1(gg_util_obj):
     # And I can get the thing status as "HEALTHY" with all uploaded components within 60 seconds with groups
     #      | FssThingGroup |
     assert (gg_util_obj.get_ggcore_device_status(
-        60, f"{gg_util_obj.get_thing_group()}") == "HEALTHY")
+        60, f"{config.thing_group_1}") == "HEALTHY")
 
 
 #As a device application owner, I can deploy configuration with updated components to a thing group.
@@ -177,8 +177,8 @@ def test_Deployment_3_T1(gg_util_obj, system_interface):
     #   | HelloWorld | 1.0.0 |
     # And I deploy the configuration for deployment Deployment1
     deployment_id_1 = gg_util_obj.create_deployment(
-        gg_util_obj.get_thing_group_arn(), [component_cloud_name],
-        "Deployment1")["deploymentId"]
+        gg_util_obj.get_thing_group_arn(config.thing_group_1),
+        [component_cloud_name], "Deployment1")["deploymentId"]
     assert deployment_id_1 is not None
 
     # Then the deployment Deployment1 completes with SUCCEEDED within 180 seconds
@@ -203,8 +203,8 @@ def test_Deployment_3_T1(gg_util_obj, system_interface):
     #   | HelloWorld | 1.0.1 |
     # And I deploy the configuration for deployment Deployment2
     deployment_id_2 = gg_util_obj.create_deployment(
-        gg_util_obj.get_thing_group_arn(), [component_cloud_name1],
-        "Deployment2")["deploymentId"]
+        gg_util_obj.get_thing_group_arn(config.thing_group_1),
+        [component_cloud_name1], "Deployment2")["deploymentId"]
     assert deployment_id_2 is not None
 
     # Then the deployment Deployment2 completes with SUCCEEDED within 180 seconds
@@ -233,7 +233,7 @@ def test_Deployment_3_T2(gg_util_obj, system_interface):
     #    | SampleComponent | 1.0.0 |
     # And I deploy the configuration for deployment Deployment1
     deployment_id_1 = gg_util_obj.create_deployment(
-        gg_util_obj.get_thing_group_arn(),
+        gg_util_obj.get_thing_group_arn(config.thing_group_1),
         [hello_world_cloud_name, sample_component_cloud_name],
         "Deployment1")["deploymentId"]
     assert deployment_id_1 is not None
@@ -261,8 +261,8 @@ def test_Deployment_3_T2(gg_util_obj, system_interface):
     #    | HelloWorld | 1.0.1 |
     # And I deploy the configuration for deployment Deployment2
     deployment_id_2 = gg_util_obj.create_deployment(
-        gg_util_obj.get_thing_group_arn(), [hello_world_cloud_name_1],
-        "Deployment2")["deploymentId"]
+        gg_util_obj.get_thing_group_arn(config.thing_group_1),
+        [hello_world_cloud_name_1], "Deployment2")["deploymentId"]
     assert deployment_id_2 is not None
 
     # Then the deployment Deployment2 completes with SUCCEEDED within 180 seconds
@@ -291,8 +291,8 @@ def test_Deployment_3_T3(gg_util_obj, system_interface):
     #     | BrokenComponent | 1.0.0 |
     # And I deploy the configuration for deployment FirstDeployment
     deployment_id = gg_util_obj.create_deployment(
-        gg_util_obj.get_thing_group_arn(), [broken_component_cloud_name],
-        "FirstDeployment")["deploymentId"]
+        gg_util_obj.get_thing_group_arn(config.thing_group_1),
+        [broken_component_cloud_name], "FirstDeployment")["deploymentId"]
 
     assert deployment_id is not None
 
@@ -317,8 +317,8 @@ def test_Deployment_3_T3(gg_util_obj, system_interface):
     #     | BrokenComponent | 1.0.2 |
     # And I deploy the configuration for deployment SecondDeployment
     deployment_id_2 = gg_util_obj.create_deployment(
-        gg_util_obj.get_thing_group_arn(), [broken_component_v2_cloud_name],
-        "SecondDeployment")["deploymentId"]
+        gg_util_obj.get_thing_group_arn(config.thing_group_1),
+        [broken_component_v2_cloud_name], "SecondDeployment")["deploymentId"]
     assert deployment_id_2 is not None
 
     # Then the deployment SecondDeployment completes with SUCCEEDED within 60 seconds
@@ -341,8 +341,8 @@ def test_Deployment_3_T4(gg_util_obj, system_interface):
     #     | BrokenComponent | 1.0.0 |
     # And I deploy the configuration for deployment FirstDeployment
     deployment_id = gg_util_obj.create_deployment(
-        gg_util_obj.get_thing_group_arn(), [broken_component_cloud_name],
-        "FirstDeployment")["deploymentId"]
+        gg_util_obj.get_thing_group_arn(config.thing_group_1),
+        [broken_component_cloud_name], "FirstDeployment")["deploymentId"]
 
     assert deployment_id is not None
 
@@ -367,8 +367,8 @@ def test_Deployment_3_T4(gg_util_obj, system_interface):
     #     | BrokenComponent | 1.0.1 |
     # And I deploy the configuration for deployment SecondDeployment
     deployment_id_v1 = gg_util_obj.create_deployment(
-        gg_util_obj.get_thing_group_arn(), [broken_component_v1_cloud_name],
-        "SecondDeployment")["deploymentId"]
+        gg_util_obj.get_thing_group_arn(config.thing_group_1),
+        [broken_component_v1_cloud_name], "SecondDeployment")["deploymentId"]
     assert deployment_id_v1 is not None
 
     # Then the deployment SecondDeployment completes with FAILED within 60 seconds
@@ -388,8 +388,8 @@ def test_Deployment_3_T5(gg_util_obj, system_interface):
     #     | BrokenComponent | 1.0.0 |
     # And I deploy the configuration for deployment FirstDeployment
     deployment_id = gg_util_obj.create_deployment(
-        gg_util_obj.get_thing_group_arn(), [broken_component_cloud_name],
-        "FirstDeployment")["deploymentId"]
+        gg_util_obj.get_thing_group_arn(config.thing_group_1),
+        [broken_component_cloud_name], "FirstDeployment")["deploymentId"]
 
     assert deployment_id is not None
 
@@ -417,8 +417,8 @@ def test_Deployment_3_T5(gg_util_obj, system_interface):
     #     | HelloWorld | 1.0.0 |
     # And I deploy the configuration for deployment Deployment2
     deployment_id_1 = gg_util_obj.create_deployment(
-        gg_util_obj.get_thing_group_arn(), [hello_world_cloud_name],
-        "Deployment2")["deploymentId"]
+        gg_util_obj.get_thing_group_arn(config.thing_group_1),
+        [hello_world_cloud_name], "Deployment2")["deploymentId"]
     assert deployment_id_1 is not None
 
     # Then the deployment Deployment2 completes with SUCCEEDED within 180 seconds

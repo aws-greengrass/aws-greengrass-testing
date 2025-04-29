@@ -1,18 +1,18 @@
 import time
 import pytest
-from GGTestUtils import GGTestUtils
-from SystemInterface import SystemInterface
+from src.GGTestUtils import GGTestUtils
+from src.SystemInterface import SystemInterface
+from config import config
 
 
 @pytest.fixture(scope="function")  # Runs for each test function
-def gg_util_obj(pytestconfig):
+def gg_util_obj():
     # Setup an instance of the GGUtils class. It is then passed to the
     # test functions.
     gg_util = GGTestUtils(
-        pytestconfig.getoption("ggTestAccount"),
-        pytestconfig.getoption("ggTestBucket"),
-        pytestconfig.getoption("ggTestRegion"),
-        pytestconfig.getoption("ggTestThingGroup"),
+        config.aws_account,
+        config.s3_bucket_name,
+        config.region,
     )
 
     # yield the instance of the class to the tests.
@@ -25,7 +25,7 @@ def gg_util_obj(pytestconfig):
 
 
 @pytest.fixture(scope="function")  # Runs for each test function
-def system_interface(pytestconfig):
+def system_interface():
     interface = SystemInterface()
 
     # yield the instance of the class to the tests.
@@ -45,7 +45,7 @@ def test_Component_12_T1(gg_util_obj, system_interface):
     #   | MultiPlatform | 1.0.0 |
     # And   I deploy the deployment configuration
     deployment_id = gg_util_obj.create_deployment(
-        gg_util_obj.get_thing_group_arn(),
+        gg_util_obj.get_thing_group_arn(config.thing_group_1),
         [component_cloud_name],
     )["deploymentId"]
     assert deployment_id is not None
@@ -77,7 +77,7 @@ def test_Component_16_T1(gg_util_obj, system_interface):
     #        | HelloWorld | 1.0.0 |
     # And I deploy the deployment configuration
     deployment_id = gg_util_obj.create_deployment(
-        gg_util_obj.get_thing_group_arn(),
+        gg_util_obj.get_thing_group_arn(config.thing_group_1),
         [component_cloud_name],
     )["deploymentId"]
     assert deployment_id is not None
@@ -117,7 +117,7 @@ def test_Component_27_T1(gg_util_obj, system_interface):
     #        | HelloWorld | 1.0.0 |
     # And I deploy the deployment configuration
     deployment_id = gg_util_obj.create_deployment(
-        gg_util_obj.get_thing_group_arn(),
+        gg_util_obj.get_thing_group_arn(config.thing_group_1),
         [component_cloud_name],
     )["deploymentId"]
     assert deployment_id is not None
