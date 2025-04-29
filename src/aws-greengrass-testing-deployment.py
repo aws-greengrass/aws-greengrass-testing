@@ -424,3 +424,52 @@ def test_Deployment_3_T5(gg_util_obj, system_interface):
     # Then the deployment Deployment2 completes with SUCCEEDED within 180 seconds
     assert (gg_util_obj.wait_for_deployment_till_timeout(
         180, deployment_id_1) == "SUCCEEDED")
+
+
+# Scenario: Deployment-5-T2: As a device application owner, I can remove a common component from one of the group the device belongs to from an IoT Jobs deployment
+def test_Deployment_5_T2(gg_util_obj, system_interface):
+    # When I upload component "Component2BaseCloud" version "1.0.0" from the local store
+    # Then I ensure component "Component2BaseCloud" version "1.0.0" exists on cloud within 60 seconds
+    Component2BaseCloud_cloud_name = gg_util_obj.upload_component_with_version(
+        "Component2BaseCloud", "1.0.0")
+
+    # When I create a deployment configuration for deployment FirstDeployment and thing group FirstThingGroup with components
+    #     | Component2BaseCloud | 1.0.0 |
+    # And I deploy the configuration for deployment FirstDeployment
+    deployment_id = gg_util_obj.create_deployment(
+        gg_util_obj.get_thing_group_arn(config.thing_group_1),
+        [Component2BaseCloud_cloud_name], "FirstDeployment")["deploymentId"]
+
+    # Then the deployment FirstDeployment completes with SUCCEEDED within 180 seconds
+    assert (gg_util_obj.wait_for_deployment_till_timeout(
+        180, deployment_id) == "SUCCEEDED")
+
+    # When I create a deployment configuration for deployment SecondDeployment and thing group NewThingGroup with components
+    #     | Component2BaseCloud | 1.0.0 |
+    # And I deploy the configuration for deployment SecondDeployment
+    deployment_id_2 = gg_util_obj.create_deployment(
+        gg_util_obj.get_thing_group_arn(config.thing_group_2),
+        [Component2BaseCloud_cloud_name], "SecondDeployment")["deploymentId"]
+
+    # Then the deployment SecondDeployment completes with SUCCEEDED within 180 seconds
+    assert (gg_util_obj.wait_for_deployment_till_timeout(
+        180, deployment_id_2) == "SUCCEEDED")
+
+    # Then I can check the cli to see the status of component Component2BaseCloud is RUNNING
+    assert system_interface.check_systemctl_status_for_component(
+        Component2BaseCloud_cloud_name) == "RUNNING"
+
+    #     # This following step removes the Component2BaseCloud from the first group
+    # When I create an empty deployment configuration for deployment ThirdDeployment and thing group FirstThingGroup
+    # And I deploy the configuration for deployment ThirdDeployment
+    deployment_id_3 = gg_util_obj.create_deployment(
+        gg_util_obj.get_thing_group_arn(config.thing_group_1), [],
+        "ThirdDeployment")["deploymentId"]
+
+    # Then the deployment ThirdDeployment completes with SUCCEEDED within 180 seconds
+    assert (gg_util_obj.wait_for_deployment_till_timeout(
+        180, deployment_id_3) == "SUCCEEDED")
+
+    # Then I can check the cli to see the status of component Component2BaseCloud is RUNNING
+    assert system_interface.check_systemctl_status_for_component(
+        Component2BaseCloud_cloud_name) == "RUNNING"
