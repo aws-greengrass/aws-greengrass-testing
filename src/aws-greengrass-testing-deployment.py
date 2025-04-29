@@ -13,6 +13,7 @@ def gg_util_obj():
         config.aws_account,
         config.s3_bucket_name,
         config.region,
+        config.ggl_cli_bin_path
     )
 
     # yield the instance of the class to the tests.
@@ -163,6 +164,104 @@ def test_FleetStatus_1_T1(gg_util_obj):
     assert (gg_util_obj.get_ggcore_device_status(
         60, f"{config.thing_group_1}") == "HEALTHY")
 
+#As a developer, I can use the local cli to deploy a single component to a device locally without cloud intervention.
+def test_Deployment_1_T1(gg_util_obj, system_interface):
+    # I check cli to get list of local deployments and verify it has 0 deployments in ANY state
+    # GG_LITE CLI doesn't support this yet.
+
+    # I install the component SampleComponentWithConfiguration version 1.0.0 from local store
+    component_recipe_dir = "./components/SampleComponentWithConfiguration/1.0.0/recipe/"
+    assert (gg_util_obj.create_local_deployment(None, component_recipe_dir, "SampleComponentWithConfiguration=1.0.0"))
+    # TODO: We can use the CLI to verify that a local deployment has finished once that feature exists
+    # For now, check if the expected component is running within a timeout.
+    timeout = 120
+    while timeout > 0:
+        if system_interface.check_systemctl_status_for_component("SampleComponentWithConfiguration") == "RUNNING":
+            break
+        time.sleep(1)
+        timeout -= 1
+
+    # I can check the cli to see the status of component SampleComponentWithConfiguration is RUNNING
+    assert (system_interface.check_systemctl_status_for_component(
+        "SampleComponentWithConfiguration") == "RUNNING")
+
+    # I can check the cli to see the component SampleComponentWithConfiguration is running with version 1.0.0
+    # GG_LITE CLI doesn't support this yet.
+
+    # I can check the cli to get list of local deployments and verify it has 1 deployments in SUCCEEDED state
+    # GG_LITE CLI doesn't support this yet.
+
+#As a developer, I can use the local cli to deploy multiple components to a device locally without cloud intervention.
+def test_Deployment_1_T2(gg_util_obj, system_interface):
+    # I install the following components from local store
+    #   | SampleComponentWithConfiguration | 1.0.0 |
+    #   | SampleComponentWithArtifacts     | 1.0.0 |
+    component_recipe_dir = "./components/SampleComponentWithConfiguration/1.0.0/recipe/"
+    assert (gg_util_obj.create_local_deployment(None, component_recipe_dir, "SampleComponentWithConfiguration=1.0.0"))
+    # TODO: We can use the CLI to verify that a local deployment has finished once that feature exists
+    # For now, check if the expected component is running within a timeout.
+    timeout = 120
+    while timeout > 0:
+        if system_interface.check_systemctl_status_for_component("SampleComponentWithConfiguration") == "RUNNING":
+            break
+        time.sleep(1)
+        timeout -= 1
+
+    component_recipe_dir = "./components/SampleComponentWithArtifacts/1.0.0/recipe/"
+    component_artifacts_dir = "./components/SampleComponentWithArtifacts/1.0.0/artifacts/"
+    assert (gg_util_obj.create_local_deployment(component_artifacts_dir, component_recipe_dir, "SampleComponentWithArtifacts=1.0.0"))
+    # TODO: We can use the CLI to verify that a local deployment has finished once that feature exists
+    # For now, check if the expected component is running within a timeout.
+    timeout = 120
+    while timeout > 0:
+        if system_interface.check_systemctl_status_for_component("SampleComponentWithArtifacts") == "RUNNING":
+            break
+        time.sleep(1)
+        timeout -= 1
+
+    # I can check the cli to see the status of component SampleComponentWithConfiguration is RUNNING
+    assert (system_interface.check_systemctl_status_for_component(
+        "SampleComponentWithConfiguration") == "RUNNING")
+
+    # I can check the cli to see the component SampleComponentWithConfiguration is running with version 1.0.0
+    # GG_LITE CLI doesn't support this yet.
+
+    # I can check the cli to see the status of component SampleComponentWithArtifacts is RUNNING
+    assert (system_interface.check_systemctl_status_for_component(
+        "SampleComponentWithArtifacts") == "RUNNING")
+
+    # I can check the cli to see the component SampleComponentWithArtifacts is running with version 1.0.0
+    # GG_LITE CLI doesn't support this yet.
+
+# As a developer, I can use the local cli to deploy a single component with component configuration to a device locally without cloud intervention.
+# Test is modified to read default config instead of the merge config, since merge/reset configuration is not supported for local deployment yet in GG_LITE
+def test_Deployment_1_T3(gg_util_obj, system_interface):
+    # I install the component SampleComponentWithConfiguration version 1.0.0 from local store with configuration
+    #   | key                                          | value          |
+    #   | SampleComponentWithConfiguration:MyConfigKey | NewConfigValue |
+    component_recipe_dir = "./components/SampleComponentWithArtifacts/1.0.0/recipe/"
+    assert (gg_util_obj.create_local_deployment(None, component_recipe_dir, "SampleComponentWithConfiguration=1.0.0"))
+    # TODO: We can use the CLI to verify that a local deployment has finished once that feature exists
+    # For now, check if the expected component is running within a timeout.
+    timeout = 120
+    while timeout > 0:
+        if system_interface.check_systemctl_status_for_component("SampleComponentWithConfiguration") == "RUNNING":
+            break
+        time.sleep(1)
+        timeout -= 1
+
+    # I can check the cli to see the status of component SampleComponentWithConfiguration is RUNNING
+    assert (system_interface.check_systemctl_status_for_component(
+        "SampleComponentWithConfiguration") == "RUNNING")
+
+    # I can check the cli to see the component SampleComponentWithConfiguration is running with version 1.0.0
+    # GG_LITE CLI doesn't support this yet.
+
+    # the SampleComponentWithConfiguration log eventually contains the line "running generic sample with version 1.0.0 with configuration value NewConfigValue" within 60 seconds
+    assert (system_interface.monitor_journalctl_for_message(
+        "ggl.SampleComponentWithConfiguration.service",
+        "running generic sample with version 1.0.0 with configuration value MyConfigDefaultValue",
+        timeout=20) is True)
 
 #As a device application owner, I can deploy configuration with updated components to a thing group.
 def test_Deployment_3_T1(gg_util_obj, system_interface):
@@ -187,7 +286,7 @@ def test_Deployment_3_T1(gg_util_obj, system_interface):
 
     # And I can check the cli to see the status of component HelloWorld is RUNNING
     assert (system_interface.check_systemctl_status_for_component(
-        component_cloud_name) == "RUNNING")
+        component_cloud_name[0]) == "RUNNING")
 
     # And I can check the cli to see the component HelloWorld is running with version 1.0.0
     # GG_LITE CLI doesn't support this yet.
@@ -213,7 +312,7 @@ def test_Deployment_3_T1(gg_util_obj, system_interface):
 
     # And I can check the cli to see the status of component HelloWorld is RUNNING
     assert (system_interface.check_systemctl_status_for_component(
-        component_cloud_name1) == "RUNNING")
+        component_cloud_name1[0]) == "RUNNING")
 
 
 # Scenario: Deployment-3-T2: As a device application owner, I can deploy configuration to a thing group which removes a component.
@@ -245,12 +344,12 @@ def test_Deployment_3_T2(gg_util_obj, system_interface):
     # And I can check the cli to see the status of component HelloWorld is RUNNING
     # And I can check the cli to see the component HelloWorld is running with version 1.0.0
     assert (system_interface.check_systemctl_status_for_component(
-        hello_world_cloud_name) == "RUNNING")
+        hello_world_cloud_name[0]) == "RUNNING")
 
     # And I can check the cli to see the status of component SampleComponent is RUNNING
     # And I can check the cli to see the component SampleComponent is running with version 1.0.0
     assert (system_interface.check_systemctl_status_for_component(
-        sample_component_cloud_name) == "RUNNING")
+        sample_component_cloud_name[0]) == "RUNNING")
 
     # When I upload component "HelloWorld" version "1.0.1" from the local store
     # Then I ensure component "HelloWorld" version "1.0.1" exists on cloud within 60 seconds
@@ -271,13 +370,13 @@ def test_Deployment_3_T2(gg_util_obj, system_interface):
 
     # And I can check the cli to see the status of component HelloWorld is RUNNING
     assert (system_interface.check_systemctl_status_for_component(
-        hello_world_cloud_name_1) == "RUNNING")
+        hello_world_cloud_name_1[0]) == "RUNNING")
     # And I can check the cli to see the component HelloWorld is running with version 1.0.1
     # GG CLI doesn't yet support this.
 
     # And I can check the cli to see the component SampleComponent is not listed
     assert (system_interface.check_systemctl_status_for_component(
-        sample_component_cloud_name) == "NOT_RUNNING")
+        sample_component_cloud_name[0]) == "NOT_RUNNING")
 
 
 # Scenario: Deployment-3-T3: As a device application owner, if a component is broken and I deploy a fix it should succeed
@@ -306,7 +405,7 @@ def test_Deployment_3_T3(gg_util_obj, system_interface):
     # And I can check the cli to see the status of component BrokenComponent is BROKEN
     # GG LITE CLI cannot yet do this, so we rely on systemctl.
     assert (system_interface.check_systemctl_status_for_component(
-        broken_component_cloud_name) == "NOT_RUNNING")
+        broken_component_cloud_name[0]) == "NOT_RUNNING")
 
     # When I upload component "BrokenComponent" version "1.0.2" from the local store
     # Then I ensure component "BrokenComponent" version "1.0.2" exists on cloud within 60 seconds
@@ -327,7 +426,7 @@ def test_Deployment_3_T3(gg_util_obj, system_interface):
 
     # And I can check the cli to see the status of component BrokenComponent is RUNNING
     assert (system_interface.check_systemctl_status_for_component(
-        broken_component_v2_cloud_name) == "RUNNING")
+        broken_component_v2_cloud_name[0]) == "RUNNING")
 
 
 # Scenario: Deployment-3-T4: As a device application owner, if a component is broken and I deploy a fix that doesn't work it should fail
@@ -356,7 +455,7 @@ def test_Deployment_3_T4(gg_util_obj, system_interface):
     # And I can check the cli to see the status of component BrokenComponent is BROKEN
     # GG LITE CLI cannot yet do this, so we rely on systemctl.
     assert (system_interface.check_systemctl_status_for_component(
-        broken_component_cloud_name) == "NOT_RUNNING")
+        broken_component_cloud_name[0]) == "NOT_RUNNING")
 
     # When I upload component "BrokenComponent" version "1.0.1" from the local store
     # Then I ensure component "BrokenComponent" version "1.0.1" exists on cloud within 60 seconds
@@ -403,7 +502,7 @@ def test_Deployment_3_T5(gg_util_obj, system_interface):
     # And I can check the cli to see the status of component BrokenComponent is BROKEN
     # GG LITE CLI cannot yet do this, so we rely on systemctl.
     assert (system_interface.check_systemctl_status_for_component(
-        broken_component_cloud_name) == "NOT_RUNNING")
+        broken_component_cloud_name[0]) == "NOT_RUNNING")
 
     # When I upload component "HelloWorld" version "1.0.0" from the local store
     # Then I ensure component "HelloWorld" version "1.0.0" exists on cloud within 60 seconds
@@ -457,7 +556,7 @@ def test_Deployment_5_T2(gg_util_obj, system_interface):
 
     # Then I can check the cli to see the status of component Component2BaseCloud is RUNNING
     assert system_interface.check_systemctl_status_for_component(
-        Component2BaseCloud_cloud_name) == "RUNNING"
+        Component2BaseCloud_cloud_name[0]) == "RUNNING"
 
     #     # This following step removes the Component2BaseCloud from the first group
     # When I create an empty deployment configuration for deployment ThirdDeployment and thing group FirstThingGroup
@@ -472,4 +571,4 @@ def test_Deployment_5_T2(gg_util_obj, system_interface):
 
     # Then I can check the cli to see the status of component Component2BaseCloud is RUNNING
     assert system_interface.check_systemctl_status_for_component(
-        Component2BaseCloud_cloud_name) == "RUNNING"
+        Component2BaseCloud_cloud_name[0]) == "RUNNING"

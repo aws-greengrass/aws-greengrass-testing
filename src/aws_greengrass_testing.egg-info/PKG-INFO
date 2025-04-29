@@ -1,0 +1,60 @@
+Metadata-Version: 2.4
+Name: aws-greengrass-testing
+Version: 0.1.0
+License-Expression: Apache-2.0
+Requires-Python: >=3.12
+Description-Content-Type: text/markdown
+License-File: LICENSE
+License-File: NOTICE
+Requires-Dist: boto3>=1.38.4
+Requires-Dist: pytest>=8.3.5
+Requires-Dist: pyyaml>=6.0.2
+Dynamic: license-file
+
+### Installing python3 venv
+
+Following is the command to setup python3 venv environment
+
+```shell
+sudo apt install python3-venv
+python3 -m venv env
+. ./env/bin/activate
+```
+
+You will now be switched to the virtual environment.
+
+Run the following command to install all the required libraries to run the test
+suite.
+
+```shell
+pip install .
+```
+
+## How to run the tests?
+
+These tests assume that you have greengrass-lite installled and running.
+
+You need to provide details of the AWS account, the S3 bucket etc in the
+[config](./config/config.py) file before running the tests.
+
+Once you have added the configuration, the tests can be run by executing the
+following command.
+
+```
+pytest -q -s -v
+```
+
+### How to run a specific test(s)?
+
+pytest provides a `-k` flag which allows the user to select specific test(s)
+which they would like to run.
+
+If you want to run a specific test (e.g. `test_Deployment_3_T3`), the command
+will be as follows:
+
+```
+pytest -q -s -v ./src/aws-greengrass-testing-deployment.py  -k "test_Deployment_3_T3"
+```
+
+More documentation on the above option can be found
+[here](https://docs.pytest.org/en/latest/example/markers.html#using-k-expr-to-select-tests-based-on-their-name).

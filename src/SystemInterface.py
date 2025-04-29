@@ -11,7 +11,7 @@ class SystemInterface:
                 "sudo",
                 "systemctl",
                 "status",
-                f"ggl.{component_name[0]}.service",
+                f"ggl.{component_name}.service",
             ]
 
             # Run the command and stream output

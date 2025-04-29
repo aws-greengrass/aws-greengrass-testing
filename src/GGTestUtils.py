@@ -5,16 +5,18 @@ import boto3
 from botocore.exceptions import ClientError
 import time
 import yaml
+import subprocess
 
 S3_ARTIFACT_DIR = "artifacts"
 
 
 class GGTestUtils:
 
-    def __init__(self, account, bucket, region):
+    def __init__(self, account, bucket, region, cli_bin_path):
         self._region = region
         self._account = account
         self._bucket = bucket
+        self._cli_bin_path = cli_bin_path
         self._ggClient = boto3.client("greengrassv2", region_name=self._region)
         self._iotClient = boto3.client("iot", region_name=self._region)
         self._s3Client = boto3.client("s3", region_name=self._region)
@@ -30,6 +32,9 @@ class GGTestUtils:
 
     def get_region(self):
         return self._region
+
+    def get_cli_bin_path(self):
+        return self._cli_bin_path
 
     def get_thing_group_arn(self, thing_group):
         return f"arn:aws:iot:{self.get_region()}:{self.get_aws_account()}:thinggroup/{thing_group}"
@@ -98,6 +103,23 @@ class GGTestUtils:
             else:
                 print(f"An error occurred: {e}")
             return None
+
+    def create_local_deployment(self, artifacts_dir, recipe_dir, component_details):
+        cli_cmd = ["sudo", self.get_cli_bin_path(), "deploy"]
+        if artifacts_dir is not None:
+            cli_cmd.extend(["--artifacts-dir", artifacts_dir])
+        if recipe_dir is not None:
+            cli_cmd.extend(["--recipe-dir", recipe_dir])
+        cli_cmd.append(f"--add-component={component_details}")
+        process = subprocess.run(cli_cmd, capture_output=True, text=True)
+        if process.returncode == 0:
+            print("CLI call to create local deployment succeeded:")
+            print(process.stdout)
+            return True
+
+        print(f"CLI call to create local deployment failed with error code {process.returncode}:")
+        print(process.stderr)
+        return False
 
     def create_deployment(self,
                           thingArn,
