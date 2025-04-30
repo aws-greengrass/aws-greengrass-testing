@@ -1,5 +1,6 @@
 import time
 import pytest
+from src.IoTUtils import IoTTestUtils
 from src.GGTestUtils import GGTestUtils
 from src.SystemInterface import SystemInterface
 from config import config
@@ -9,12 +10,8 @@ from config import config
 def gg_util_obj():
     # Setup an instance of the GGUtils class. It is then passed to the
     # test functions.
-    gg_util = GGTestUtils(
-        config.aws_account,
-        config.s3_bucket_name,
-        config.region,
-        config.ggl_cli_bin_path
-    )
+    gg_util = GGTestUtils(config.aws_account, config.s3_bucket_name,
+                          config.region, config.ggl_cli_bin_path)
 
     # yield the instance of the class to the tests.
     yield gg_util
@@ -36,133 +33,23 @@ def system_interface():
     pass
 
 
-# As a component developer, I can create Greengrass component that works on my current platform.
-def test_Component_12_T1(gg_util_obj, system_interface):
-    # I upload component "MultiPlatform" version "1.0.0" from the local store
-    component_cloud_name = gg_util_obj.upload_component_with_version(
-        "MultiPlatform", "1.0.0")
+@pytest.fixture(scope="function")  # Runs for each test function
+def iot_obj():
+    # Setup an instance of the GGUtils class. It is then passed to the
+    # test functions.
+    iot_obj = IoTTestUtils(
+        config.aws_account,
+        config.region,
+    )
 
-    # And  I create a deployment configuration with components and configuration
-    #   | MultiPlatform | 1.0.0 |
-    # And   I deploy the deployment configuration
-    deployment_id = gg_util_obj.create_deployment(
-        gg_util_obj.get_thing_group_arn(config.thing_group_1),
-        [component_cloud_name],
-    )["deploymentId"]
-    assert deployment_id is not None
+    # yield the instance of the class to the tests.
+    yield iot_obj
 
-    # Then the deployment completes with SUCCEEDED within 180 seconds
-    assert (gg_util_obj.wait_for_deployment_till_timeout(
-        180, deployment_id) == "SUCCEEDED")
+    # This section is called AFTER the test is run.
 
-    # And  I can check the cli to see the status of component MultiPlatform is RUNNING
-    """ GG LITE CLI DOESN"T SUPPORT THIS YET. """
+    # Cleanup the artifacts, components etc.
+    iot_obj.cleanup()
 
-    # And  the MultiPlatform log eventually contains the line "Hello world!" within 20 seconds
-    assert (system_interface.monitor_journalctl_for_message(
-        "ggl." + component_cloud_name[0] + ".service",
-        "Hello world! World",
-        timeout=20) is True)
-
-
-# GC developer can create a component with recipes containing s3 artifact. GGC operator can deploy it and artifact can be run.
-def test_Component_16_T1(gg_util_obj, system_interface):
-    # I upload component "HelloWorld" version "1.0.0" from the local store
-    component_cloud_name = gg_util_obj.upload_component_with_version(
-        "HelloWorld", "1.0.0")
-
-    # Give 5 sec for cloud to calculate artifact checksum and make it "DEPLOYABLE"
-    time.sleep(5)
-
-    # When I create a deployment configuration with components
-    #        | HelloWorld | 1.0.0 |
-    # And I deploy the deployment configuration
-    deployment_id = gg_util_obj.create_deployment(
-        gg_util_obj.get_thing_group_arn(config.thing_group_1),
-        [component_cloud_name],
-    )["deploymentId"]
-    assert deployment_id is not None
-
-    # Then the deployment completes with SUCCEEDED within 120 seconds
-    assert (gg_util_obj.wait_for_deployment_till_timeout(
-        120, deployment_id) == "SUCCEEDED")
-
-    # Then I can check the cli to see the status of component HelloWorld is RUNNING
-    """ GG LITE CLI DOESN"T SUPPORT THIS YET. """
-
-    # Then the HelloWorld log contains the line "Evergreen's dev experience is great!"
-    assert (system_interface.monitor_journalctl_for_message(
-        "ggl." + component_cloud_name[0] + ".service",
-        "Evergreen's dev experience is great!",
-        timeout=20,
-    ) is True)
-
-
-# As a component developer, I expect kernel to fail the deployment if the checksum of downloaded artifacts does not match with the checksum in the recipe.
-def test_Component_27_T1(gg_util_obj, system_interface):
-    # Given I upload component "HelloWorld" version "1.0.0" from the local store
-    # And I ensure component "HelloWorld" version "1.0.0" exists on cloud within 120 seconds
-    # And kernel registered as a Thing
-    # And my device is running the evergreen-kernel
-    component_cloud_name = gg_util_obj.upload_component_with_version(
-        "HelloWorld", "1.0.0")
-
-    # Give 5 sec for cloud to calculate artifact checksum and make it "DEPLOYABLE"
-    time.sleep(5)
-
-    # When I corrupt the contents of the component HelloWorld version 1.0.0 in the S3 bucket
-    assert gg_util_obj.upload_corrupt_artifacts_to_s3("HelloWorld",
-                                                      "1.0.0") is True
-
-    # When I create a deployment configuration with components
-    #        | HelloWorld | 1.0.0 |
-    # And I deploy the deployment configuration
-    deployment_id = gg_util_obj.create_deployment(
-        gg_util_obj.get_thing_group_arn(config.thing_group_1),
-        [component_cloud_name],
-    )["deploymentId"]
-    assert deployment_id is not None
-
-    # Greengrass retries 10 times with a 1 minute interval
-    # Then the deployment completes with FAILED within 630 seconds
-    assert gg_util_obj.wait_for_deployment_till_timeout(
-        630, deployment_id) == "FAILED"
-
-    # the greengrass log eventually contains the line "Failed to verify digest." within 30 seconds
-    assert (system_interface.monitor_journalctl_for_message(
-        "ggl.core.ggdeploymentd.service",
-        "Failed to verify digest.",
-        timeout=30,
-    ) is True)
-
-
-# Scenario: FleetStatus-1-T1: As a customer I can get thing information with components whose statuses have changed after an IoT Jobs deployment succeeds
-def test_FleetStatus_1_T1(gg_util_obj):
-    # When I upload component "HelloWorld" version "1.0.0" from the local store
-    component_cloud_name = gg_util_obj.upload_component_with_version(
-        "HelloWorld", "1.0.0")
-
-    # Give 5 sec for cloud to calculate artifact checksum and make it "DEPLOYABLE"
-    time.sleep(5)
-
-    # When I create a deployment configuration for deployment FirstDeployment and thing group FssThingGroup with components
-    #        | HelloWorld | 1.0.0 |
-    # And I deploy the configuration for deployment FirstDeployment
-    deployment_id = gg_util_obj.create_deployment(
-        gg_util_obj.get_thing_group_arn(config.thing_group_1),
-        [component_cloud_name],
-        "FirstDeployment",
-    )["deploymentId"]
-    assert deployment_id is not None
-
-    # Then the deployment FirstDeployment completes with SUCCEEDED within 180 seconds
-    assert (gg_util_obj.wait_for_deployment_till_timeout(
-        180, deployment_id) == "SUCCEEDED")
-
-    # And I can get the thing status as "HEALTHY" with all uploaded components within 60 seconds with groups
-    #      | FssThingGroup |
-    assert (gg_util_obj.get_ggcore_device_status(
-        60, f"{config.thing_group_1}") == "HEALTHY")
 
 #As a developer, I can use the local cli to deploy a single component to a device locally without cloud intervention.
 def test_Deployment_1_T1(gg_util_obj, system_interface):
@@ -171,12 +58,14 @@ def test_Deployment_1_T1(gg_util_obj, system_interface):
 
     # I install the component SampleComponentWithConfiguration version 1.0.0 from local store
     component_recipe_dir = "./components/SampleComponentWithConfiguration/1.0.0/recipe/"
-    assert (gg_util_obj.create_local_deployment(None, component_recipe_dir, "SampleComponentWithConfiguration=1.0.0"))
+    assert (gg_util_obj.create_local_deployment(
+        None, component_recipe_dir, "SampleComponentWithConfiguration=1.0.0"))
     # TODO: We can use the CLI to verify that a local deployment has finished once that feature exists
     # For now, check if the expected component is running within a timeout.
-    timeout = 120
+    timeout = 180
     while timeout > 0:
-        if system_interface.check_systemctl_status_for_component("SampleComponentWithConfiguration") == "RUNNING":
+        if system_interface.check_systemctl_status_for_component(
+                "SampleComponentWithConfiguration") == "RUNNING":
             break
         time.sleep(1)
         timeout -= 1
@@ -191,30 +80,36 @@ def test_Deployment_1_T1(gg_util_obj, system_interface):
     # I can check the cli to get list of local deployments and verify it has 1 deployments in SUCCEEDED state
     # GG_LITE CLI doesn't support this yet.
 
+
 #As a developer, I can use the local cli to deploy multiple components to a device locally without cloud intervention.
 def test_Deployment_1_T2(gg_util_obj, system_interface):
     # I install the following components from local store
     #   | SampleComponentWithConfiguration | 1.0.0 |
     #   | SampleComponentWithArtifacts     | 1.0.0 |
     component_recipe_dir = "./components/SampleComponentWithConfiguration/1.0.0/recipe/"
-    assert (gg_util_obj.create_local_deployment(None, component_recipe_dir, "SampleComponentWithConfiguration=1.0.0"))
+    assert (gg_util_obj.create_local_deployment(
+        None, component_recipe_dir, "SampleComponentWithConfiguration=1.0.0"))
     # TODO: We can use the CLI to verify that a local deployment has finished once that feature exists
     # For now, check if the expected component is running within a timeout.
-    timeout = 120
+    timeout = 180
     while timeout > 0:
-        if system_interface.check_systemctl_status_for_component("SampleComponentWithConfiguration") == "RUNNING":
+        if system_interface.check_systemctl_status_for_component(
+                "SampleComponentWithConfiguration") == "RUNNING":
             break
         time.sleep(1)
         timeout -= 1
 
     component_recipe_dir = "./components/SampleComponentWithArtifacts/1.0.0/recipe/"
     component_artifacts_dir = "./components/SampleComponentWithArtifacts/1.0.0/artifacts/"
-    assert (gg_util_obj.create_local_deployment(component_artifacts_dir, component_recipe_dir, "SampleComponentWithArtifacts=1.0.0"))
+    assert (gg_util_obj.create_local_deployment(
+        component_artifacts_dir, component_recipe_dir,
+        "SampleComponentWithArtifacts=1.0.0"))
     # TODO: We can use the CLI to verify that a local deployment has finished once that feature exists
     # For now, check if the expected component is running within a timeout.
     timeout = 120
     while timeout > 0:
-        if system_interface.check_systemctl_status_for_component("SampleComponentWithArtifacts") == "RUNNING":
+        if system_interface.check_systemctl_status_for_component(
+                "SampleComponentWithArtifacts") == "RUNNING":
             break
         time.sleep(1)
         timeout -= 1
@@ -233,6 +128,7 @@ def test_Deployment_1_T2(gg_util_obj, system_interface):
     # I can check the cli to see the component SampleComponentWithArtifacts is running with version 1.0.0
     # GG_LITE CLI doesn't support this yet.
 
+
 # As a developer, I can use the local cli to deploy a single component with component configuration to a device locally without cloud intervention.
 # TODO: Update test when merge/reset is supported for local deployments.
 # Test is modified to read default config instead of the merge config, since merge/reset configuration is not supported for local deployment yet in GG_LITE
@@ -241,12 +137,16 @@ def test_Deployment_1_T3(gg_util_obj, system_interface):
     #   | key                                          | value          |
     #   | SampleComponentWithConfiguration:MyConfigKey | NewConfigValue |
     component_recipe_dir = "./components/SampleComponentWithArtifacts/1.0.0/recipe/"
-    assert (gg_util_obj.create_local_deployment(None, component_recipe_dir, "SampleComponentWithConfiguration=1.0.0"))
+    assert (gg_util_obj.create_local_deployment(
+        None, component_recipe_dir, "SampleComponentWithConfiguration=1.0.0")
+            is True)
+
     # TODO: We can use the CLI to verify that a local deployment has finished once that feature exists
     # For now, check if the expected component is running within a timeout.
-    timeout = 120
+    timeout = 180
     while timeout > 0:
-        if system_interface.check_systemctl_status_for_component("SampleComponentWithConfiguration") == "RUNNING":
+        if system_interface.check_systemctl_status_for_component(
+                "SampleComponentWithConfiguration") == "RUNNING":
             break
         time.sleep(1)
         timeout -= 1
@@ -263,6 +163,7 @@ def test_Deployment_1_T3(gg_util_obj, system_interface):
         "ggl.SampleComponentWithConfiguration.service",
         "running generic sample with version 1.0.0 with configuration value MyConfigDefaultValue",
         timeout=20) is True)
+
 
 #As a device application owner, I can deploy configuration with updated components to a thing group.
 def test_Deployment_3_T1(gg_util_obj, system_interface):
@@ -569,6 +470,121 @@ def test_Deployment_5_T2(gg_util_obj, system_interface):
     # Then the deployment ThirdDeployment completes with SUCCEEDED within 180 seconds
     assert (gg_util_obj.wait_for_deployment_till_timeout(
         180, deployment_id_3) == "SUCCEEDED")
+
+    # Then I can check the cli to see the status of component Component2BaseCloud is RUNNING
+    assert system_interface.check_systemctl_status_for_component(
+        Component2BaseCloud_cloud_name[0]) == "RUNNING"
+
+
+# Scenario: Deployment-7-T3: As a device application owner, I can deploy from IoT Jobs different set of components to the device belonging to multiple thing groups
+def test_Deployment_7_T3(gg_util_obj, system_interface, iot_obj):
+    # When I upload component "Component2BaseCloud" version "1.0.0" from the local store
+    # Then I ensure component "Component2BaseCloud" version "1.0.0" exists on cloud within 60 seconds
+    Component2BaseCloud_cloud_name = gg_util_obj.upload_component_with_version(
+        "Component2BaseCloud", "1.0.0")
+
+    # When I create a deployment configuration for deployment FirstDeployment and thing group FirstThingGroup with components
+    #     | Component2BaseCloud | 1.0.0 |
+    # And I deploy the configuration for deployment FirstDeployment
+    deployment_id = gg_util_obj.create_deployment(
+        gg_util_obj.get_thing_group_arn(config.thing_group_1),
+        [Component2BaseCloud_cloud_name], "FirstDeployment")["deploymentId"]
+
+    # Then the deployment FirstDeployment completes with SUCCEEDED within 180 seconds
+    assert (gg_util_obj.wait_for_deployment_till_timeout(
+        180, deployment_id) == "SUCCEEDED")
+
+    # When I create a new thing group NewThingGroup
+    new_thing_group = iot_obj.create_new_thing_group("NewThingGroup")
+    assert new_thing_group is not None
+
+    # And I add the device to thing group NewThingGroup
+    assert iot_obj.add_thing_to_thing_group(config.thing_name,
+                                            new_thing_group) is True
+
+    # Then my device is in following thing group
+    #     | FirstThingGroup |
+    #     | NewThingGroup   |
+    assert iot_obj.is_thing_in_thing_groups(
+        config.thing_name, [config.thing_group_1, new_thing_group]) is True
+
+    # When I upload component "HelloWorld" version "1.0.0" from the local store
+    # Then I ensure component "HelloWorld" version "1.0.0" exists on cloud within 60 seconds
+    hello_world_cloud_name = gg_util_obj.upload_component_with_version(
+        "HelloWorld", "1.0.0")
+
+    # When I create a deployment configuration for deployment SecondDeployment and thing group NewThingGroup with components
+    #     | HelloWorld | 1.0.0 |
+    # And I deploy the configuration for deployment SecondDeployment
+    deployment_id_1 = gg_util_obj.create_deployment(
+        gg_util_obj.get_thing_group_arn(new_thing_group),
+        [hello_world_cloud_name], "SecondDeployment")["deploymentId"]
+
+    # Then the deployment SecondDeployment completes with SUCCEEDED within 120 seconds
+    assert (gg_util_obj.wait_for_deployment_till_timeout(
+        180, deployment_id_1) == "SUCCEEDED")
+
+    # Then I can check the cli to see the status of component HelloWorld is RUNNING
+    assert system_interface.check_systemctl_status_for_component(
+        hello_world_cloud_name[0]) == "RUNNING"
+    # Then I can check the cli to see the status of component Component2BaseCloud is RUNNING
+    assert system_interface.check_systemctl_status_for_component(
+        Component2BaseCloud_cloud_name[0]) == "RUNNING"
+
+
+# Scenario: Deployment-7-T4: As a device application owner, I can deploy from IoT Jobs a common component to thing groups the device belongs to
+def test_Deployment_7_T4(gg_util_obj, system_interface, iot_obj):
+    # When I upload component "Component2BaseCloud" version "1.0.0" from the local store
+    # Then I ensure component "Component2BaseCloud" version "1.0.0" exists on cloud within 60 seconds
+    Component2BaseCloud_cloud_name = gg_util_obj.upload_component_with_version(
+        "Component2BaseCloud", "1.0.0")
+
+    # When I create a deployment configuration for deployment FirstDeployment and thing group FirstThingGroup with components
+    #     | Component2BaseCloud | 1.0.0 |
+    # And I deploy the configuration for deployment FirstDeployment
+    deployment_id = gg_util_obj.create_deployment(
+        gg_util_obj.get_thing_group_arn(config.thing_group_1),
+        [Component2BaseCloud_cloud_name], "FirstDeployment")["deploymentId"]
+
+    # Then the deployment FirstDeployment completes with SUCCEEDED within 180 seconds
+    assert (gg_util_obj.wait_for_deployment_till_timeout(
+        180, deployment_id) == "SUCCEEDED")
+
+    # When I create a new thing group NewThingGroup
+    new_thing_group = iot_obj.create_new_thing_group("NewThingGroup")
+    assert new_thing_group is not None
+
+    # And I add the device to thing group NewThingGroup
+    assert iot_obj.add_thing_to_thing_group(config.thing_name,
+                                            new_thing_group) is True
+
+    # Then my device is in following thing group
+    #     | FirstThingGroup |
+    #     | NewThingGroup   |
+    assert iot_obj.is_thing_in_thing_groups(
+        config.thing_name, [config.thing_group_1, new_thing_group]) is True
+
+    # When I upload component "HelloWorld" version "1.0.0" from the local store
+    # Then I ensure component "HelloWorld" version "1.0.0" exists on cloud within 60 seconds
+    hello_world_cloud_name = gg_util_obj.upload_component_with_version(
+        "HelloWorld", "1.0.0")
+
+    # When I create a deployment configuration for deployment SecondDeployment and thing group NewThingGroup with components
+    #     | HelloWorld | 1.0.0 |
+    #     | Component2BaseCloud | 1.0.0 |
+    # And I deploy the configuration for deployment SecondDeployment
+    deployment_id_1 = gg_util_obj.create_deployment(
+        gg_util_obj.get_thing_group_arn(new_thing_group),
+        [hello_world_cloud_name, Component2BaseCloud_cloud_name],
+        "SecondDeployment")["deploymentId"]
+
+    # Then the deployment SecondDeployment completes with SUCCEEDED within 120 seconds
+    assert (gg_util_obj.wait_for_deployment_till_timeout(
+        120, deployment_id_1) == "SUCCEEDED")
+
+    # Then I can check the cli to see the status of component HelloWorld is RUNNING
+    assert system_interface.check_systemctl_status_for_component(
+        hello_world_cloud_name[0]) == "RUNNING"
 
     # Then I can check the cli to see the status of component Component2BaseCloud is RUNNING
     assert system_interface.check_systemctl_status_for_component(

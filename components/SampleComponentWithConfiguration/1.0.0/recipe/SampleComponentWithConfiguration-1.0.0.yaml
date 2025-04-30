@@ -1,21 +1,21 @@
 ---
-RecipeFormatVersion: '2020-01-25'
+RecipeFormatVersion: "2020-01-25"
 ComponentName: SampleComponentWithConfiguration
-ComponentVersion: '1.0.0'
+ComponentVersion: "1.0.0"
 ComponentDescription: Generic sample component with configuration for Evergreen
 ComponentPublisher: Amazon
 ComponentConfiguration:
   DefaultConfiguration:
-    MyConfigKey: 'MyConfigDefaultValue'
+    MyConfigKey: "MyConfigDefaultValue"
 Manifests:
   - Platform:
-      os: 'windows'
+      os: "windows"
     Lifecycle:
       Run: |-
         powershell -command "& { while(1) { echo \"running generic sample with version 1.0.0 with configuration value {configuration:/MyConfigKey}\"; sleep 5 } }"
   - Platform:
-      os: '*'
-      runtime: '*'
+      os: "*"
+      runtime: "*"
     Lifecycle:
       run: |-
         while true; do

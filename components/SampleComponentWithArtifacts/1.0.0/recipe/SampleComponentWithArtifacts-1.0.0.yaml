@@ -1,7 +1,7 @@
 ---
-RecipeFormatVersion: '2020-01-25'
+RecipeFormatVersion: "2020-01-25"
 ComponentName: SampleComponentWithArtifacts
-ComponentVersion: '1.0.0'
+ComponentVersion: "1.0.0"
 ComponentDescription: Generic sample component with artifacts for Evergreen
 ComponentPublisher: Amazon
 Manifests:
@@ -9,12 +9,13 @@ Manifests:
       os: windows
     Lifecycle:
       run: >-
-        powershell -command "& { while(1) { python {artifacts:path}/sample_artifact.py; sleep 5 } }"
+        powershell -command "& { while(1) { python
+        {artifacts:path}/sample_artifact.py; sleep 5 } }"
     Artifacts:
       - URI: s3://eg-uat-component-artifacts/SampleComponentWithArtifacts/sample_artifact.py
   - Platform:
-      os: '*'
-      runtime: '*'
+      os: "*"
+      runtime: "*"
     Artifacts:
       - URI: s3://eg-uat-component-artifacts/SampleComponentWithArtifacts/sample_artifact.py
     Lifecycle:

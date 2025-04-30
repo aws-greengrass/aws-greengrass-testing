@@ -104,7 +104,8 @@ class GGTestUtils:
                 print(f"An error occurred: {e}")
             return None
 
-    def create_local_deployment(self, artifacts_dir, recipe_dir, component_details):
+    def create_local_deployment(self, artifacts_dir, recipe_dir,
+                                component_details):
         cli_cmd = ["sudo", self.get_cli_bin_path(), "deploy"]
         if artifacts_dir is not None:
             cli_cmd.extend(["--artifacts-dir", artifacts_dir])
@@ -117,7 +118,9 @@ class GGTestUtils:
             print(process.stdout)
             return True
 
-        print(f"CLI call to create local deployment failed with error code {process.returncode}:")
+        print(
+            f"CLI call to create local deployment failed with error code {process.returncode}:"
+        )
         print(process.stderr)
         return False
 
