@@ -5,7 +5,7 @@ aws_account = ""
 s3_bucket_name = ""
 
 # The region of the AWS Account used for the tests.
-region = "us-east-1"
+region = ""
 
 # First thing group with 'thing' under test added to it.
 thing_group_1 = ""

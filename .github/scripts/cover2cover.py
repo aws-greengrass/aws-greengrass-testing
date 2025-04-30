@@ -51,7 +51,7 @@ def convert_lines(j_lines, into):
         cline.set('number', jline.attrib['nr'])
         cline.set(
             'hits', '1' if ci > 0 else
-            '0')  # Probably not true but no way to know from JaCoCo XML file
+            '0')    # Probably not true but no way to know from JaCoCo XML file
 
         if mb + cb > 0:
             percentage = str(int(100 * (float(cb) /

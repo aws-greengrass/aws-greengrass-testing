@@ -52,7 +52,7 @@ class SystemInterface:
                 "journalctl",
                 "-xeau",
                 service_name,
-                "-f",  # Follow mode - shows new entries as they are added
+                "-f",    # Follow mode - shows new entries as they are added
             ]
 
             # Run the command and stream output

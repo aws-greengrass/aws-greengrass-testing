@@ -61,8 +61,7 @@ def main():
         "GITHUB_REPOSITORY")].issues[pr].comments.get()
     if existing_comments[0] == 200:
         existing_comments = list(
-            filter(lambda i: my_body_dedupe in i["body"],
-                   existing_comments[1]))
+            filter(lambda i: my_body_dedupe in i["body"], existing_comments[1]))
     else:
         existing_comments = []
 

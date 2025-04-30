@@ -90,8 +90,7 @@ class GGTestUtils:
         """
         try:
             # Get the deployment status
-            response = self._ggClient.get_deployment(
-                deploymentId=deployment_id)
+            response = self._ggClient.get_deployment(deploymentId=deployment_id)
 
             # Extract relevant information
             deployment_status = response["deploymentStatus"]
@@ -147,15 +146,24 @@ class GGTestUtils:
         print(process.stderr)
         return False
 
-    def create_deployment(self,
-                          thingArn,
-                          component_list,
-                          deployment_name="UATinPython") -> CreateDeploymentResponseTypeDef:
+    def create_deployment(
+            self,
+            thingArn,
+            component_list,
+            deployment_name="UATinPython") -> CreateDeploymentResponseTypeDef:
         component_parsed_dict = {}
         for component in component_list:
-            component_parsed_dict[component[0]] = {
-                "componentVersion": component[1]
-            }
+            if (component[2]):
+                component_parsed_dict[component[0]] = {
+                    "componentVersion": component[1],
+                    "configurationUpdate": {
+                        "merge": component[2]
+                    }
+                }
+            else:
+                component_parsed_dict[component[0]] = {
+                    "componentVersion": component[1]
+                }
 
         result = self._ggClient.create_deployment(
             targetArn=thingArn,
@@ -169,7 +177,9 @@ class GGTestUtils:
 
         return result
 
-    def wait_for_deployment_till_timeout(self, timeout, deployment_id) -> Literal['SUCCEEDED', 'FAILED', 'TIMEOUT']:
+    def wait_for_deployment_till_timeout(
+            self, timeout,
+            deployment_id) -> Literal['SUCCEEDED', 'FAILED', 'TIMEOUT']:
         while timeout > 0:
             result = self._check_greengrass_group_deployment_status(
                 deployment_id)
@@ -196,7 +206,8 @@ class GGTestUtils:
 
         return "TIMEOUT"
 
-    def _upload_files_to_s3(self, files: Sequence[os.PathLike | str], bucket_name: str) -> bool:
+    def _upload_files_to_s3(self, files: Sequence[os.PathLike | str],
+                            bucket_name: str) -> bool:
         """
         Upload a file to an S3 bucket
 
@@ -206,12 +217,12 @@ class GGTestUtils:
         """
 
         for file_path in files:
-            object_name = os.path.join(S3_ARTIFACT_DIR, os.path.basename(file_path))
+            object_name = os.path.join(S3_ARTIFACT_DIR,
+                                       os.path.basename(file_path))
 
             try:
                 # Upload the file
-                self._s3Client.upload_file(file_path, bucket_name,
-                                                      object_name)
+                self._s3Client.upload_file(file_path, bucket_name, object_name)
                 self._ggS3ObjToDelete.append(object_name)
             except Exception as e:
                 print(f"Error uploading file: {e}")
@@ -233,12 +244,12 @@ class GGTestUtils:
             recipe_name = yaml.safe_load(recipe_content)["ComponentName"]
 
             cloud_recipe_name = recipe_name + cloud_addition
-            modified_content = recipe_content.replace(
-                "$bucketName$", self.s3_artifact_bucket)
+            modified_content = recipe_content.replace("$bucketName$",
+                                                      self.s3_artifact_bucket)
             modified_content = modified_content.replace(
                 "$testArtifactsDirectory$", S3_ARTIFACT_DIR)
-            modified_content = modified_content.replace(
-                recipe_name, cloud_recipe_name)
+            modified_content = modified_content.replace(recipe_name,
+                                                        cloud_recipe_name)
 
             # Parse the modified content as YAML and convert it to JSON.
             recipe_yaml = yaml.safe_load(modified_content)
@@ -264,7 +275,8 @@ class GGTestUtils:
 
     def upload_component_with_version(self, component_name: str, version: str):
         try:
-            component_artifact_dir = os.path.join('components', component_name,  version, 'artifacts')
+            component_artifact_dir = os.path.join('components', component_name,
+                                                  version, 'artifacts')
 
             artifact_files = os.listdir(component_artifact_dir)
             artifact_files_full_paths = [
@@ -283,7 +295,8 @@ class GGTestUtils:
             return None
 
         try:
-            component_recipe_dir = os.path.join('components', component_name,  version, 'recipe')
+            component_recipe_dir = os.path.join('components', component_name,
+                                                version, 'recipe')
 
             recipes = os.listdir(component_recipe_dir)
             recipes_full_paths = [
@@ -325,8 +338,10 @@ class GGTestUtils:
             print(f"Error creating corrupt file: {e}")
             return None
 
-    def upload_corrupt_artifacts_to_s3(self, component_name: str, version: str) -> bool:
-        component_artifact_dir = os.path.join('components', component_name,  version, 'artifacts')
+    def upload_corrupt_artifacts_to_s3(self, component_name: str,
+                                       version: str) -> bool:
+        component_artifact_dir = os.path.join('components', component_name,
+                                              version, 'artifacts')
 
         artifact_files = os.listdir(component_artifact_dir)
         artifact_files_full_paths = [
@@ -348,14 +363,18 @@ class GGTestUtils:
             try:
                 self._ggClient.delete_component(arn=componentArn)
             except:
-                logging.warning(f'Failed to delete component {componentArn} from configured test account.')
+                logging.warning(
+                    f'Failed to delete component {componentArn} from configured test account.'
+                )
 
         for artifact in self._ggS3ObjToDelete:
             try:
                 self._s3Client.delete_object(Bucket=self.s3_artifact_bucket,
-                                         Key=artifact)
+                                             Key=artifact)
             except:
-                logging.warning(f'Failed to delete s3 key {artifact} from configured test bucket.')
+                logging.warning(
+                    f'Failed to delete s3 key {artifact} from configured test bucket.'
+                )
 
         # Reset the lists.
         self._ggComponentToDeleteArn = []
@@ -365,8 +384,9 @@ class GGTestUtils:
             print(f"ggl.{service}.service")
         self._ggServiceList = []
 
-    def wait_ggcore_device_status(self, timeout: int | float, thing_group_name,
-                                 desired_health: str) -> Optional[CoreDeviceStatusType]:
+    def wait_ggcore_device_status(
+            self, timeout: int | float, thing_group_name,
+            desired_health: str) -> Optional[CoreDeviceStatusType]:
         things_in_group = self._iotClient.list_things_in_thing_group(
             thingGroupName=thing_group_name,
             recursive=False,
