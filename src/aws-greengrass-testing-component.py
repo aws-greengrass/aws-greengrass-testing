@@ -33,7 +33,8 @@ def system_interface():
 
 
 # As a component developer, I can create Greengrass component that works on my current platform.
-def test_Component_12_T1(gg_util_obj, system_interface):
+def test_Component_12_T1(gg_util_obj: GGTestUtils,
+                         system_interface: SystemInterface):
     # I upload component "MultiPlatform" version "1.0.0" from the local store
     component_cloud_name = gg_util_obj.upload_component_with_version(
         "MultiPlatform", "1.0.0")

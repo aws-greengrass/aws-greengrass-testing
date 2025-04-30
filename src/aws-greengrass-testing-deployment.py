@@ -52,7 +52,8 @@ def iot_obj():
 
 
 #As a developer, I can use the local cli to deploy a single component to a device locally without cloud intervention.
-def test_Deployment_1_T1(gg_util_obj, system_interface):
+def test_Deployment_1_T1(gg_util_obj: GGTestUtils,
+                         system_interface: SystemInterface):
     # I check cli to get list of local deployments and verify it has 0 deployments in ANY state
     # GG_LITE CLI doesn't support this yet.
 
@@ -82,7 +83,8 @@ def test_Deployment_1_T1(gg_util_obj, system_interface):
 
 
 #As a developer, I can use the local cli to deploy multiple components to a device locally without cloud intervention.
-def test_Deployment_1_T2(gg_util_obj, system_interface):
+def test_Deployment_1_T2(gg_util_obj: GGTestUtils,
+                         system_interface: SystemInterface):
     # I install the following components from local store
     #   | SampleComponentWithConfiguration | 1.0.0 |
     #   | SampleComponentWithArtifacts     | 1.0.0 |
@@ -132,7 +134,8 @@ def test_Deployment_1_T2(gg_util_obj, system_interface):
 # As a developer, I can use the local cli to deploy a single component with component configuration to a device locally without cloud intervention.
 # TODO: Update test when merge/reset is supported for local deployments.
 # Test is modified to read default config instead of the merge config, since merge/reset configuration is not supported for local deployment yet in GG_LITE
-def test_Deployment_1_T3(gg_util_obj, system_interface):
+def test_Deployment_1_T3(gg_util_obj: GGTestUtils,
+                         system_interface: SystemInterface):
     # I install the component SampleComponentWithConfiguration version 1.0.0 from local store with configuration
     #   | key                                          | value          |
     #   | SampleComponentWithConfiguration:MyConfigKey | NewConfigValue |
@@ -166,7 +169,8 @@ def test_Deployment_1_T3(gg_util_obj, system_interface):
 
 
 #As a device application owner, I can deploy configuration with updated components to a thing group.
-def test_Deployment_3_T1(gg_util_obj, system_interface):
+def test_Deployment_3_T1(gg_util_obj: GGTestUtils,
+                         system_interface: SystemInterface):
     # I upload component "HelloWorld" version "1.0.0" from the local store
     component_cloud_name = gg_util_obj.upload_component_with_version(
         "HelloWorld", "1.0.0")
@@ -218,7 +222,8 @@ def test_Deployment_3_T1(gg_util_obj, system_interface):
 
 
 # Scenario: Deployment-3-T2: As a device application owner, I can deploy configuration to a thing group which removes a component.
-def test_Deployment_3_T2(gg_util_obj, system_interface):
+def test_Deployment_3_T2(gg_util_obj: GGTestUtils,
+                         system_interface: SystemInterface):
     # When I upload component "HelloWorld" version "1.0.0" from the local store
     # Then I ensure component "HelloWorld" version "1.0.0" exists on cloud within 60 seconds
     hello_world_cloud_name = gg_util_obj.upload_component_with_version(
@@ -282,7 +287,8 @@ def test_Deployment_3_T2(gg_util_obj, system_interface):
 
 
 # Scenario: Deployment-3-T3: As a device application owner, if a component is broken and I deploy a fix it should succeed
-def test_Deployment_3_T3(gg_util_obj, system_interface):
+def test_Deployment_3_T3(gg_util_obj: GGTestUtils,
+                         system_interface: SystemInterface):
     # When I upload component "BrokenComponent" version "1.0.0" from the local store
     # Then I ensure component "BrokenComponent" version "1.0.0" exists on cloud within 60 seconds
     broken_component_cloud_name = gg_util_obj.upload_component_with_version(
@@ -332,7 +338,8 @@ def test_Deployment_3_T3(gg_util_obj, system_interface):
 
 
 # Scenario: Deployment-3-T4: As a device application owner, if a component is broken and I deploy a fix that doesn't work it should fail
-def test_Deployment_3_T4(gg_util_obj, system_interface):
+def test_Deployment_3_T4(gg_util_obj: GGTestUtils,
+                         system_interface: SystemInterface):
     # When I upload component "BrokenComponent" version "1.0.0" from the local store
     # Then I ensure component "BrokenComponent" version "1.0.0" exists on cloud within 60 seconds
     broken_component_cloud_name = gg_util_obj.upload_component_with_version(
@@ -379,7 +386,8 @@ def test_Deployment_3_T4(gg_util_obj, system_interface):
 
 
 # Scenario: Deployment-3-T5: As a device application owner, if a component is broken and I deploy a different component it should proceed as usual
-def test_Deployment_3_T5(gg_util_obj, system_interface):
+def test_Deployment_3_T5(gg_util_obj: GGTestUtils,
+                         system_interface: SystemInterface):
     # When I upload component "BrokenComponent" version "1.0.0" from the local store
     # Then I ensure component "BrokenComponent" version "1.0.0" exists on cloud within 60 seconds
     broken_component_cloud_name = gg_util_obj.upload_component_with_version(
@@ -428,7 +436,8 @@ def test_Deployment_3_T5(gg_util_obj, system_interface):
 
 
 # Scenario: Deployment-5-T2: As a device application owner, I can remove a common component from one of the group the device belongs to from an IoT Jobs deployment
-def test_Deployment_5_T2(gg_util_obj, system_interface):
+def test_Deployment_5_T2(gg_util_obj: GGTestUtils,
+                         system_interface: SystemInterface):
     # When I upload component "Component2BaseCloud" version "1.0.0" from the local store
     # Then I ensure component "Component2BaseCloud" version "1.0.0" exists on cloud within 60 seconds
     Component2BaseCloud_cloud_name = gg_util_obj.upload_component_with_version(
@@ -477,7 +486,9 @@ def test_Deployment_5_T2(gg_util_obj, system_interface):
 
 
 # Scenario: Deployment-7-T3: As a device application owner, I can deploy from IoT Jobs different set of components to the device belonging to multiple thing groups
-def test_Deployment_7_T3(gg_util_obj, system_interface, iot_obj):
+def test_Deployment_7_T3(gg_util_obj: GGTestUtils,
+                         system_interface: SystemInterface,
+                         iot_obj: IoTTestUtils):
     # When I upload component "Component2BaseCloud" version "1.0.0" from the local store
     # Then I ensure component "Component2BaseCloud" version "1.0.0" exists on cloud within 60 seconds
     Component2BaseCloud_cloud_name = gg_util_obj.upload_component_with_version(
@@ -533,7 +544,9 @@ def test_Deployment_7_T3(gg_util_obj, system_interface, iot_obj):
 
 
 # Scenario: Deployment-7-T4: As a device application owner, I can deploy from IoT Jobs a common component to thing groups the device belongs to
-def test_Deployment_7_T4(gg_util_obj, system_interface, iot_obj):
+def test_Deployment_7_T4(gg_util_obj: GGTestUtils,
+                         system_interface: SystemInterface,
+                         iot_obj: IoTTestUtils):
     # When I upload component "Component2BaseCloud" version "1.0.0" from the local store
     # Then I ensure component "Component2BaseCloud" version "1.0.0" exists on cloud within 60 seconds
     Component2BaseCloud_cloud_name = gg_util_obj.upload_component_with_version(

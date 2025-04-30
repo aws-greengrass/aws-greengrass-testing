@@ -1,9 +1,16 @@
 import json
 import os
+from typing import Any, Dict, List, Literal, Optional, Sequence
 import uuid
 import boto3
 from botocore.exceptions import ClientError
 import time
+import logging
+from types_boto3_greengrassv2 import GreengrassV2Client
+from types_boto3_greengrassv2.type_defs import CreateDeploymentResponseTypeDef
+from types_boto3_greengrassv2.literals import CoreDeviceStatusType
+from types_boto3_iot import IoTClient
+from types_boto3_s3 import S3Client
 import yaml
 from subprocess import run
 
@@ -11,8 +18,19 @@ S3_ARTIFACT_DIR = "artifacts"
 
 
 class GGTestUtils:
+    _account: str
+    _region: str
+    _bucket: str
+    _cli_bin_path: str
+    _ggClient: GreengrassV2Client
+    _iotClient: IoTClient
+    _s3Client: S3Client
+    _ggComponentToDeleteArn: List[str]
+    _ggS3ObjToDelete: List[str]
+    _ggServiceList: List[str]
 
-    def __init__(self, account, bucket, region, cli_bin_path):
+    def __init__(self, account: str, bucket: str, region: str,
+                 cli_bin_path: str):
         self._region = region
         self._account = account
         self._bucket = bucket
@@ -24,22 +42,26 @@ class GGTestUtils:
         self._ggS3ObjToDelete = []
         self._ggServiceList = []
 
-    def get_aws_account(self):
+    @property
+    def aws_account(self) -> str:
         return self._account
 
-    def get_s3_artifact_bucket(self):
-        return self._bucket
-
-    def get_region(self):
+    @property
+    def aws_region(self) -> str:
         return self._region
 
-    def get_cli_bin_path(self):
+    @property
+    def s3_artifact_bucket(self) -> str:
+        return self._bucket
+
+    @property
+    def cli_bin_path(self) -> str:
         return self._cli_bin_path
 
-    def get_thing_group_arn(self, thing_group):
-        return f"arn:aws:iot:{self.get_region()}:{self.get_aws_account()}:thinggroup/{thing_group}"
+    def get_thing_group_arn(self, thing_group: str) -> str:
+        return f"arn:aws:iot:{self.aws_region}:{self.aws_account}:thinggroup/{thing_group}"
 
-    def _get_things_in_thing_group(self, thing_group_name):
+    def _get_things_in_thing_group(self, thing_group_name) -> List[str]:
         """
         Retrieves a list of things in a given thing group.
 
@@ -58,7 +80,8 @@ class GGTestUtils:
             print(f"Error retrieving things in thing group: {e}")
             return None
 
-    def _check_greengrass_group_deployment_status(self, deployment_id):
+    def _check_greengrass_group_deployment_status(
+            self, deployment_id) -> Optional[Dict[str, Any]]:
         """
         Check the status of a Greengrass deployment for a thing group.
 
@@ -105,8 +128,8 @@ class GGTestUtils:
             return None
 
     def create_local_deployment(self, artifacts_dir, recipe_dir,
-                                component_details):
-        cli_cmd = ["sudo", self.get_cli_bin_path(), "deploy"]
+                                component_details) -> bool:
+        cli_cmd = ["sudo", self.cli_bin_path, "deploy"]
         if artifacts_dir is not None:
             cli_cmd.extend(["--artifacts-dir", artifacts_dir])
         if recipe_dir is not None:
@@ -127,7 +150,7 @@ class GGTestUtils:
     def create_deployment(self,
                           thingArn,
                           component_list,
-                          deployment_name="UATinPython"):
+                          deployment_name="UATinPython") -> CreateDeploymentResponseTypeDef:
         component_parsed_dict = {}
         for component in component_list:
             component_parsed_dict[component[0]] = {
@@ -146,7 +169,7 @@ class GGTestUtils:
 
         return result
 
-    def wait_for_deployment_till_timeout(self, timeout, deployment_id) -> str:
+    def wait_for_deployment_till_timeout(self, timeout, deployment_id) -> Literal['SUCCEEDED', 'FAILED', 'TIMEOUT']:
         while timeout > 0:
             result = self._check_greengrass_group_deployment_status(
                 deployment_id)
@@ -173,7 +196,7 @@ class GGTestUtils:
 
         return "TIMEOUT"
 
-    def _upload_files_to_s3(self, files, bucket_name):
+    def _upload_files_to_s3(self, files: Sequence[os.PathLike | str], bucket_name: str) -> bool:
         """
         Upload a file to an S3 bucket
 
@@ -183,11 +206,11 @@ class GGTestUtils:
         """
 
         for file_path in files:
-            object_name = S3_ARTIFACT_DIR + "/" + os.path.basename(file_path)
+            object_name = os.path.join(S3_ARTIFACT_DIR, os.path.basename(file_path))
 
             try:
                 # Upload the file
-                response = self._s3Client.upload_file(file_path, bucket_name,
+                self._s3Client.upload_file(file_path, bucket_name,
                                                       object_name)
                 self._ggS3ObjToDelete.append(object_name)
             except Exception as e:
@@ -199,19 +222,19 @@ class GGTestUtils:
             )
         return True
 
-    def _upload_component_to_gg(self, recipe):
+    def _upload_component_to_gg(self, recipe_path: str | os.PathLike) -> str:
         recipe_name = ""
         recipe_content = ""
         cloud_addition = str(uuid.uuid1())
 
         # Read and modify the file
-        with open(recipe, "r") as f:
+        with open(recipe_path, "r") as f:
             recipe_content = f.read()
             recipe_name = yaml.safe_load(recipe_content)["ComponentName"]
 
             cloud_recipe_name = recipe_name + cloud_addition
             modified_content = recipe_content.replace(
-                "$bucketName$", self.get_s3_artifact_bucket())
+                "$bucketName$", self.s3_artifact_bucket)
             modified_content = modified_content.replace(
                 "$testArtifactsDirectory$", S3_ARTIFACT_DIR)
             modified_content = modified_content.replace(
@@ -239,9 +262,9 @@ class GGTestUtils:
                 print(f"Error uploading component: {e}")
                 raise
 
-    def upload_component_with_version(self, component_name, version):
+    def upload_component_with_version(self, component_name: str, version: str):
         try:
-            component_artifact_dir = "./components/" + component_name + "/" + version + "/artifacts/"
+            component_artifact_dir = os.path.join('components', component_name,  version, 'artifacts')
 
             artifact_files = os.listdir(component_artifact_dir)
             artifact_files_full_paths = [
@@ -249,7 +272,7 @@ class GGTestUtils:
                 for file in artifact_files
             ]
             self._upload_files_to_s3(artifact_files_full_paths,
-                                     self.get_s3_artifact_bucket())
+                                     self.s3_artifact_bucket)
         except FileNotFoundError:
             print(
                 f"No artifact directory found for {component_name}-{version}.")
@@ -260,7 +283,7 @@ class GGTestUtils:
             return None
 
         try:
-            component_recipe_dir = "./components/" + component_name + "/" + version + "/recipe/"
+            component_recipe_dir = os.path.join('components', component_name,  version, 'recipe')
 
             recipes = os.listdir(component_recipe_dir)
             recipes_full_paths = [
@@ -279,7 +302,7 @@ class GGTestUtils:
             )
             return None
 
-    def _create_corrupt_file(self, file_path):
+    def _create_corrupt_file(self, file_path: str | os.PathLike):
         try:
             # Ensure the output directory exists
             output_dir = os.path.join(".", "ggtest", "corruptFiles")
@@ -302,8 +325,8 @@ class GGTestUtils:
             print(f"Error creating corrupt file: {e}")
             return None
 
-    def upload_corrupt_artifacts_to_s3(self, component_name, version):
-        component_artifact_dir = "./components/" + component_name + "/" + version + "/artifacts/"
+    def upload_corrupt_artifacts_to_s3(self, component_name: str, version: str) -> bool:
+        component_artifact_dir = os.path.join('components', component_name,  version, 'artifacts')
 
         artifact_files = os.listdir(component_artifact_dir)
         artifact_files_full_paths = [
@@ -318,14 +341,21 @@ class GGTestUtils:
             corrupt_file_list.append(corrupt_file_path)
 
         return self._upload_files_to_s3(corrupt_file_list,
-                                        self.get_s3_artifact_bucket())
+                                        self.s3_artifact_bucket)
 
     def cleanup(self):
         for componentArn in self._ggComponentToDeleteArn:
-            self._ggClient.delete_component(arn=componentArn)
+            try:
+                self._ggClient.delete_component(arn=componentArn)
+            except:
+                logging.warning(f'Failed to delete component {componentArn} from configured test account.')
+
         for artifact in self._ggS3ObjToDelete:
-            self._s3Client.delete_object(Bucket=self.get_s3_artifact_bucket(),
+            try:
+                self._s3Client.delete_object(Bucket=self.s3_artifact_bucket,
                                          Key=artifact)
+            except:
+                logging.warning(f'Failed to delete s3 key {artifact} from configured test bucket.')
 
         # Reset the lists.
         self._ggComponentToDeleteArn = []
@@ -335,7 +365,7 @@ class GGTestUtils:
             print(f"ggl.{service}.service")
         self._ggServiceList = []
 
-    def get_ggcore_device_status(self, timeout, thing_group_name):
+    def get_ggcore_device_status(self, timeout: int | float, thing_group_name: str) -> Optional[CoreDeviceStatusType]:
         things_in_group = self._iotClient.list_things_in_thing_group(
             thingGroupName=thing_group_name,
             recursive=False,

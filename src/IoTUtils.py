@@ -1,9 +1,15 @@
 from time import sleep
+from typing import List
 from uuid import uuid1
 from boto3 import client
+from types_boto3_iot import IoTClient
 
 
 class IoTTestUtils():
+    _aws_account: str
+    _region: str
+    _iotClient: IoTClient
+    _thing_groups_to_clean_up: List[str]
 
     def __init__(self, account: str, region: str) -> None:
         self._aws_account = account

@@ -1,11 +1,13 @@
 import os
 import subprocess
 import time
+from typing import Literal
 
 
 class SystemInterface:
 
-    def check_systemctl_status_for_component(self, component_name):
+    def check_systemctl_status_for_component(
+            self, component_name: str) -> Literal['RUNNING', 'NOT_RUNNING']:
         try:
             cmd = [
                 "sudo",
@@ -42,7 +44,8 @@ class SystemInterface:
             print(f"Error: {e}")
             return "NOT_RUNNING"
 
-    def monitor_journalctl_for_message(self, service_name, message, timeout):
+    def monitor_journalctl_for_message(self, service_name: str, message: str,
+                                       timeout: int | float) -> bool:
         try:
             cmd = [
                 "sudo",

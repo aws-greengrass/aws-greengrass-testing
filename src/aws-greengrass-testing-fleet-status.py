@@ -37,7 +37,7 @@ def system_interface():
 
 
 # Scenario: FleetStatus-1-T1: As a customer I can get thing information with components whose statuses have changed after an IoT Jobs deployment succeeds
-def test_FleetStatus_1_T1(gg_util_obj):
+def test_FleetStatus_1_T1(gg_util_obj: GGTestUtils):
     # When I upload component "HelloWorld" version "1.0.0" from the local store
     component_cloud_name = gg_util_obj.upload_component_with_version(
         "HelloWorld", "1.0.0")
