@@ -1,0 +1,28 @@
+---
+RecipeFormatVersion: "2020-01-25"
+ComponentName: _BrokenAfterDeployed_
+ComponentVersion: "1.0.0"
+ComponentConfiguration:
+  DefaultConfiguration:
+    SleepTime: 10 #TODO: Allow configurable value
+ComponentDescription:
+  Component that becomes broken after a successful deployment and raises
+  exception
+ComponentPublisher: Amazon
+Manifests:
+  - Platform:
+      os: windows
+    Artifacts:
+      - URI: s3://$bucketName$/$testArtifactsDirectory$/broken_after_deployed.py
+    Lifecycle:
+      run:
+        python {artifacts:path}/broken_after_deployed.py
+        {configuration:/SleepTime}
+  - Platform:
+      os: "*"
+      runtime: "*"
+    Artifacts:
+      - URI: s3://$bucketName$/$testArtifactsDirectory$/broken_after_deployed.py
+    Lifecycle:
+      run: |-
+        python3 {artifacts:path}/broken_after_deployed.py {configuration:/SleepTime};
