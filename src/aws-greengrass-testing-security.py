@@ -31,6 +31,7 @@ def system_interface():
     pass
 
 
+#TODO: INCOMPLETE only partially implemented
 # Scenario Outline: Security-6-T2-mqtt: As a service owner, I want to specify which components can publish on which mqtt topic
 def test_Security_6_T2_mqtt(gg_util_obj, system_interface):
     #   When I install the component IotMqttPublisher version 0.0.0 from local store with configuration

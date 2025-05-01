@@ -86,5 +86,5 @@ def test_FleetStatus_1_T3(gg_util_obj):
     #    And I can get the thing status as "UNHEALTHY" with all uploaded components within 180 seconds with groups
     #        | FssThingGroup |
     assert (gg_util_obj.wait_ggcore_device_status(180, config.thing_group_1,
-                                                 "UNHEALTHY")
+                                                  "UNHEALTHY")
             )    #TODO: create and use FssThingGroup instead of thing_group_1
