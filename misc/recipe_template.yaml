@@ -1,0 +1,13 @@
+---
+RecipeFormatVersion: "2020-01-25"
+ComponentName: ${componentName}
+ComponentDescription: UAT component for testing
+ComponentPublisher: Me
+ComponentVersion: "${componentVersion}"
+Manifests:
+  - Platform:
+      os: "*"
+      runtime: "*"
+    Lifecycle:
+      run: |-
+        echo Evergreen says Hello

@@ -58,7 +58,7 @@ def test_FleetStatus_1_T1(gg_util_obj: GGTestUtils):
     # And I can get the thing status as "HEALTHY" with all uploaded components within 60 seconds with groups
     #      | FssThingGroup |
     assert (gg_util_obj.wait_ggcore_device_status(
-        60, f"{gg_util_obj.get_thing_group()}", "HEALTHY"))
+        60, config.thing_group_1, "HEALTHY"))
 
 
 #Scenario: FleetStatus-1-T3: As a customer I can get thing information with components whose statuses have changed after an IoT Jobs deployment fails

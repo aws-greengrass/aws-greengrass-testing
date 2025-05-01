@@ -1,7 +1,7 @@
 import json
 import os
-from typing import Any, Dict, List, Literal, Optional, Sequence
-import uuid
+from typing import Any, Dict, List, Literal, Optional, Sequence, Tuple
+from uuid import uuid1
 import boto3
 from botocore.exceptions import ClientError
 import time
@@ -28,6 +28,7 @@ class GGTestUtils:
     _ggComponentToDeleteArn: List[str]
     _ggS3ObjToDelete: List[str]
     _ggServiceList: List[str]
+    _ggDeploymentList: List[str]
 
     def __init__(self, account: str, bucket: str, region: str,
                  cli_bin_path: str):
@@ -41,6 +42,7 @@ class GGTestUtils:
         self._ggComponentToDeleteArn = []
         self._ggS3ObjToDelete = []
         self._ggServiceList = []
+        self._ggDeploymentList = []
 
     @property
     def aws_account(self) -> str:
@@ -60,6 +62,9 @@ class GGTestUtils:
 
     def get_thing_group_arn(self, thing_group: str) -> str:
         return f"arn:aws:iot:{self.aws_region}:{self.aws_account}:thinggroup/{thing_group}"
+
+    def get_thing_arn(self, thing: str) -> str:
+        return f"arn:aws:iot:{self.aws_region}:{self.aws_account}:thing/{thing}"
 
     def _get_things_in_thing_group(self, thing_group_name) -> List[str]:
         """
@@ -81,7 +86,7 @@ class GGTestUtils:
             return None
 
     def _check_greengrass_group_deployment_status(
-            self, deployment_id) -> Optional[Dict[str, Any]]:
+            self, deployment_id: str) -> Optional[Dict[str, Any]]:
         """
         Check the status of a Greengrass deployment for a thing group.
 
@@ -97,8 +102,13 @@ class GGTestUtils:
             target_arn = response["targetArn"]
             creation_timestamp = response["creationTimestamp"]
 
-            things_list = self._get_things_in_thing_group(
-                target_arn.split("/")[-1])
+            things_list = []
+            if "thinggroup" in target_arn:
+                things_list = self._get_things_in_thing_group(
+                    target_arn.split("/")[-1])
+            else:
+                # If this is a thing instead of a thing group.
+                things_list.append(target_arn.split("/")[-1])
 
             statistics_list = []
 
@@ -106,7 +116,8 @@ class GGTestUtils:
                 try:
                     # Get deployment statistics
                     statistic = self._ggClient.list_effective_deployments(
-                        coreDeviceThingName=thing)["effectiveDeployments"]
+                        coreDeviceThingName=thing, maxResults=100)
+                    statistic = statistic["effectiveDeployments"]
                     if statistic:
                         statistics_list.append({thing: statistic})
                 except Exception as e:
@@ -147,10 +158,11 @@ class GGTestUtils:
         return False
 
     def create_deployment(
-            self,
-            thingArn,
-            component_list,
-            deployment_name="UATinPython") -> CreateDeploymentResponseTypeDef:
+        self,
+        thingArn: str,
+        component_list: List[Tuple[str, str] | Tuple[str, str, str]],
+        deployment_name: str = "UATinPython"
+    ) -> CreateDeploymentResponseTypeDef:
         component_parsed_dict = {}
         for component in component_list:
             if (len(component) > 2):
@@ -174,12 +186,13 @@ class GGTestUtils:
         if result is not None:
             self._ggServiceList.extend(
                 [component[0] for component in component_list])
+            self._ggDeploymentList.append(result["deploymentId"])
 
         return result
 
     def wait_for_deployment_till_timeout(
-            self, timeout,
-            deployment_id) -> Literal['SUCCEEDED', 'FAILED', 'TIMEOUT']:
+            self, timeout: int,
+            deployment_id: str) -> Literal['SUCCEEDED', 'FAILED', 'TIMEOUT']:
         while timeout > 0:
             result = self._check_greengrass_group_deployment_status(
                 deployment_id)
@@ -236,7 +249,7 @@ class GGTestUtils:
     def _upload_component_to_gg(self, recipe_path: str | os.PathLike) -> str:
         recipe_name = ""
         recipe_content = ""
-        cloud_addition = str(uuid.uuid1())
+        cloud_addition = str(uuid1())
 
         # Read and modify the file
         with open(recipe_path, "r") as f:
@@ -273,7 +286,8 @@ class GGTestUtils:
                 print(f"Error uploading component: {e}")
                 raise
 
-    def upload_component_with_version(self, component_name: str, version: str):
+    def upload_component_with_version(self, component_name: str,
+                                      version: str) -> Tuple[str, str] | None:
         try:
             component_artifact_dir = os.path.join('components', component_name,
                                                   version, 'artifacts')
@@ -358,7 +372,7 @@ class GGTestUtils:
         return self._upload_files_to_s3(corrupt_file_list,
                                         self.s3_artifact_bucket)
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         for componentArn in self._ggComponentToDeleteArn:
             try:
                 self._ggClient.delete_component(arn=componentArn)
@@ -376,9 +390,17 @@ class GGTestUtils:
                     f'Failed to delete s3 key {artifact} from configured test bucket.'
                 )
 
+        for deployment in self._ggDeploymentList:
+            try:
+                self._ggClient.cancel_deployment(deploymentId=deployment)
+                self._ggClient.delete_deployment(deploymentId=deployment)
+            except Exception as e:
+                print(e)
+
         # Reset the lists.
         self._ggComponentToDeleteArn = []
         self._ggS3ObjToDelete = []
+        self._ggDeploymentList = []
 
         for service in self._ggServiceList:
             print(f"ggl.{service}.service")
@@ -408,3 +430,41 @@ class GGTestUtils:
                 return True
 
         return False
+
+    def create_recipe_file(self, component_name: str) -> dict | None:
+        template_file = os.path.join(".", "misc", "recipe_template.yaml")
+        template_abs_path = os.path.abspath(template_file)
+        with open(template_abs_path) as template:
+            content = template.read()
+            recipe_yaml = yaml.safe_load(content)
+
+            recipe_yaml["ComponentName"] = component_name
+            recipe_yaml["ComponentVersion"] = "1.0.0"
+
+            template.close()
+            return recipe_yaml
+        return None
+
+    def upload_component_from_recipe(self,
+                                     recipe: dict) -> Tuple[str, str] | None:
+        cloud_addition = str(uuid1())
+        recipe_name = recipe["ComponentName"]
+        cloud_recipe_name = recipe_name + cloud_addition
+        recipe["ComponentName"] = cloud_recipe_name
+
+        try:
+            # Create component version using the recipe
+            response = self._ggClient.create_component_version(
+                inlineRecipe=str(recipe))
+
+            print(
+                f"Successfully uploaded component with ARN: {response['arn']}")
+            self._ggComponentToDeleteArn.append(response["arn"])
+            return (cloud_recipe_name, recipe["ComponentVersion"])
+
+        except self._ggClient.exceptions.ConflictException as e:
+            print(f"Component version already exists: {e}")
+            raise
+        except Exception as e:
+            print(f"Error uploading component: {e}")
+            raise

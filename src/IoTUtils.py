@@ -3,6 +3,7 @@ from typing import List
 from uuid import uuid1
 from boto3 import client
 from types_boto3_iot import IoTClient
+import botocore
 
 
 class IoTTestUtils():
@@ -32,13 +33,49 @@ class IoTTestUtils():
 
         return None
 
-    def add_thing_to_thing_group(self, thing: str, thing_group: str) -> bool:
-        self._iotClient.add_thing_to_thing_group(thingGroupName=thing_group,
-                                                 thingName=thing)
+    def thing_group_exists(self, thing_group: str) -> bool:
+        try:
+            result = self._iotClient.describe_thing_group(
+                thingGroupName=thing_group)
+            return ('thingGroupName'
+                    in result) and (thing_group == result['thingGroupName'])
+        except botocore.exceptions.ClientError as error:
+            if error.response['Error']['Code'] == 'ResourceNotFoundException':
+                return False
+            else:
+                raise error
+
+    def add_thing_to_thing_group(self, thing: str,
+                                 thing_group: str) -> str | None:
+        thing_group_local = thing_group
+        if self.thing_group_exists(thing_group_local) is not True:
+            thing_group_local = self.create_new_thing_group(thing_group_local)
+            sleep(5)
+
+        self._iotClient.add_thing_to_thing_group(
+            thingGroupName=thing_group_local, thingName=thing)
 
         # Try to see whether the thing got added to the thing group.
         for i in range(3):
-            if self.is_thing_in_thing_groups(thing, [thing_group]) is True:
+            if self.is_thing_in_thing_groups(thing,
+                                             [thing_group_local]) is True:
+                return thing_group_local
+            sleep(2)
+
+        return None
+
+    def remove_thing_from_thing_group(self, thing: str,
+                                      thing_group: str) -> bool | None:
+        if self.thing_group_exists(thing_group) is not True:
+            print("Thing group does not exist.")
+            return False
+
+        self._iotClient.remove_thing_from_thing_group(
+            thingGroupName=thing_group, thingName=thing)
+
+        # Try to see whether the thing got removed from the thing group.
+        for i in range(3):
+            if self.is_thing_in_thing_groups(thing, [thing_group]) is not True:
                 return True
             sleep(2)
 

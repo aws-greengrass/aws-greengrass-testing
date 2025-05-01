@@ -1,4 +1,5 @@
 import time
+from typing import Generator
 import pytest
 from src.IoTUtils import IoTTestUtils
 from src.GGTestUtils import GGTestUtils
@@ -7,7 +8,7 @@ from config import config
 
 
 @pytest.fixture(scope="function")    # Runs for each test function
-def gg_util_obj():
+def gg_util_obj() -> Generator[GGTestUtils, None, None]:
     # Setup an instance of the GGUtils class. It is then passed to the
     # test functions.
     gg_util = GGTestUtils(config.aws_account, config.s3_bucket_name,
@@ -23,7 +24,7 @@ def gg_util_obj():
 
 
 @pytest.fixture(scope="function")    # Runs for each test function
-def system_interface():
+def system_interface() -> Generator[SystemInterface, None, None]:
     interface = SystemInterface()
 
     # yield the instance of the class to the tests.
@@ -34,7 +35,7 @@ def system_interface():
 
 
 @pytest.fixture(scope="function")    # Runs for each test function
-def iot_obj():
+def iot_obj() -> Generator[IoTTestUtils, None, None]:
     # Setup an instance of the GGUtils class. It is then passed to the
     # test functions.
     iot_obj = IoTTestUtils(
@@ -185,6 +186,8 @@ def test_Deployment_3_T1(gg_util_obj: GGTestUtils,
         gg_util_obj.get_thing_group_arn(config.thing_group_1),
         [component_cloud_name], "Deployment1")["deploymentId"]
     assert deployment_id_1 is not None
+
+    print(deployment_id_1)
 
     # Then the deployment Deployment1 completes with SUCCEEDED within 180 seconds
     assert (gg_util_obj.wait_for_deployment_till_timeout(
@@ -602,3 +605,228 @@ def test_Deployment_7_T4(gg_util_obj: GGTestUtils,
     # Then I can check the cli to see the status of component Component2BaseCloud is RUNNING
     assert system_interface.check_systemctl_status_for_component(
         Component2BaseCloud_cloud_name[0]) == "RUNNING"
+
+
+# Scenario: Deployment-8-T1: As a device application owner, I can publish a series of
+# configurations using different groups and the device receives them all
+def test_Deployment_8_T1(gg_util_obj: GGTestUtils,
+                         system_interface: SystemInterface,
+                         iot_obj: IoTTestUtils):
+    # Given kernel registered as a Thing with thing group GroupA
+    group_a_name = iot_obj.add_thing_to_thing_group(config.thing_name, "GroupA")
+    assert group_a_name is not None
+
+    # Given I add the device to thing group GroupB
+    group_b_name = iot_obj.add_thing_to_thing_group(config.thing_name, "GroupB")
+    assert group_b_name is not None
+
+    # And I add the device to thing group GroupC
+    group_c_name = iot_obj.add_thing_to_thing_group(config.thing_name, "GroupC")
+    assert group_c_name is not None
+
+    # And I am revising the recipe file of a component componentGroupA
+    recipe_group_A = gg_util_obj.create_recipe_file("componentGroupA")
+    assert recipe_group_A is not None
+
+    # And I update my cloud component using my recipe file
+    # Then my cloud component should exist
+    component_group_A_cloud_name = gg_util_obj.upload_component_from_recipe(
+        recipe_group_A)
+    assert component_group_A_cloud_name is not None
+
+    # Given I am revising the recipe file of a component componentGroupB
+    recipe_group_B = gg_util_obj.create_recipe_file("componentGroupB")
+    assert recipe_group_B is not None
+
+    # And I update my cloud component using my recipe file
+    # Then my cloud component should exist
+    component_group_B_cloud_name = gg_util_obj.upload_component_from_recipe(
+        recipe_group_B)
+    assert component_group_B_cloud_name is not None
+
+    # Given I am revising the recipe file of a component componentGroupC
+    recipe_group_C = gg_util_obj.create_recipe_file("componentGroupC")
+    assert recipe_group_C is not None
+
+    # And I update my cloud component using my recipe file
+    # Then my cloud component should exist
+    component_group_C_cloud_name = gg_util_obj.upload_component_from_recipe(
+        recipe_group_C)
+    assert component_group_C_cloud_name is not None
+
+    # When I create a deployment configuration for deployment deploymentForGroupA and thing group GroupA with components
+    #     | componentGroupA | 1.0.0 |
+    # And I deploy the configuration for deployment deploymentForGroupA
+    deployment_a = gg_util_obj.create_deployment(
+        gg_util_obj.get_thing_group_arn(group_a_name),
+        [component_group_A_cloud_name], "deploymentForGroupA")["deploymentId"]
+
+    # And I create a deployment configuration for deployment deploymentForGroupB and thing group GroupB with components
+    #     | componentGroupB | 1.0.0 |
+    # And I deploy the configuration for deployment deploymentForGroupB
+    deployment_b = gg_util_obj.create_deployment(
+        gg_util_obj.get_thing_group_arn(group_b_name),
+        [component_group_B_cloud_name], "deploymentForGroupB")["deploymentId"]
+
+    # And I create a deployment configuration for deployment deploymentForGroupC and thing group GroupC with components
+    #     | componentGroupC | 1.0.0 |
+    # And I deploy the configuration for deployment deploymentForGroupC
+    deployment_c = gg_util_obj.create_deployment(
+        gg_util_obj.get_thing_group_arn(group_c_name),
+        [component_group_C_cloud_name], "deploymentForGroupC")["deploymentId"]
+
+    # Then the deployment deploymentForGroupA completes with SUCCEEDED within 240 seconds
+    assert (gg_util_obj.wait_for_deployment_till_timeout(
+        120, deployment_a) == "SUCCEEDED")
+
+    # Then the deployment deploymentForGroupB completes with SUCCEEDED within 240 seconds
+    assert (gg_util_obj.wait_for_deployment_till_timeout(
+        120, deployment_b) == "SUCCEEDED")
+
+    # Then the deployment deploymentForGroupC completes with SUCCEEDED within 240 seconds
+    assert (gg_util_obj.wait_for_deployment_till_timeout(
+        120, deployment_c) == "SUCCEEDED")
+
+    # Then I can check the cli to see the component componentGroupA is listed within 5 seconds
+    assert system_interface.monitor_journalctl_for_message(
+        f"ggl.{component_group_A_cloud_name[0]}.service",
+        "Evergreen says Hello", 5)
+
+    # Then I can check the cli to see the component componentGroupB is listed within 5 seconds
+    assert system_interface.monitor_journalctl_for_message(
+        f"ggl.{component_group_B_cloud_name[0]}.service",
+        "Evergreen says Hello", 5)
+
+    # Then I can check the cli to see the component componentGroupC is listed within 5 seconds
+    assert system_interface.monitor_journalctl_for_message(
+        f"ggl.{component_group_C_cloud_name[0]}.service",
+        "Evergreen says Hello", 5)
+
+
+# Scenario: Deployment-8-T3: As a device application owner, I can remove device from thing
+# group to prevent component version conflict from multiple thing group deployments
+def test_Deployment_8_T3(gg_util_obj: GGTestUtils,
+                         system_interface: SystemInterface,
+                         iot_obj: IoTTestUtils):
+    # Given kernel registered as a Thing with thing group GroupA
+    group_a_name = iot_obj.add_thing_to_thing_group(config.thing_name, "GroupA")
+    assert group_a_name is not None
+
+    # And I upload component "HelloWorld" version "1.0.0" from the local store
+    # And I ensure component "HelloWorld" version "1.0.0" exists on cloud within 60 seconds
+    hello_world_v0_cloud_name = gg_util_obj.upload_component_with_version(
+        "HelloWorld", "1.0.0")
+
+    # And I upload component "HelloWorld" version "1.0.1" from the local store
+    # And I ensure component "HelloWorld" version "1.0.1" exists on cloud within 60 seconds
+    hello_world_v1_cloud_name = gg_util_obj.upload_component_with_version(
+        "HelloWorld", "1.0.1")
+
+    # # Deploy conflicting version from another group, after device is removed from first group
+    # # Will fail if removal from first group is not handled correctly
+    # When I create a deployment configuration for deployment deployment1 and thing group GroupA with components
+    #     | HelloWorld | 1.0.0 |
+    # And I deploy the configuration for deployment deployment1
+    deployment_1 = gg_util_obj.create_deployment(
+        gg_util_obj.get_thing_group_arn(group_a_name),
+        [hello_world_v0_cloud_name], "deployment1")["deploymentId"]
+
+    # Then the deployment deployment1 completes with SUCCEEDED within 240 seconds
+    assert (gg_util_obj.wait_for_deployment_till_timeout(
+        240, deployment_1) == "SUCCEEDED")
+
+    # And I can check the cli to see the component HelloWorld is listed within 30 seconds
+    # And I can check the cli to see the component HelloWorld is running with version 1.0.0
+    # TODO: GG-lite CLI cannot get the version yet.
+    assert system_interface.check_systemctl_status_for_component(
+        hello_world_v0_cloud_name[0]) == "RUNNING"
+
+    # When I remove the device from thing group GroupA
+    assert iot_obj.remove_thing_from_thing_group(config.thing_name,
+                                                 group_a_name) is True
+
+    # And I add the device to thing group GroupB
+    group_b_name = iot_obj.add_thing_to_thing_group(config.thing_name, "GroupB")
+    assert group_b_name is not None
+
+    # When I create a deployment configuration for deployment deployment2 and thing group GroupB with components
+    #     | HelloWorld | 1.0.1 |
+    # And I deploy the configuration for deployment deployment2
+    deployment_2 = gg_util_obj.create_deployment(
+        gg_util_obj.get_thing_group_arn(group_b_name),
+        [hello_world_v1_cloud_name], "deployment2")["deploymentId"]
+
+    # Then the deployment deployment2 completes with SUCCEEDED within 240 seconds
+    assert (gg_util_obj.wait_for_deployment_till_timeout(
+        240, deployment_2) == "SUCCEEDED")
+
+    # And I can check the cli to see the component HelloWorld is listed within 30 seconds
+    # And I can check the cli to see the component HelloWorld is running with version 1.0.1
+    # TODO: GG-lite CLI cannot get the version yet.
+    assert system_interface.check_systemctl_status_for_component(
+        hello_world_v1_cloud_name[0]) == "RUNNING"
+
+
+# Scenario: Deployment-8-T4: As a device application owner, I can remove device from thing
+# group to prevent component version conflict from device deployment
+def test_Deployment_8_T4(gg_util_obj: GGTestUtils,
+                         system_interface: SystemInterface,
+                         iot_obj: IoTTestUtils):
+    # # Deploy conflicting version via single device deployment, after device is removed from first group
+    # # Will fail if removal from first group is not handled correctly
+    # Given kernel registered as a Thing with thing group GroupA
+    group_a_name = iot_obj.add_thing_to_thing_group(config.thing_name, "GroupA")
+    assert group_a_name is not None
+
+    # And I upload component "HelloWorld" version "1.0.0" from the local store
+    # And I ensure component "HelloWorld" version "1.0.0" exists on cloud within 60 seconds
+    hello_world_v0_cloud_name = gg_util_obj.upload_component_with_version(
+        "HelloWorld", "1.0.0")
+
+    # And I upload component "HelloWorld" version "1.0.1" from the local store
+    # And I ensure component "HelloWorld" version "1.0.1" exists on cloud within 60 seconds
+    hello_world_v1_cloud_name = gg_util_obj.upload_component_with_version(
+        "HelloWorld", "1.0.1")
+
+    # When I create a deployment configuration for deployment deployment1 and thing group GroupA with components
+    #     | HelloWorld | 1.0.0 |
+    # And I deploy the configuration for deployment deployment1
+    deployment_1 = gg_util_obj.create_deployment(
+        gg_util_obj.get_thing_group_arn(group_a_name),
+        [hello_world_v0_cloud_name], "deployment1")["deploymentId"]
+    assert deployment_1 is not None
+
+    # Then the deployment deployment1 completes with SUCCEEDED within 240 seconds
+    assert (gg_util_obj.wait_for_deployment_till_timeout(
+        240, deployment_1) == "SUCCEEDED")
+
+    # And I can check the cli to see the component HelloWorld is listed within 30 seconds
+    # And I can check the cli to see the component HelloWorld is running with version 1.0.0
+    assert system_interface.check_systemctl_status_for_component(
+        hello_world_v0_cloud_name[0]) == "RUNNING"
+
+    # When I remove the device from thing group GroupA
+    assert iot_obj.remove_thing_from_thing_group(config.thing_name,
+                                                 group_a_name) is True
+
+    # TODO: This is a way to get around thing deployment not supported for gglite as of now.
+    group_b_name = iot_obj.add_thing_to_thing_group(config.thing_name, "GroupB")
+    assert group_b_name is not None
+
+    # And I create a device deployment configuration for deployment deployment2 with components
+    #     | HelloWorld | 1.0.1 |
+    # And I deploy the configuration for deployment deployment2
+    deployment_2 = gg_util_obj.create_deployment(
+        gg_util_obj.get_thing_group_arn(group_b_name),
+        [hello_world_v1_cloud_name], "deployment2")["deploymentId"]
+    assert deployment_2 is not None
+
+    # Then the status of single device deployment deployment2 reaches COMPLETED within 240 seconds
+    assert (gg_util_obj.wait_for_deployment_till_timeout(
+        240, deployment_2) == "SUCCEEDED")
+
+    # And I can check the cli to see the component HelloWorld is listed within 30 seconds
+    # And I can check the cli to see the component HelloWorld is running with version 1.0.1
+    assert system_interface.check_systemctl_status_for_component(
+        hello_world_v1_cloud_name[0]) == "RUNNING"
+
