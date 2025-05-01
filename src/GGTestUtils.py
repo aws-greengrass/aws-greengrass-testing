@@ -7,14 +7,22 @@ from botocore.exceptions import ClientError
 import time
 import logging
 from types_boto3_greengrassv2 import GreengrassV2Client
-from types_boto3_greengrassv2.type_defs import CreateDeploymentResponseTypeDef
+from types_boto3_greengrassv2.type_defs import CreateDeploymentResponseTypeDef, ComponentDeploymentSpecificationTypeDef
 from types_boto3_greengrassv2.literals import CoreDeviceStatusType
 from types_boto3_iot import IoTClient
 from types_boto3_s3 import S3Client
 import yaml
 from subprocess import run
+from typing import Sequence, Optional, Any, Dict, List, Literal, Optional, Sequence, NamedTuple
 
 S3_ARTIFACT_DIR = "artifacts"
+
+
+class ComponentDeploymentInfo(NamedTuple):
+    name: str
+    version: str
+    merge_config: Dict | str
+    """JSON document of configuration keys to merge"""
 
 
 class GGTestUtils:
@@ -157,41 +165,48 @@ class GGTestUtils:
         print(process.stderr)
         return False
 
-    def create_deployment(
-        self,
-        thingArn: str,
-        component_list: List[Tuple[str, str] | Tuple[str, str, str]],
-        deployment_name: str = "UATinPython"
-    ) -> CreateDeploymentResponseTypeDef:
-        component_parsed_dict = {}
-        for component in component_list:
-            if (len(component) > 2):
-                component_parsed_dict[component[0]] = {
-                    "componentVersion": component[1],
-                    "configurationUpdate": {
-                        "merge": component[2]
-                    }
-                }
+    def _convert_deployment_info(
+        self, component: ComponentDeploymentInfo
+    ) -> ComponentDeploymentSpecificationTypeDef:
+        specification: ComponentDeploymentSpecificationTypeDef = {
+            "componentVersion": component.version
+        }
+        if component.merge_config is not None:
+            merge: str
+            if component.merge_config is str:
+                merge = component.merge_config
             else:
-                component_parsed_dict[component[0]] = {
-                    "componentVersion": component[1]
-                }
+                merge = json.dumps(component.merge_config)
+            specification["configurationUpdate"] = {
+                "merge": merge
+            }
+        return specification
+
+    def create_deployment(
+            self,
+            thingArn: str,
+            component_list: Sequence[ComponentDeploymentInfo],
+            deployment_name: str = None) -> CreateDeploymentResponseTypeDef:
+        component_parsed_dict = {
+            component.name: self._convert_deployment_info(component)
+            for component in component_list
+        }
 
         result = self._ggClient.create_deployment(
             targetArn=thingArn,
-            deploymentName=deployment_name,
+            deploymentName=deployment_name or "UATInPython",
             components=component_parsed_dict,
         )
 
         if result is not None:
             self._ggServiceList.extend(
-                [component[0] for component in component_list])
+                [component.name for component in component_list])
             self._ggDeploymentList.append(result["deploymentId"])
 
         return result
 
     def wait_for_deployment_till_timeout(
-            self, timeout: int,
+            self, timeout: float,
             deployment_id: str) -> Literal['SUCCEEDED', 'FAILED', 'TIMEOUT']:
         while timeout > 0:
             result = self._check_greengrass_group_deployment_status(
@@ -246,7 +261,7 @@ class GGTestUtils:
             )
         return True
 
-    def _upload_component_to_gg(self, recipe_path: str | os.PathLike) -> str:
+    def _upload_component_to_gg(self, recipe_path: os.PathLike | str) -> str:
         recipe_name = ""
         recipe_content = ""
         cloud_addition = str(uuid1())
@@ -254,15 +269,16 @@ class GGTestUtils:
         # Read and modify the file
         with open(recipe_path, "r") as f:
             recipe_content = f.read()
-            recipe_name = yaml.safe_load(recipe_content)["ComponentName"]
+            recipe_name: str = yaml.safe_load(recipe_content)["ComponentName"]
 
             cloud_recipe_name = recipe_name + cloud_addition
+
             modified_content = recipe_content.replace("$bucketName$",
                                                       self.s3_artifact_bucket)
             modified_content = modified_content.replace(
                 "$testArtifactsDirectory$", S3_ARTIFACT_DIR)
-            modified_content = modified_content.replace(recipe_name,
-                                                        cloud_recipe_name)
+
+            modified_content = modified_content.replace(recipe_name, cloud_recipe_name)
 
             # Parse the modified content as YAML and convert it to JSON.
             recipe_yaml = yaml.safe_load(modified_content)
@@ -286,8 +302,9 @@ class GGTestUtils:
                 print(f"Error uploading component: {e}")
                 raise
 
-    def upload_component_with_version(self, component_name: str,
-                                      version: str) -> Tuple[str, str] | None:
+    def upload_component_with_version(
+            self, component_name: str,
+            version: str) -> Optional[ComponentDeploymentInfo]:
         try:
             component_artifact_dir = os.path.join('components', component_name,
                                                   version, 'artifacts')
@@ -318,8 +335,10 @@ class GGTestUtils:
                 for file in recipes
             ]
 
-            return (self._upload_component_to_gg(recipes_full_paths[0]),
-                    version)
+            cloud_name = self._upload_component_to_gg(recipes_full_paths[0])
+            return ComponentDeploymentInfo(name=cloud_name,
+                                           version=version,
+                                           merge_config=None)
         except FileNotFoundError:
             print(f"No recipe directory found for {component_name}-{version}.")
             return None
