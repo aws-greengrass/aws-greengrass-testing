@@ -1,11 +1,10 @@
-import time
-import pytest
+from pytest import fixture
 from src.GGTestUtils import GGTestUtils
 from src.SystemInterface import SystemInterface
 from config import config
 
 
-@pytest.fixture(scope="function")    # Runs for each test function
+@fixture(scope="function")    # Runs for each test function
 def gg_util_obj():
     # Setup an instance of the GGUtils class. It is then passed to the
     # test functions.
@@ -21,7 +20,7 @@ def gg_util_obj():
     gg_util.cleanup()
 
 
-@pytest.fixture(scope="function")    # Runs for each test function
+@fixture(scope="function")    # Runs for each test function
 def system_interface():
     interface = SystemInterface()
 
