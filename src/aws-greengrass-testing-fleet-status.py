@@ -10,7 +10,8 @@ def gg_util_obj():
     # Setup an instance of the GGUtils class. It is then passed to the
     # test functions.
     gg_util = GGTestUtils(config.aws_account, config.s3_bucket_name,
-                          config.region, config.ggl_cli_bin_path)
+                          config.region, config.ggl_cli_bin_path,
+                          config.ggl_install_dir)
 
     # yield the instance of the class to the tests.
     yield gg_util
