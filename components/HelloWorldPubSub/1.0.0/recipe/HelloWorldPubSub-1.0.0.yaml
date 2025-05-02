@@ -13,19 +13,22 @@ ComponentConfiguration:
     Topic: "topic"
     accessControl:
       aws.greengrass.ipc.pubsub:
-        com.example.PythonLocalPubSub:pubsub:1:
+        HelloWorldPubSub:pubsub:1:
           policyDescription: "Allows access to publish and subscribe to a topic"
           operations:
             - "aws.greengrass#SubscribeToTopic"
             - "aws.greengrass#PublishToTopic"
-          resources: []
+          resources: [ "*" ]
 Manifests:
-  - Platform:
-      os: "linux"
-      runtime: "*"
-    Lifecycle:
-      run: "python3 -u {artifacts:path}/hello_world_pub_sub.py \
-        {configuration:/Topic} {configuration:/Message}"
-    Artifacts:
-      - Uri: "s3://$bucketName$/$testArtifactsDirectory$/hello_world_pub_sub.py"
+- Platform:
+    os: "linux"
+    runtime: "*"
+  Lifecycle:
+    install: |-
+      python3 -m venv .venv
+      .venv/bin/python3 -m pip install awsiotsdk
+    run: |-
+      .venv/bin/python3 -u {artifacts:path}/hello_world_pub_sub.py "{configuration:/Topic}" "{configuration:/Message}"
+  Artifacts:
+  - Uri: "s3://$bucketName$/$testArtifactsDirectory$/hello_world_pub_sub.py"
 Lifecycle: {}
