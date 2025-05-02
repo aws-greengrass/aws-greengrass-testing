@@ -12,6 +12,15 @@ dependencies = [
     "types-boto3[essential,greengrassv2,iot,iot-data]>=1.38.4",
 ]
 
+[dependency-groups]
+dev = [
+    "pyls-memestra>=0.0.16",
+    "pylsp-mypy>=0.7.0",
+    "pylsp-rope>=0.1.17",
+    "python-lsp-isort>=0.2.0",
+    "python-lsp-server[mccabe,pycodestyle,pyflakes,rope,yapf]>=1.12.2",
+]
+
 [tool.pytest.ini_options]
 testpaths = [
     "./src/*",
