@@ -1,0 +1,23 @@
+---
+RecipeFormatVersion: "2020-01-25"
+componentName: HelloWorldBroken
+ComponentVersion: "1.0.0"
+ComponentConfiguration:
+  DefaultConfiguration:
+    Message: "World"
+ComponentDescription: Hello World App
+ComponentPublisher: Amazon
+manifests:
+  - Platform:
+      os: windows
+    lifecycle:
+      startup: |-
+        powershell -command "& { echo \"Broken Hello {configuration:/Message}\"; exit 1 }"
+
+  - Platform:
+      os: "*"
+      runtime: "*"
+    lifecycle:
+      startup: |-
+        echo 'Broken Hello {configuration:/Message}'
+        exit 1

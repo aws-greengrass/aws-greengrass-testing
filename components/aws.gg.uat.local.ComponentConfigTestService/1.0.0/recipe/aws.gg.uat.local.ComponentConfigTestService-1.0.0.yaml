@@ -1,0 +1,53 @@
+---
+RecipeFormatVersion: 2020-01-25
+ComponentName: aws.gg.uat.local.ComponentConfigTestService
+ComponentDescription: This is dedicated for testing component configuration with
+  local only deployments
+ComponentPublisher: Me
+ComponentVersion: 1.0.0
+ComponentConfiguration:
+  DefaultConfiguration:
+    singleLevelKey: default value of singleLevelKey
+    nestedKey:
+      leafKey: default value of /nestedKey/leafKey
+    listKey:
+      - item1
+      - item2
+    emptyStringKey: ""
+    emptyListKey: []
+    emptyObjectKey: {}
+    defaultIsNullKey: null
+    willBeNullKey: I will be set to null soon
+Manifests:
+  - Platform:
+      os: windows
+    Lifecycle:
+      run:
+        Script: powershell -command "& { echo $env:BypassCMD; python
+          {artifacts:path}/print_json_env.py; echo \"done\" }"
+        Setenv:
+          BypassCMD: "aws.iot.gg.uat.ComponentConfigTestService output Value for
+            /singleLevelKey: {configuration:/singleLevelKey}. Value for
+            /nestedKey/leafKey: {configuration:/nestedKey/leafKey}. Value for
+            /nestedKey: {configuration:/nestedKey}. I will be interpolated as a
+            serialized JSON String. Value for /emptyStringKey:
+            {configuration:/emptyStringKey}. Value for /defaultIsNullKey:
+            {configuration:/defaultIsNullKey}. Value for /newSingleLevelKey:
+            {configuration:/newSingleLevelKey}. I was not in the default value."
+          testJsonEnvvar: "{configuration:/nestedKey}"
+  - Platform:
+      os: "*"
+      runtime: "*"
+    Lifecycle:
+      run:
+        Setenv:
+          testJsonEnvvar: "{configuration:/nestedKey}"
+        Script: >-
+          echo 'aws.iot.gg.uat.ComponentConfigTestService output
+          Value for /singleLevelKey: {configuration:/singleLevelKey}.
+          Value for /nestedKey/leafKey: {configuration:/nestedKey/leafKey}.
+          Value for /nestedKey: {configuration:/nestedKey}. I will be interpolated as a serialized JSON String.
+          Value for /emptyStringKey: {configuration:/emptyStringKey}.
+          Value for /defaultIsNullKey: {configuration:/defaultIsNullKey}.
+          Value for /newSingleLevelKey: {configuration:/newSingleLevelKey}. I was not in the default value.'
+          && python3 {artifacts:path}/print_json_env.py && echo "done"

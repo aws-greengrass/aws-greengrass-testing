@@ -1,0 +1,55 @@
+---
+RecipeFormatVersion: "2020-01-25"
+ComponentName: _aws.gg.uat.cloud.ComponentConfigTestService_
+ComponentDescription: This is dedicated for testing component configuration for cloud and local deployments.
+ComponentPublisher: Me
+ComponentVersion: "1.0.0"
+
+# Configuration section to test and assert
+# Texts below are used for assertion in Component-29 and need to be changed together.
+ComponentConfiguration:
+  DefaultConfiguration:
+    singleLevelKey: "default value of singleLevelKey"
+    nestedKey:
+      leafKey: "default value of /nestedKey/leafKey"
+    listKey:
+      - "item1"
+      - "item2"
+    emptyStringKey: ""
+    emptyListKey: []
+    emptyObjectKey: {}
+    defaultIsNullKey: null
+    willBeNullKey: "I will be set to null soon"
+
+Manifests:
+  - Platform:
+      os: "windows"
+    Lifecycle:
+      # Texts below are used for assertion in Component-29 and need to be changed together.
+      run:
+        Script: >-
+          powershell -command "& { echo $env:BypassCMD;
+          echo \"done\" }"
+        Setenv:
+          BypassCMD: >-
+            aws.iot.gg.uat.ComponentConfigTestService output
+            Value for /singleLevelKey: {configuration:/singleLevelKey}.
+            Value for /nestedKey/leafKey: {configuration:/nestedKey/leafKey}.
+            Value for /nestedKey: {configuration:/nestedKey}. I will be interpolated as a serialized JSON String.
+            Value for /listKey/0: {configuration:/listKey/0}.
+            Value for /emptyStringKey: {configuration:/emptyStringKey}.
+            Value for /defaultIsNullKey: {configuration:/defaultIsNullKey}.
+            Value for /newSingleLevelKey: {configuration:/newSingleLevelKey}. I was not in the default value.
+  - Platform:
+      os: "*"
+      runtime: "*"
+    Lifecycle:
+      # Texts below are used for assertion in Component-29 and need to be changed together.
+      run: >-
+        echo "aws.iot.gg.uat.ComponentConfigTestService output
+        Value for /singleLevelKey: {configuration:/singleLevelKey}.
+        Value for /nestedKey/leafKey: {configuration:/nestedKey/leafKey}.
+        Value for /nestedKey: {configuration:/nestedKey}. I will be interpolated as a serialized JSON String.
+        Value for /emptyStringKey: {configuration:/emptyStringKey}.
+        Value for /defaultIsNullKey: {configuration:/defaultIsNullKey}.
+        Value for /newSingleLevelKey: {configuration:/newSingleLevelKey}. I was not in the default value." && echo "done"
