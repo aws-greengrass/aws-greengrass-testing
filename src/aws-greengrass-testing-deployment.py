@@ -265,8 +265,8 @@ def test_Deployment_1_T12(gg_util_obj, system_interface):
 def test_Deployment_3_T1(gg_util_obj: GGTestUtils,
                          system_interface: SystemInterface):
     # I upload component "HelloWorld" version "1.0.0" from the local store
-    component_cloud_name = gg_util_obj.upload_component_with_version(
-        "HelloWorld", "1.0.0")
+    component_cloud_name = gg_util_obj.upload_component_with_versions(
+        "HelloWorld", ["1.0.0"])
 
     # Give 5 sec for cloud to calculate artifact checksum and make it "DEPLOYABLE"
     time.sleep(5)
@@ -293,8 +293,8 @@ def test_Deployment_3_T1(gg_util_obj: GGTestUtils,
     # GG_LITE CLI doesn't support this yet.
 
     # I upload component "HelloWorld" version "1.0.1" from the local store
-    component_cloud_name1 = gg_util_obj.upload_component_with_version(
-        "HelloWorld", "1.0.1")
+    component_cloud_name1 = gg_util_obj.upload_component_with_versions(
+        "HelloWorld", ["1.0.1"])
 
     # Give 5 sec for cloud to calculate artifact checksum and make it "DEPLOYABLE"
     time.sleep(5)
@@ -321,13 +321,13 @@ def test_Deployment_3_T2(gg_util_obj: GGTestUtils,
                          system_interface: SystemInterface):
     # When I upload component "HelloWorld" version "1.0.0" from the local store
     # Then I ensure component "HelloWorld" version "1.0.0" exists on cloud within 60 seconds
-    hello_world_cloud_name = gg_util_obj.upload_component_with_version(
-        "HelloWorld", "1.0.0")
+    hello_world_cloud_name = gg_util_obj.upload_component_with_versions(
+        "HelloWorld", ["1.0.0"])
 
     # When I upload component "SampleComponent" version "1.0.0" from the local store
     # Then I ensure component "SampleComponent" version "1.0.0" exists on cloud within 60 seconds
-    sample_component_cloud_name = gg_util_obj.upload_component_with_version(
-        "SampleComponent", "1.0.0")
+    sample_component_cloud_name = gg_util_obj.upload_component_with_versions(
+        "SampleComponent", ["1.0.0"])
 
     # When I create a deployment configuration for deployment Deployment1 with components
     #    | HelloWorld      | 1.0.0 |
@@ -355,8 +355,8 @@ def test_Deployment_3_T2(gg_util_obj: GGTestUtils,
 
     # When I upload component "HelloWorld" version "1.0.1" from the local store
     # Then I ensure component "HelloWorld" version "1.0.1" exists on cloud within 60 seconds
-    hello_world_cloud_name_1 = gg_util_obj.upload_component_with_version(
-        "HelloWorld", "1.0.1")
+    hello_world_cloud_name_1 = gg_util_obj.upload_component_with_versions(
+        "HelloWorld", ["1.0.1"])
 
     # When I create a deployment configuration for deployment Deployment2 with components
     #    | HelloWorld | 1.0.1 |
@@ -386,8 +386,8 @@ def test_Deployment_3_T3(gg_util_obj: GGTestUtils,
                          system_interface: SystemInterface):
     # When I upload component "BrokenComponent" version "1.0.0" from the local store
     # Then I ensure component "BrokenComponent" version "1.0.0" exists on cloud within 60 seconds
-    broken_component_cloud_name = gg_util_obj.upload_component_with_version(
-        "BrokenComponent", "1.0.0")
+    broken_component_cloud_name = gg_util_obj.upload_component_with_versions(
+        "BrokenComponent", ["1.0.0"])
 
     # And I create a deployment configuration for deployment FirstDeployment with components
     #     | BrokenComponent | 1.0.0 |
@@ -412,8 +412,8 @@ def test_Deployment_3_T3(gg_util_obj: GGTestUtils,
 
     # When I upload component "BrokenComponent" version "1.0.2" from the local store
     # Then I ensure component "BrokenComponent" version "1.0.2" exists on cloud within 60 seconds
-    broken_component_v2_cloud_name = gg_util_obj.upload_component_with_version(
-        "BrokenComponent", "1.0.2")
+    broken_component_v2_cloud_name = gg_util_obj.upload_component_with_versions(
+        "BrokenComponent", ["1.0.2"])
 
     # And I create a deployment configuration for deployment SecondDeployment with components
     #     | BrokenComponent | 1.0.2 |
@@ -437,8 +437,8 @@ def test_Deployment_3_T4(gg_util_obj: GGTestUtils,
                          system_interface: SystemInterface):
     # When I upload component "BrokenComponent" version "1.0.0" from the local store
     # Then I ensure component "BrokenComponent" version "1.0.0" exists on cloud within 60 seconds
-    broken_component_cloud_name = gg_util_obj.upload_component_with_version(
-        "BrokenComponent", "1.0.0")
+    broken_component_cloud_name = gg_util_obj.upload_component_with_versions(
+        "BrokenComponent", ["1.0.0"])
 
     # And I create a deployment configuration for deployment FirstDeployment with components
     #     | BrokenComponent | 1.0.0 |
@@ -463,8 +463,8 @@ def test_Deployment_3_T4(gg_util_obj: GGTestUtils,
 
     # When I upload component "BrokenComponent" version "1.0.1" from the local store
     # Then I ensure component "BrokenComponent" version "1.0.1" exists on cloud within 60 seconds
-    broken_component_v1_cloud_name = gg_util_obj.upload_component_with_version(
-        "BrokenComponent", "1.0.1")
+    broken_component_v1_cloud_name = gg_util_obj.upload_component_with_versions(
+        "BrokenComponent", ["1.0.1"])
 
     # And I create a deployment configuration for deployment SecondDeployment with components
     #     | BrokenComponent | 1.0.1 |
@@ -485,8 +485,8 @@ def test_Deployment_3_T5(gg_util_obj: GGTestUtils,
                          system_interface: SystemInterface):
     # When I upload component "BrokenComponent" version "1.0.0" from the local store
     # Then I ensure component "BrokenComponent" version "1.0.0" exists on cloud within 60 seconds
-    broken_component_cloud_name = gg_util_obj.upload_component_with_version(
-        "BrokenComponent", "1.0.0")
+    broken_component_cloud_name = gg_util_obj.upload_component_with_versions(
+        "BrokenComponent", ["1.0.0"])
 
     # And I create a deployment configuration for deployment FirstDeployment with components
     #     | BrokenComponent | 1.0.0 |
@@ -511,8 +511,8 @@ def test_Deployment_3_T5(gg_util_obj: GGTestUtils,
 
     # When I upload component "HelloWorld" version "1.0.0" from the local store
     # Then I ensure component "HelloWorld" version "1.0.0" exists on cloud within 60 seconds
-    hello_world_cloud_name = gg_util_obj.upload_component_with_version(
-        "HelloWorld", "1.0.0")
+    hello_world_cloud_name = gg_util_obj.upload_component_with_versions(
+        "HelloWorld", ["1.0.0"])
 
     # Give 5 sec for cloud to calculate artifact checksum and make it "DEPLOYABLE"
     time.sleep(5)
@@ -535,8 +535,8 @@ def test_Deployment_5_T2(gg_util_obj: GGTestUtils,
                          system_interface: SystemInterface):
     # When I upload component "Component2BaseCloud" version "1.0.0" from the local store
     # Then I ensure component "Component2BaseCloud" version "1.0.0" exists on cloud within 60 seconds
-    Component2BaseCloud_cloud_name = gg_util_obj.upload_component_with_version(
-        "Component2BaseCloud", "1.0.0")
+    Component2BaseCloud_cloud_name = gg_util_obj.upload_component_with_versions(
+        "Component2BaseCloud", ["1.0.0"])
 
     # When I create a deployment configuration for deployment FirstDeployment and thing group FirstThingGroup with components
     #     | Component2BaseCloud | 1.0.0 |
@@ -586,8 +586,8 @@ def test_Deployment_7_T3(gg_util_obj: GGTestUtils,
                          iot_obj: IoTTestUtils):
     # When I upload component "Component2BaseCloud" version "1.0.0" from the local store
     # Then I ensure component "Component2BaseCloud" version "1.0.0" exists on cloud within 60 seconds
-    Component2BaseCloud_cloud_name = gg_util_obj.upload_component_with_version(
-        "Component2BaseCloud", "1.0.0")
+    Component2BaseCloud_cloud_name = gg_util_obj.upload_component_with_versions(
+        "Component2BaseCloud", ["1.0.0"])
 
     # When I create a deployment configuration for deployment FirstDeployment and thing group FirstThingGroup with components
     #     | Component2BaseCloud | 1.0.0 |
@@ -617,8 +617,8 @@ def test_Deployment_7_T3(gg_util_obj: GGTestUtils,
 
     # When I upload component "HelloWorld" version "1.0.0" from the local store
     # Then I ensure component "HelloWorld" version "1.0.0" exists on cloud within 60 seconds
-    hello_world_cloud_name = gg_util_obj.upload_component_with_version(
-        "HelloWorld", "1.0.0")
+    hello_world_cloud_name = gg_util_obj.upload_component_with_versions(
+        "HelloWorld", ["1.0.0"])
 
     # When I create a deployment configuration for deployment SecondDeployment and thing group NewThingGroup with components
     #     | HelloWorld | 1.0.0 |
@@ -645,8 +645,8 @@ def test_Deployment_7_T4(gg_util_obj: GGTestUtils,
                          iot_obj: IoTTestUtils):
     # When I upload component "Component2BaseCloud" version "1.0.0" from the local store
     # Then I ensure component "Component2BaseCloud" version "1.0.0" exists on cloud within 60 seconds
-    Component2BaseCloud_cloud_name = gg_util_obj.upload_component_with_version(
-        "Component2BaseCloud", "1.0.0")
+    Component2BaseCloud_cloud_name = gg_util_obj.upload_component_with_versions(
+        "Component2BaseCloud", ["1.0.0"])
 
     # When I create a deployment configuration for deployment FirstDeployment and thing group FirstThingGroup with components
     #     | Component2BaseCloud | 1.0.0 |
@@ -676,8 +676,8 @@ def test_Deployment_7_T4(gg_util_obj: GGTestUtils,
 
     # When I upload component "HelloWorld" version "1.0.0" from the local store
     # Then I ensure component "HelloWorld" version "1.0.0" exists on cloud within 60 seconds
-    hello_world_cloud_name = gg_util_obj.upload_component_with_version(
-        "HelloWorld", "1.0.0")
+    hello_world_cloud_name = gg_util_obj.upload_component_with_versions(
+        "HelloWorld", ["1.0.0"])
 
     # When I create a deployment configuration for deployment SecondDeployment and thing group NewThingGroup with components
     #     | HelloWorld | 1.0.0 |
@@ -808,13 +808,13 @@ def test_Deployment_8_T3(gg_util_obj: GGTestUtils,
 
     # And I upload component "HelloWorld" version "1.0.0" from the local store
     # And I ensure component "HelloWorld" version "1.0.0" exists on cloud within 60 seconds
-    hello_world_v0_cloud_name = gg_util_obj.upload_component_with_version(
-        "HelloWorld", "1.0.0")
+    hello_world_v0_cloud_name = gg_util_obj.upload_component_with_versions(
+        "HelloWorld", ["1.0.0"])
 
     # And I upload component "HelloWorld" version "1.0.1" from the local store
     # And I ensure component "HelloWorld" version "1.0.1" exists on cloud within 60 seconds
-    hello_world_v1_cloud_name = gg_util_obj.upload_component_with_version(
-        "HelloWorld", "1.0.1")
+    hello_world_v1_cloud_name = gg_util_obj.upload_component_with_versions(
+        "HelloWorld", ["1.0.1"])
 
     # # Deploy conflicting version from another group, after device is removed from first group
     # # Will fail if removal from first group is not handled correctly
@@ -874,13 +874,13 @@ def test_Deployment_8_T4(gg_util_obj: GGTestUtils,
 
     # And I upload component "HelloWorld" version "1.0.0" from the local store
     # And I ensure component "HelloWorld" version "1.0.0" exists on cloud within 60 seconds
-    hello_world_v0_cloud_name = gg_util_obj.upload_component_with_version(
-        "HelloWorld", "1.0.0")
+    hello_world_v0_cloud_name = gg_util_obj.upload_component_with_versions(
+        "HelloWorld", ["1.0.0"])
 
     # And I upload component "HelloWorld" version "1.0.1" from the local store
     # And I ensure component "HelloWorld" version "1.0.1" exists on cloud within 60 seconds
-    hello_world_v1_cloud_name = gg_util_obj.upload_component_with_version(
-        "HelloWorld", "1.0.1")
+    hello_world_v1_cloud_name = gg_util_obj.upload_component_with_versions(
+        "HelloWorld", ["1.0.1"])
 
     # When I create a deployment configuration for deployment deployment1 and thing group GroupA with components
     #     | HelloWorld | 1.0.0 |
@@ -940,14 +940,14 @@ def test_Deployment_8_T5(gg_util_obj: GGTestUtils,
 
     # And I upload component "HelloWorld" version "1.0.0" from the local store
     # And I ensure component "HelloWorld" version "1.0.0" exists on cloud within 60 seconds
-    hello_world_v0_cloud_name = gg_util_obj.upload_component_with_version(
-        "HelloWorld", "1.0.0")
+    hello_world_v0_cloud_name = gg_util_obj.upload_component_with_versions(
+        "HelloWorld", ["1.0.0"])
     assert hello_world_v0_cloud_name is not None
 
     # And I upload component "HelloWorld" version "1.0.1" from the local store
     # And I ensure component "HelloWorld" version "1.0.1" exists on cloud within 60 seconds
-    hello_world_v1_cloud_name = gg_util_obj.upload_component_with_version(
-        "HelloWorld", "1.0.1")
+    hello_world_v1_cloud_name = gg_util_obj.upload_component_with_versions(
+        "HelloWorld", ["1.0.1"])
     assert hello_world_v1_cloud_name is not None
 
     # Given I upload component "DependsHelloWorldA" version "1.0.0" from the local store
@@ -1020,3 +1020,88 @@ def test_Deployment_8_T5(gg_util_obj: GGTestUtils,
         depends_hello_world_a_cloud_name[0]) == "NOT_RUNNING"
     assert system_interface.check_systemctl_status_for_component(
         hello_world_v0_cloud_name[0]) == "NOT_RUNNING"
+
+
+# Scenario: Deployment-8-T8-multigroup: As a device application owner, I can deploy a component to two thing groups with different compatible version requirements
+# and Greengrass successfully deploys the version that satisfies both
+def test_Deployment_8_T8_multigroup(gg_util_obj: GGTestUtils,
+                                    iot_obj: IoTTestUtils,
+                                    system_interface: SystemInterface):
+    # # HelloWorld version 1.0.0 and 1.0.1 are uploaded in the scenario background
+    # Given kernel registered as a Thing with thing group GroupA
+    group_a_name = iot_obj.add_thing_to_thing_group(config.thing_name, "GroupA")
+    assert group_a_name is not None
+
+    # And I upload component "HelloWorld" version "1.0.0" from the local store
+    # And I upload component "HelloWorld" version "1.0.1" from the local store
+    # And I upload component "HelloWorld" version "1.0.2" from the local store
+    # And I ensure component "HelloWorld" version "1.0.0" exists on cloud within 60 seconds
+    # And I ensure component "HelloWorld" version "1.0.1" exists on cloud within 60 seconds
+    # And I ensure component "HelloWorld" version "1.0.2" exists on cloud within 60 seconds
+    hello_world_cloud_name = gg_util_obj.upload_component_with_versions(
+        "HelloWorld", ["1.0.0", "1.0.1", "1.0.2"])
+    assert hello_world_cloud_name is not None
+
+    # Given I upload component "DependsHelloWorldB" version "1.0.0" from the local store
+    # And I ensure component "DependsHelloWorldB" version "1.0.0" exists on cloud within 60 seconds
+    depends_hello_world_b_cloud_name = gg_util_obj.upload_component_with_version_and_deps(
+        "DependsHelloWorldB", "1.0.0",
+        [("_HelloWorld_", hello_world_cloud_name[0])])
+    assert depends_hello_world_b_cloud_name is not None
+
+    # Given I upload component "DependsHelloWorldC" version "1.0.0" from the local store
+    # And I ensure component "DependsHelloWorldC" version "1.0.0" exists on cloud within 60 seconds
+    depends_hello_world_c_cloud_name = gg_util_obj.upload_component_with_version_and_deps(
+        "DependsHelloWorldC", "1.0.0",
+        [("_HelloWorld_", hello_world_cloud_name[0])])
+    assert depends_hello_world_c_cloud_name is not None
+
+    # # DependsHelloWorldC depends on HelloWorld >1.0.0
+    # # deployment to GroupA should resolve to the latest version HellowWorld 1.0.2
+    # When I create a deployment configuration for deployment deployment1 and thing group GroupA with components
+    #     | DependsHelloWorldC | 1.0.0 |
+    # And I deploy the configuration for deployment deployment1
+    deployment_1 = gg_util_obj.create_deployment(
+        gg_util_obj.get_thing_group_arn(group_a_name),
+        [depends_hello_world_c_cloud_name], "deployment1")["deploymentId"]
+    assert deployment_1 is not None
+
+    # Then the deployment deployment1 completes with SUCCEEDED within 240 seconds
+    assert (gg_util_obj.wait_for_deployment_till_timeout(
+        240, deployment_1) == "SUCCEEDED")
+
+    # And I can check the cli to see the component DependsHelloWorldC is listed within 30 seconds
+    # And I can check the cli to see the component DependsHelloWorldC is running with version 1.0.0
+    assert system_interface.check_systemctl_status_for_component(
+        depends_hello_world_c_cloud_name[0]) == "RUNNING"
+
+    # And I can check the cli to see the component HelloWorld is running with version 1.0.2
+    assert system_interface.check_systemctl_status_for_component(
+        hello_world_cloud_name[0]) == "RUNNING"
+
+    # And I add the device to thing group GroupB
+    group_b_name = iot_obj.add_thing_to_thing_group(config.thing_name, "GroupA")
+    assert group_b_name is not None
+
+    # # DependsHelloWorldB depends on HellowWorld 1.0.1
+    # # deployment to GroupB should resolve to HellowWorld 1.0.1 which satisfies constraints for both GroupA and GroupB
+    # When I create a deployment configuration for deployment deployment2 and thing group GroupB with components
+    #     | DependsHelloWorldB | 1.0.0 |
+    # And I deploy the configuration for deployment deployment2
+    deployment_2 = gg_util_obj.create_deployment(
+        gg_util_obj.get_thing_group_arn(group_b_name),
+        [depends_hello_world_b_cloud_name], "deployment2")["deploymentId"]
+    assert deployment_2 is not None
+
+    # Then the deployment deployment2 completes with SUCCEEDED within 240 seconds
+    assert (gg_util_obj.wait_for_deployment_till_timeout(
+        240, deployment_2) == "SUCCEEDED")
+
+    # And I can check the cli to see the component DependsHelloWorldB is listed within 30 seconds
+    # And I can check the cli to see the component DependsHelloWorldB is running with version 1.0.0
+    assert system_interface.check_systemctl_status_for_component(
+        depends_hello_world_b_cloud_name[0]) == "RUNNING"
+
+    # And I can check the cli to see the component HelloWorld is running with version 1.0.1
+    assert system_interface.check_systemctl_status_for_component(
+        hello_world_cloud_name[0]) == "RUNNING"

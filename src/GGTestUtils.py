@@ -21,7 +21,7 @@ S3_ARTIFACT_DIR = "artifacts"
 
 class ComponentDeploymentInfo(NamedTuple):
     name: str
-    version: str
+    versions: List[str]
     merge_config: Dict | str
     """JSON document of configuration keys to merge"""
 
@@ -174,9 +174,15 @@ class GGTestUtils:
     def _convert_deployment_info(
         self, component: ComponentDeploymentInfo
     ) -> ComponentDeploymentSpecificationTypeDef:
+        if len(component.versions) > 1:
+            print(
+                "In a deployment each component cannot have more than 1 version."
+            )
+            raise ValueError
         specification: ComponentDeploymentSpecificationTypeDef = {
-            "componentVersion": component.version
+            "componentVersion": component.versions[0]
         }
+
         if component.merge_config is not None:
             merge: str
             if component.merge_config is str:
@@ -265,52 +271,59 @@ class GGTestUtils:
             )
         return True
 
-    def _upload_component_to_gg(self, recipe_path: os.PathLike | str) -> str:
+    def _upload_component_to_gg(self,
+                                recipe_files: List[os.PathLike | str]) -> str:
         recipe_name = ""
         recipe_content = ""
         cloud_addition = str(uuid1())
 
-        # Read and modify the file
-        with open(recipe_path, "r") as f:
-            recipe_content = f.read()
-            recipe_name: str = yaml.safe_load(recipe_content)["ComponentName"]
+        if len(recipe_files) < 1:
+            return None
 
-            cloud_recipe_name = recipe_name + cloud_addition
+        cloud_recipe_name = os.path.basename(
+            recipe_files[0]).split('-')[0] + cloud_addition
 
-            modified_content = recipe_content.replace("$bucketName$",
-                                                      self.s3_artifact_bucket)
-            modified_content = modified_content.replace(
-                "$testArtifactsDirectory$", S3_ARTIFACT_DIR)
+        for recipe_path in recipe_files:
+            # Read and modify the file
+            with open(recipe_path, "r") as f:
+                recipe_content = f.read()
+                recipe_name: str = yaml.safe_load(
+                    recipe_content)["ComponentName"]
 
-            modified_content = modified_content.replace(recipe_name,
-                                                        cloud_recipe_name)
+                modified_content = recipe_content.replace(
+                    "$bucketName$", self.s3_artifact_bucket)
+                modified_content = modified_content.replace(
+                    "$testArtifactsDirectory$", S3_ARTIFACT_DIR)
 
-            # Parse the modified content as YAML and convert it to JSON.
-            recipe_yaml = yaml.safe_load(modified_content)
-            recipe_json = json.dumps(recipe_yaml)
+                modified_content = modified_content.replace(
+                    recipe_name, cloud_recipe_name)
 
-            try:
-                # Create component version using the recipe
-                response = self._ggClient.create_component_version(
-                    inlineRecipe=recipe_json)
+                # Parse the modified content as YAML and convert it to JSON.
+                recipe_yaml = yaml.safe_load(modified_content)
+                recipe_json = json.dumps(recipe_yaml)
 
-                print(
-                    f"Successfully uploaded component with ARN: {response['arn']}"
-                )
-                self._ggComponentToDeleteArn.append(response["arn"])
-                return cloud_recipe_name
+                try:
+                    # Create component version using the recipe
+                    response = self._ggClient.create_component_version(
+                        inlineRecipe=recipe_json)
 
-            except self._ggClient.exceptions.ConflictException as e:
-                print(f"Component version already exists: {e}")
-                raise
-            except Exception as e:
-                print(f"Error uploading component: {e}")
-                raise
+                    print(
+                        f"Successfully uploaded component with ARN: {response['arn']}"
+                    )
+                    self._ggComponentToDeleteArn.append(response["arn"])
 
-    def upload_component_with_version_and_deps(self, component_name: str,
-                                               version: str,
-                                               dependencies: List[Tuple[str,
-                                                                        str]]):
+                except self._ggClient.exceptions.ConflictException as e:
+                    print(f"Component version already exists: {e}")
+                    raise
+                except Exception as e:
+                    print(f"Error uploading component: {e}")
+                    raise
+        return cloud_recipe_name
+
+    def upload_component_with_version_and_deps(
+        self, component_name: str, version: str,
+        dependencies: List[Tuple[str,
+                                 str]]) -> Optional[ComponentDeploymentInfo]:
         try:
             component_artifact_dir = os.path.join('components', component_name,
                                                   version, 'artifacts')
@@ -380,12 +393,12 @@ class GGTestUtils:
                     f_out.write(yaml.safe_dump(recipe_obj))
                     f_out.close()
 
-                cloud_name = self._upload_component_to_gg(new_file_path)
+                cloud_name = self._upload_component_to_gg([new_file_path])
 
                 recipe.close()
 
                 return ComponentDeploymentInfo(name=cloud_name,
-                                               version=version,
+                                               versions=[version],
                                                merge_config=None)
         except FileNotFoundError:
             print(f"No recipe directory found for {component_name}-{version}.")
@@ -396,46 +409,56 @@ class GGTestUtils:
             )
             return None
 
-    def upload_component_with_version(
+    def upload_component_with_versions(
             self, component_name: str,
-            version: str) -> Optional[ComponentDeploymentInfo]:
-        try:
-            component_artifact_dir = os.path.join('components', component_name,
-                                                  version, 'artifacts')
+            versions: List[str]) -> Optional[ComponentDeploymentInfo]:
 
-            artifact_files = os.listdir(component_artifact_dir)
-            artifact_files_full_paths = [
-                os.path.abspath(os.path.join(component_artifact_dir, file))
-                for file in artifact_files
-            ]
-            self._upload_files_to_s3(artifact_files_full_paths,
-                                     self.s3_artifact_bucket)
-        except FileNotFoundError:
-            print(
-                f"No artifact directory found for {component_name}-{version}.")
-        except PermissionError:
-            print(
-                f"Cannot access the directory with artifacts for {component_name}-{version}."
-            )
-            return None
+        for version in versions:
+            try:
+                component_artifact_dir = os.path.join('components',
+                                                      component_name, version,
+                                                      'artifacts')
 
-        try:
-            component_recipe_dir = os.path.join('components', component_name,
-                                                version, 'recipe')
-
-            recipes = os.listdir(component_recipe_dir)
-            recipes_full_paths = [
-                os.path.abspath(os.path.join(component_recipe_dir, file))
-                for file in recipes
-            ]
-
-            if len(recipes_full_paths) != 1:
-                print("More than one recipe files found.")
+                artifact_files = os.listdir(component_artifact_dir)
+                artifact_files_full_paths = [
+                    os.path.abspath(os.path.join(component_artifact_dir, file))
+                    for file in artifact_files
+                ]
+                self._upload_files_to_s3(artifact_files_full_paths,
+                                         self.s3_artifact_bucket)
+            except FileNotFoundError:
+                print(
+                    f"No artifact directory found for {component_name}-{version}."
+                )
+            except PermissionError:
+                print(
+                    f"Cannot access the directory with artifacts for {component_name}-{version}."
+                )
                 return None
 
-            cloud_name = self._upload_component_to_gg(recipes_full_paths[0])
+        try:
+            recipes_file_list = []
+            for version in versions:
+                component_recipe_dir = os.path.join('components',
+                                                    component_name, version,
+                                                    'recipe')
+
+                recipes = os.listdir(component_recipe_dir)
+                recipes_full_paths = [
+                    os.path.abspath(os.path.join(component_recipe_dir, file))
+                    for file in recipes
+                ]
+
+                if len(recipes_full_paths) != 1:
+                    print("More than one recipe files found.")
+                    return None
+
+                recipes_file_list.append(recipes_full_paths[0])
+
+            print(recipes_file_list)
+            cloud_name = self._upload_component_to_gg(recipes_file_list)
             return ComponentDeploymentInfo(name=cloud_name,
-                                           version=version,
+                                           versions=versions,
                                            merge_config=None)
         except FileNotFoundError:
             print(f"No recipe directory found for {component_name}-{version}.")
@@ -562,8 +585,8 @@ class GGTestUtils:
             return recipe_yaml
         return None
 
-    def upload_component_from_recipe(self,
-                                     recipe: dict) -> Tuple[str, str] | None:
+    def upload_component_from_recipe(
+            self, recipe: dict) -> Optional[ComponentDeploymentInfo]:
         cloud_addition = str(uuid1())
         recipe_name = recipe["ComponentName"]
         cloud_recipe_name = recipe_name + cloud_addition
@@ -577,7 +600,10 @@ class GGTestUtils:
             print(
                 f"Successfully uploaded component with ARN: {response['arn']}")
             self._ggComponentToDeleteArn.append(response["arn"])
-            return (cloud_recipe_name, recipe["ComponentVersion"])
+            return ComponentDeploymentInfo(
+                name=cloud_recipe_name,
+                versions=[recipe["ComponentVersion"]],
+                merge_config=None)
 
         except self._ggClient.exceptions.ConflictException as e:
             print(f"Component version already exists: {e}")

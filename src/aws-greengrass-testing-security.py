@@ -40,8 +40,8 @@ def test_Security_6_T2_mqtt(gg_util_obj: GGTestUtils,
     #   When I install the component IotMqttPublisher version 0.0.0 from local store with configuration
     #     | value                                                                                                                                                                                                                                                        |
     #     | {"MERGE":{"accessControl":{"aws.greengrass.ipc.mqttproxy":{"policyId1":{"policyDescription":"access to publish to mqtt topics","operations":["aws.greengrass#PublishToIoTCore"],"resources":["<resource>"]}}},"topic":"<topic>","QOS":"1","payload":"test"}} |
-    IotMqttPublisher_cloud_name = gg_util_obj.upload_component_with_version(
-        "IotMqttPublisher", "0.0.0")
+    IotMqttPublisher_cloud_name = gg_util_obj.upload_component_with_versions(
+        "IotMqttPublisher", ["0.0.0"])
     if IotMqttPublisher_cloud_name is None:
         raise RuntimeError(
             "Fatal error: IotMqttPublisher_cloud_name cannot be uploaded to cloud"
@@ -90,8 +90,8 @@ def test_Security_6_T2_mqtt(gg_util_obj: GGTestUtils,
 def test_Security_T2_Security_T3(gg_util_obj: GGTestUtils,
                                  system_interface: SystemInterface,
                                  resource: str, topic: str, accepted: bool):
-    pubsub_cloud_name = gg_util_obj.upload_component_with_version(
-        "HelloWorldPubSub", "1.0.0")
+    pubsub_cloud_name = gg_util_obj.upload_component_with_versions(
+        "HelloWorldPubSub", ["1.0.0"])
     if pubsub_cloud_name is None:
         raise RuntimeError(
             "Fatal error: IotMqttPublisher_cloud_name cannot be uploaded to cloud"

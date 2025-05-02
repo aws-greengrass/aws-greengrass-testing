@@ -37,8 +37,8 @@ def system_interface():
 def test_Component_12_T1(gg_util_obj: GGTestUtils,
                          system_interface: SystemInterface):
     # I upload component "MultiPlatform" version "1.0.0" from the local store
-    component_cloud_name = gg_util_obj.upload_component_with_version(
-        "MultiPlatform", "1.0.0")
+    component_cloud_name = gg_util_obj.upload_component_with_versions(
+        "MultiPlatform", ["1.0.0"])
 
     # And  I create a deployment configuration with components and configuration
     #   | MultiPlatform | 1.0.0 |
@@ -67,8 +67,8 @@ def test_Component_12_T1(gg_util_obj: GGTestUtils,
 def test_Component_16_T1(gg_util_obj: GGTestUtils,
                          system_interface: SystemInterface):
     # I upload component "HelloWorld" version "1.0.0" from the local store
-    component_cloud_name = gg_util_obj.upload_component_with_version(
-        "HelloWorld", "1.0.0")
+    component_cloud_name = gg_util_obj.upload_component_with_versions(
+        "HelloWorld", ["1.0.0"])
 
     # Give 5 sec for cloud to calculate artifact checksum and make it "DEPLOYABLE"
     time.sleep(5)
@@ -104,8 +104,8 @@ def test_Component_27_T1(gg_util_obj: GGTestUtils,
     # And I ensure component "HelloWorld" version "1.0.0" exists on cloud within 120 seconds
     # And kernel registered as a Thing
     # And my device is running the evergreen-kernel
-    component_cloud_name = gg_util_obj.upload_component_with_version(
-        "HelloWorld", "1.0.0")
+    component_cloud_name = gg_util_obj.upload_component_with_versions(
+        "HelloWorld", ["1.0.0"])
 
     # Give 5 sec for cloud to calculate artifact checksum and make it "DEPLOYABLE"
     time.sleep(5)
@@ -137,7 +137,8 @@ def test_Component_27_T1(gg_util_obj: GGTestUtils,
 
 
 # As an operator, I can interpolate component default configurations by local deployment.
-def test_Component_29_T0(gg_util_obj, system_interface):
+def test_Component_29_T0(gg_util_obj: GGTestUtils,
+                         system_interface: SystemInterface):
     # I install the component aws.gg.uat.local.ComponentConfigTestService version 1.0.0 from local store
     component_artifacts_dir = "./components/local_artifacts/"
     component_recipe_dir = "./components/aws.gg.uat.local.ComponentConfigTestService/1.0.0/recipe/"
@@ -225,11 +226,12 @@ def test_Component_29_T0(gg_util_obj, system_interface):
 
 
 # As an operator, I can update component configurations from multiple sources, by doing a mix of cloud and local deployments.
-def test_Component_29_T4(gg_util_obj, system_interface):
+def test_Component_29_T4(gg_util_obj: GGTestUtils,
+                         system_interface: SystemInterface):
     # I upload component "aws.gg.uat.cloud.ComponentConfigTestService" version "1.0.0" from the local store
     # I ensure component "aws.gg.uat.cloud.ComponentConfigTestService" version "1.0.0" exists on cloud with scope private within 60 seconds
-    component_cloud_name = gg_util_obj.upload_component_with_version(
-        "aws.gg.uat.cloud.ComponentConfigTestService", "1.0.0")
+    component_cloud_name = gg_util_obj.upload_component_with_versions(
+        "aws.gg.uat.cloud.ComponentConfigTestService", ["1.0.0"])
 
     # I create a deployment configuration for deployment FirstCloudDeployment with components
     #         | aws.gg.uat.cloud.ComponentConfigTestService | 1.0.0 |
@@ -328,7 +330,8 @@ def test_Component_29_T4(gg_util_obj, system_interface):
 
 # As a component developer, I can use automatic cleanup to delete component files further than last two deployments
 # Note: Heavily rewritten as GG_LITE only keeps files from the latest version.
-def test_Component_34_T4(gg_util_obj, system_interface):
+def test_Component_34_T4(gg_util_obj: GGTestUtils,
+                         system_interface: SystemInterface):
     # I install the component Minimal version 1.0.0 from local store
     component_recipe_dir = "./components/Minimal/1.0.0/recipe/"
     assert (gg_util_obj.create_local_deployment(None, component_recipe_dir,

@@ -1,0 +1,24 @@
+---
+RecipeFormatVersion: "2020-01-25"
+ComponentName: _DependsHelloWorldC_
+ComponentVersion: "1.0.0"
+ComponentDescription: Component depends on hello world latest version
+ComponentPublisher: GG UAT
+Manifests:
+  - Platform:
+      os: windows
+    Lifecycle:
+      Run: >-
+        powershell -command "& { while(1) { echo \"running\"; sleep 5 } }"
+  - Platform:
+      os: "*"
+      runtime: "*"
+    Lifecycle:
+      run: |-
+        while true; do
+        echo running; sleep 5
+        done
+ComponentDependencies:
+  _HelloWorld_:
+    VersionRequirement: ">=1.0.0"
+    DependencyType: HARD
