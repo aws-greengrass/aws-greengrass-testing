@@ -6,7 +6,7 @@ s3_bucket_name = ""
 
 # The region of the AWS Account used for the tests.
 region = ""
-
+"
 # First thing group with 'thing' under test added to it.
 thing_group_1 = ""
 
@@ -18,3 +18,6 @@ thing_name = ""
 
 # Location of ggl-cli binary
 ggl_cli_bin_path = "../aws-greengrass-lite/build/bin/ggl-cli"
+
+# GGL install directory
+ggl_install_dir = "/var/lib/greengrass/"

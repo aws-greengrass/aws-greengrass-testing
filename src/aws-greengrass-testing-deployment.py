@@ -12,7 +12,8 @@ def gg_util_obj() -> Generator[GGTestUtils, None, None]:
     # Setup an instance of the GGUtils class. It is then passed to the
     # test functions.
     gg_util = GGTestUtils(config.aws_account, config.s3_bucket_name,
-                          config.region, config.ggl_cli_bin_path)
+                          config.region, config.ggl_cli_bin_path,
+                          config.ggl_install_dir)
 
     # yield the instance of the class to the tests.
     yield gg_util
@@ -103,13 +104,13 @@ def test_Deployment_1_T2(gg_util_obj: GGTestUtils,
         timeout -= 1
 
     component_recipe_dir = "./components/SampleComponentWithArtifacts/1.0.0/recipe/"
-    component_artifacts_dir = "./components/SampleComponentWithArtifacts/1.0.0/artifacts/"
+    component_artifacts_dir = "./components/local_artifacts/"
     assert (gg_util_obj.create_local_deployment(
         component_artifacts_dir, component_recipe_dir,
         "SampleComponentWithArtifacts=1.0.0"))
     # TODO: We can use the CLI to verify that a local deployment has finished once that feature exists
     # For now, check if the expected component is running within a timeout.
-    timeout = 120
+    timeout = 180
     while timeout > 0:
         if system_interface.check_systemctl_status_for_component(
                 "SampleComponentWithArtifacts") == "RUNNING":
@@ -167,6 +168,89 @@ def test_Deployment_1_T3(gg_util_obj: GGTestUtils,
         "ggl.SampleComponentWithConfiguration.service",
         "running generic sample with version 1.0.0 with configuration value MyConfigDefaultValue",
         timeout=20) is True)
+
+# As a developer, I can use the local cli to deploy multiple components to a device locally without cloud intervention and check the list of components using CLI.
+def test_Deployment_1_T6(gg_util_obj, system_interface):
+    # I install the following components from local store
+    #   | SampleComponentWithConfiguration | 1.0.0 |
+    #   | SampleComponentWithArtifacts     | 1.0.0 |
+    component_recipe_dir = "./components/SampleComponentWithConfiguration/1.0.0/recipe/"
+    assert (gg_util_obj.create_local_deployment(None, component_recipe_dir, "SampleComponentWithConfiguration=1.0.0"))
+    # TODO: We can use the CLI to verify that a local deployment has finished once that feature exists
+    # For now, check if the expected component is running within a timeout.
+    timeout = 180
+    while timeout > 0:
+        if system_interface.check_systemctl_status_for_component("SampleComponentWithConfiguration") == "RUNNING":
+            break
+        time.sleep(1)
+        timeout -= 1
+
+    component_recipe_dir = "./components/SampleComponentWithArtifacts/1.0.0/recipe/"
+    component_artifacts_dir = "./components/SampleComponentWithArtifacts/1.0.0/artifacts/"
+    assert (gg_util_obj.create_local_deployment(component_artifacts_dir, component_recipe_dir, "SampleComponentWithArtifacts=1.0.0"))
+    # TODO: We can use the CLI to verify that a local deployment has finished once that feature exists
+    # For now, check if the expected component is running within a timeout.
+    timeout = 180
+    while timeout > 0:
+        if system_interface.check_systemctl_status_for_component("SampleComponentWithArtifacts") == "RUNNING":
+            break
+        time.sleep(1)
+        timeout -= 1
+
+    # I can check the cli to see the status of component SampleComponentWithConfiguration is RUNNING
+    assert (system_interface.check_systemctl_status_for_component(
+        "SampleComponentWithConfiguration") == "RUNNING")
+
+    # I can check the cli to see the component SampleComponentWithConfiguration is running with version 1.0.0
+    # GG_LITE CLI doesn't support this yet.
+
+    # I can check the cli to see the status of component SampleComponentWithArtifacts is RUNNING
+    assert (system_interface.check_systemctl_status_for_component(
+        "SampleComponentWithArtifacts") == "RUNNING")
+
+    # I can check the cli to see the component SampleComponentWithArtifacts is running with version 1.0.0
+    # GG_LITE CLI doesn't support this yet.
+
+    # I can check cli to get list of components and verify version and state of following components
+    #   | SampleComponentWithConfiguration | 1.0.0 | RUNNING |
+    #   | SampleComponentWithArtifacts     | 1.0.0 | RUNNING |
+    # GG_LITE CLI doesn't support this yet.
+
+# As a developer, I can use the local cli to deploy a single broken component to a device and check its failure status and cause.
+def test_Deployment_1_T12(gg_util_obj, system_interface):
+    # I check cli to get list of local deployments and verify it has 0 deployments in ANY state
+    # GG_LITE CLI doesn't support this yet.
+
+    # I create a local deployment dep with the following components:
+    #   | HelloWorldBroken | 1.0.0 |
+    component_recipe_dir = "./components/HelloWorldBroken/1.0.0/recipe/"
+
+    # I perform the local deployment dep without waiting for the result and persist the deployment id
+    # TODO: Persist the deployment ID. Since CLI doesn't support the features the deployment id is saved for, we don't need it yet.
+    assert (gg_util_obj.create_local_deployment(None, component_recipe_dir, "HelloWorldBroken=1.0.0"))
+
+    # I can check the cli to see the status of component HelloWorldBroken is BROKEN
+    # TODO: Use a proper timeout. Old testing framework uses 30 * timeoutMultiplier seconds
+    timeout = 30
+    while timeout > 0:
+        if system_interface.check_systemctl_status_for_component("HelloWorldBroken") == "BROKEN":
+            break
+        time.sleep(1)
+        timeout -= 1
+
+    # I can check the cli to see the component HelloWorldBroken is running with version 1.0.0
+    # GG_LITE CLI doesn't support this yet.
+
+    # I can check the cli to see the status of the deployment dep contains:
+    #   | Detailed Status          | FAILED_ROLLBACK_NOT_REQUESTED            |
+    #   | Deployment Error Stack   | COMPONENT_BROKEN                         |
+    #   | Deployment Error Types   | USER_COMPONENT_ERROR                     |
+    #   | Deployment Failure Cause | Service HelloWorldBroken in broken state |
+    # GG_LITE CLI doesn't support this yet.
+
+    # I can check the cli to get list of local deployments and verify it has 1 deployments in FAILED state
+    # GG_LITE CLI doesn't support this yet.
+
 
 
 #As a device application owner, I can deploy configuration with updated components to a thing group.

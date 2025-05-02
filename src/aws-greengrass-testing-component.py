@@ -10,7 +10,8 @@ def gg_util_obj():
     # Setup an instance of the GGUtils class. It is then passed to the
     # test functions.
     gg_util = GGTestUtils(config.aws_account, config.s3_bucket_name,
-                          config.region, config.ggl_cli_bin_path)
+                          config.region, config.ggl_cli_bin_path,
+                          config.ggl_install_dir)
 
     # yield the instance of the class to the tests.
     yield gg_util
@@ -131,3 +132,227 @@ def test_Component_27_T1(gg_util_obj, system_interface):
         "Failed to verify digest.",
         timeout=30,
     ) is True)
+
+# As an operator, I can interpolate component default configurations by local deployment.
+def test_Component_29_T0(gg_util_obj, system_interface):
+    # I install the component aws.gg.uat.local.ComponentConfigTestService version 1.0.0 from local store
+    component_artifacts_dir = "./components/local_artifacts/"
+    component_recipe_dir = "./components/aws.gg.uat.local.ComponentConfigTestService/1.0.0/recipe/"
+    assert (gg_util_obj.create_local_deployment(component_artifacts_dir, component_recipe_dir, "aws.gg.uat.local.ComponentConfigTestService=1.0.0"))
+    # TODO: We can use the CLI to verify that a local deployment has finished once that feature exists
+    # For now, check if the expected component is running within a timeout.
+    timeout = 120
+    while timeout > 0:
+        if system_interface.check_systemctl_status_for_component("aws.gg.uat.local.ComponentConfigTestService") == "FINISHED":
+            break
+        time.sleep(1)
+        timeout -= 1
+
+    # I can check the cli to see the status of component aws.gg.uat.local.ComponentConfigTestService is FINISHED
+    assert (system_interface.check_systemctl_status_for_component(
+        "aws.gg.uat.local.ComponentConfigTestService") == "FINISHED")
+
+    # And the aws.gg.uat.local.ComponentConfigTestService log contains the line "Value for /singleLevelKey: default value of singleLevelKey"
+    assert (system_interface.monitor_journalctl_for_message(
+        "ggl.aws.gg.uat.local.ComponentConfigTestService.service",
+        "Value for /singleLevelKey: default value of singleLevelKey",
+        timeout=20) is True)
+
+    # And the aws.gg.uat.local.ComponentConfigTestService log contains the line "Value for /nestedKey/leafKey: default value of /nestedKey/leafKey."
+    assert (system_interface.monitor_journalctl_for_message(
+        "ggl.aws.gg.uat.local.ComponentConfigTestService.service",
+        "Value for /nestedKey/leafKey: default value of /nestedKey/leafKey.",
+        timeout=20) is True)
+
+    # And the aws.gg.uat.local.ComponentConfigTestService log contains the line "Value for /nestedKey: {"leafKey":"default value of /nestedKey/leafKey"}. I will be interpolated as a serialized JSON String."
+    assert (system_interface.monitor_journalctl_for_message(
+        "ggl.aws.gg.uat.local.ComponentConfigTestService.service",
+        "Value for /nestedKey: {\"leafKey\":\"default value of /nestedKey/leafKey\"}. I will be interpolated as a serialized JSON String.",
+        timeout=20) is True)
+
+    # And the aws.gg.uat.local.ComponentConfigTestService log contains the line "Value for /listKey/0: item1."
+    # TODO: Add this after we support json pointer support for list indices. This logging has been removed from the component recipe for now.
+
+    # And the aws.gg.uat.local.ComponentConfigTestService log contains the line "Value for /emptyStringKey: ."
+    assert (system_interface.monitor_journalctl_for_message(
+        "ggl.aws.gg.uat.local.ComponentConfigTestService.service",
+        "Value for /emptyStringKey: .",
+        timeout=20) is True)
+
+    # And the aws.gg.uat.local.ComponentConfigTestService log contains the line "Value for /defaultIsNullKey: null"
+    assert (system_interface.monitor_journalctl_for_message(
+        "ggl.aws.gg.uat.local.ComponentConfigTestService.service",
+        "Value for /defaultIsNullKey: null",
+        timeout=20) is True)
+
+    # And the aws.gg.uat.local.ComponentConfigTestService log contains the line "Value for /newSingleLevelKey: {configuration:/newSingleLevelKey}."
+    assert (system_interface.monitor_journalctl_for_message(
+        "ggl.aws.gg.uat.local.ComponentConfigTestService.service",
+        "Value for /newSingleLevelKey: {configuration:/newSingleLevelKey}.",
+        timeout=20) is True)
+
+    # And the aws.gg.uat.local.ComponentConfigTestService log contains the line "Verified JSON interpolation from script"
+    assert (system_interface.monitor_journalctl_for_message(
+        "ggl.aws.gg.uat.local.ComponentConfigTestService.service",
+        "Verified JSON interpolation from script",
+        timeout=20) is True)
+
+    # I can use greengrass-cli component details -n to check the component aws.gg.uat.local.ComponentConfigTestService has configuration that is equal to JSON:
+    #     """
+    #     {
+    #       "defaultIsNullKey": null,
+    #       "emptyListKey": [],
+    #       "emptyObjectKey": {},
+    #       "emptyStringKey": "",
+    #       "listKey": [
+    #         "item1",
+    #         "item2"
+    #       ],
+    #       "nestedKey": {
+    #         "leafKey": "default value of /nestedKey/leafKey"
+    #       },
+    #       "singleLevelKey": "default value of singleLevelKey",
+    #       "willBeNullKey": "I will be set to null soon"
+    #     }
+    #     """
+    # GG_LITE CLI doesn't support this yet.
+
+# As an operator, I can update component configurations from multiple sources, by doing a mix of cloud and local deployments.
+def test_Component_29_T4(gg_util_obj, system_interface):
+    # I upload component "aws.gg.uat.cloud.ComponentConfigTestService" version "1.0.0" from the local store
+    # I ensure component "aws.gg.uat.cloud.ComponentConfigTestService" version "1.0.0" exists on cloud with scope private within 60 seconds
+    component_cloud_name = gg_util_obj.upload_component_with_version(
+        "aws.gg.uat.cloud.ComponentConfigTestService", "1.0.0")
+
+    # I create a deployment configuration for deployment FirstCloudDeployment with components
+    #         | aws.gg.uat.cloud.ComponentConfigTestService | 1.0.0 |
+    # I deploy the configuration for deployment FirstCloudDeployment
+    deployment_id = gg_util_obj.create_deployment(
+        gg_util_obj.get_thing_group_arn(config.thing_group_1),
+        [component_cloud_name], "FirstCloudDeployment")["deploymentId"]
+    assert deployment_id is not None
+
+    # the deployment FirstCloudDeployment completes with SUCCEEDED within 180 seconds
+    assert (gg_util_obj.wait_for_deployment_till_timeout(
+        180, deployment_id) == "SUCCEEDED")
+
+    # I can check the cli to see the status of component aws.gg.uat.cloud.ComponentConfigTestService is FINISHED
+    assert (system_interface.check_systemctl_status_for_component(
+        "aws.gg.uat.cloud.ComponentConfigTestService") == "FINISHED")
+
+    # I can use greengrass-cli component details -n to check the component aws.gg.uat.cloud.ComponentConfigTestService has configuration that is equal to JSON:
+    # """
+    # {
+    #   "emptyListKey": [],
+    #   "emptyObjectKey": {},
+    #   "emptyStringKey": "",
+    #   "listKey": [
+    #     "item1",
+    #     "item2"
+    #   ],
+    #   "nestedKey": {
+    #     "leafKey": "default value of /nestedKey/leafKey"
+    #   },
+    #   "singleLevelKey": "default value of singleLevelKey",
+    #   "willBeNullKey": "I will be set to null soon",
+    #   "defaultIsNullKey": null
+    # }
+    # """
+    # GG_LITE CLI doesn't support this yet.
+
+    # I update the component aws.gg.uat.cloud.ComponentConfigTestService version 1.0.0 parameter singleLevelKey with value newValueForSingleLevelKey
+    # TODO: We do not support merge/reset configuration in local deployment.
+
+    # I can use greengrass-cli component details -n to check the component aws.gg.uat.cloud.ComponentConfigTestService has configuration that is equal to JSON:
+    # """
+    # {
+    #   "emptyListKey": [],
+    #   "emptyObjectKey": {},
+    #   "emptyStringKey": "",
+    #   "listKey": [
+    #     "item1",
+    #     "item2"
+    #   ],
+    #   "nestedKey": {
+    #     "leafKey": "default value of /nestedKey/leafKey"
+    #   },
+    #   "singleLevelKey": "newValueForSingleLevelKey",
+    #   "willBeNullKey": "I will be set to null soon",
+    #   "defaultIsNullKey": null
+    # }
+    # """
+    # GG_LITE CLI doesn't support this yet.
+
+    # I create an empty deployment configuration for deployment SecondCloudDeployment
+
+    # I update the deployment configuration SecondCloudDeployment, setting the component "aws.gg.uat.cloud.ComponentConfigTestService" version "1.0.0" configuration:
+    # """
+    # {
+    #   "RESET": ["/singleLevelKey"]
+    # }
+    # """
+
+    # I deploy the configuration for deployment SecondCloudDeployment
+
+    # the deployment SecondCloudDeployment completes with SUCCEEDED within 180 seconds
+
+    # I can check the cli to see the status of component aws.gg.uat.cloud.ComponentConfigTestService is FINISHED
+
+    # I can use greengrass-cli component details -n to check the component aws.gg.uat.cloud.ComponentConfigTestService has configuration that is equal to JSON:
+    # """
+    # {
+    #   "emptyListKey": [],
+    #   "emptyObjectKey": {},
+    #   "emptyStringKey": "",
+    #   "listKey": [
+    #     "item1",
+    #     "item2"
+    #   ],
+    #   "nestedKey": {
+    #     "leafKey": "default value of /nestedKey/leafKey"
+    #   },
+    #   "singleLevelKey": "default value of singleLevelKey",
+    #   "willBeNullKey": "I will be set to null soon",
+    #   "defaultIsNullKey": null
+    # }
+    # """
+    # GG_LITE CLI doesn't support this yet.
+
+# As a component developer, I can use automatic cleanup to delete component files further than last two deployments
+# Note: Heavily rewritten as GG_LITE only keeps files from the latest version.
+def test_Component_34_T4(gg_util_obj, system_interface):
+    # I install the component Minimal version 1.0.0 from local store
+    component_recipe_dir = "./components/Minimal/1.0.0/recipe/"
+    assert (gg_util_obj.create_local_deployment(
+        None, component_recipe_dir, "Minimal=1.0.0"))
+    # TODO: We can use the CLI to verify that a local deployment has finished once that feature exists
+    # For now, check if the expected component is running within a timeout.
+    timeout = 180
+    while timeout > 0:
+        if system_interface.check_systemctl_status_for_component(
+                "Minimal") == "RUNNING":
+            break
+        time.sleep(1)
+        timeout -= 1
+
+    # I install the component Minimal version 2.0.0 from local store
+    component_recipe_dir = "./components/Minimal/2.0.0/recipe/"
+    assert (gg_util_obj.create_local_deployment(
+        None, component_recipe_dir, "Minimal=2.0.0"))
+    # TODO: We can use the CLI to verify that a local deployment has finished once that feature exists
+    # For now, check if the expected component is running within a timeout.
+    timeout = 180
+    while timeout > 0:
+        if system_interface.check_systemctl_status_for_component(
+                "Minimal") == "RUNNING":
+            break
+        time.sleep(1)
+        timeout -= 1
+
+    # the local files for component Minimal version 2.0.0 should exist
+    # TODO: Replace hacky sleep when we can use CLI to verify a local deployment has finished.
+    time.sleep(30)
+    assert gg_util_obj.recipe_for_component_exists("Minimal", "2.0.0")
+
+    # the local files for component Minimal version 1.0.0 should not exist
+    assert not gg_util_obj.recipe_for_component_exists("Minimal", "1.0.0")

@@ -13,6 +13,7 @@ from types_boto3_iot import IoTClient
 from types_boto3_s3 import S3Client
 import yaml
 from subprocess import run
+from pathlib import Path
 from typing import Sequence, Optional, Any, Dict, List, Literal, Optional, Sequence, NamedTuple
 
 S3_ARTIFACT_DIR = "artifacts"
@@ -39,11 +40,12 @@ class GGTestUtils:
     _ggDeploymentList: List[str]
 
     def __init__(self, account: str, bucket: str, region: str,
-                 cli_bin_path: str):
+                 cli_bin_path: str, install_dir: str):
         self._region = region
         self._account = account
         self._bucket = bucket
         self._cli_bin_path = cli_bin_path
+        self._install_dir = install_dir
         self._ggClient = boto3.client("greengrassv2", region_name=self._region)
         self._iotClient = boto3.client("iot", region_name=self._region)
         self._s3Client = boto3.client("s3", region_name=self._region)
@@ -67,6 +69,10 @@ class GGTestUtils:
     @property
     def cli_bin_path(self) -> str:
         return self._cli_bin_path
+
+    @property
+    def install_dir(self) -> str:
+        return self._install_dir
 
     def get_thing_group_arn(self, thing_group: str) -> str:
         return f"arn:aws:iot:{self.aws_region}:{self.aws_account}:thinggroup/{thing_group}"
@@ -487,3 +493,7 @@ class GGTestUtils:
         except Exception as e:
             print(f"Error uploading component: {e}")
             raise
+
+    def recipe_for_component_exists(self, component_name: str, component_version: str):
+        print(f"Checking if file {(Path(self._install_dir) / "packages/recipes" / f"{component_name}-{component_version}.yaml")} exists")
+        return (Path(self._install_dir) / "packages/recipes" / f"{component_name}-{component_version}.yaml").exists()
