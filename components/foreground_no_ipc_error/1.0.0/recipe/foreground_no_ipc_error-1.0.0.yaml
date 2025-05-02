@@ -1,0 +1,17 @@
+---
+RecipeFormatVersion: "2020-01-25"
+componentName: foreground_no_ipc_error
+ComponentVersion: "1.0.0"
+ComponentDescription: Broken Foreground App not using IPC
+ComponentPublisher: Amazon
+manifests:
+  - Platform:
+      os: windows
+    Lifecycle:
+      run: powershell -command exit 1
+
+  - Platform:
+      os: "*"
+      runtime: "*"
+    Lifecycle:
+      run: exit 1

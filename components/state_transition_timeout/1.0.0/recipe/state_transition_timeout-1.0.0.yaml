@@ -1,0 +1,21 @@
+---
+RecipeFormatVersion: "2020-01-25"
+ComponentName: state_transition_timeout
+ComponentVersion: "1.0.0"
+ComponentDescription: App which times out in state transitions
+ComponentPublisher: Amazon
+manifests:
+  - Platform:
+      os: windows
+    Lifecycle:
+      install:
+        Script: powershell -command sleep 10
+        Timeout: 5
+
+  - Platform:
+      os: "*"
+      runtime: "*"
+    Lifecycle:
+      install:
+        Script: sleep 10
+        Timeout: 5

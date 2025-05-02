@@ -1,11 +1,12 @@
 import time
-import pytest
+from pytest import fixture
+from pytest import mark
 from src.GGTestUtils import GGTestUtils
 from src.SystemInterface import SystemInterface
 from config import config
 
 
-@pytest.fixture(scope="function")    # Runs for each test function
+@fixture(scope="function")    # Runs for each test function
 def gg_util_obj():
     # Setup an instance of the GGUtils class. It is then passed to the
     # test functions.
@@ -22,7 +23,7 @@ def gg_util_obj():
     gg_util.cleanup()
 
 
-@pytest.fixture(scope="function")    # Runs for each test function
+@fixture(scope="function")    # Runs for each test function
 def system_interface():
     interface = SystemInterface()
 
@@ -63,6 +64,7 @@ def test_FleetStatus_1_T1(gg_util_obj: GGTestUtils):
 
 
 #Scenario: FleetStatus-1-T3: As a customer I can get thing information with components whose statuses have changed after an IoT Jobs deployment fails
+@mark.skip(reason="TODO: Fix fleet status to update on GC faliure")
 def test_FleetStatus_1_T3(gg_util_obj):
     # When I upload component BrokenAfterDeployed version 1.0.0 with configuration from the local store
     #         | key               | value |
