@@ -10,7 +10,8 @@ def gg_util_obj():
     # Setup an instance of the GGUtils class. It is then passed to the
     # test functions.
     gg_util = GGTestUtils(config.aws_account, config.s3_bucket_name,
-                          config.region, config.ggl_cli_bin_path, config.ggl_install_dir)
+                          config.region, config.ggl_cli_bin_path,
+                          config.ggl_install_dir)
 
     # yield the instance of the class to the tests.
     yield gg_util
@@ -77,12 +78,3 @@ def test_Runtime_1_T5(gg_util_obj, system_interface):
     #Then I can check foreground_no_ipc_error is in state BROKEN within 30 seconds
     #And the greengrass log eventually contains the following patterns within 5 seconds
     #  | service-set-state.*serviceName=foreground_no_ipc_error, currentState=RUNNING, newState=ERROR | 2 | should retry 3 times and become broken |
-
-# Scenario: Runtime-1-T9: I can install a component with a soft dependency locally
-def test_Runtime_1_T9(gg_util_obj, system_interface):
-    # When I install the component component_with_soft_dep version 1.0.0 from local store
-    component_artifacts_dir = "./components/local_artifacts/"
-    component_recipe_dir = "./components/aws.gg.uat.local.ComponentConfigTestService/1.0.0/recipe/"
-
-    # Then I can check component_with_soft_dep is in state RUNNING within 30 seconds
-    # And I can check broken_soft_dep is in state BROKEN within 10 seconds

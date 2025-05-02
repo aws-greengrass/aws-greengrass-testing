@@ -9,9 +9,7 @@ Manifests:
       os: windows
     Lifecycle:
       run: >-
-        powershell -command while(1) {
-        echo 'Minimal-1.0.0 ran';
-        sleep 5 }
+        powershell -command while(1) { echo 'Minimal-1.0.0 ran'; sleep 5 }
       shutdown: >-
         echo Goodbye from Minimal-1.0.0
   - Platform:

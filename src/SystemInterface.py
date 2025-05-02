@@ -7,7 +7,8 @@ from typing import Literal
 class SystemInterface:
 
     def check_systemctl_status_for_component(
-            self, component_name: str) -> Literal['RUNNING', 'FINISHED', 'NOT_RUNNING']:
+            self, component_name: str
+    ) -> Literal['RUNNING', 'FINISHED', 'NOT_RUNNING']:
         try:
             cmd = [
                 "sudo",
@@ -32,7 +33,9 @@ class SystemInterface:
                     if "Active: active (running)" in active_line:
                         print("Process is active")
                         return "RUNNING"
-                    elif ("Active: inactive (dead)" in active_line) and ("status=0/SUCCESS" in process_line):
+                    elif ("Active: inactive (dead)"
+                          in active_line) and ("status=0/SUCCESS"
+                                               in process_line):
                         print("Process is finished")
                         return "FINISHED"
 

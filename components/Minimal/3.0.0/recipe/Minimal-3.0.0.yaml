@@ -9,7 +9,8 @@ Manifests:
       os: windows
     Lifecycle:
       run: >-
-        powershell -command "& { while(1) { echo \"Minimal-3.0.0 ran\"; sleep 5 } }"
+        powershell -command "& { while(1) { echo \"Minimal-3.0.0 ran\"; sleep 5
+        } }"
   - Platform:
       os: "*"
       runtime: "*"

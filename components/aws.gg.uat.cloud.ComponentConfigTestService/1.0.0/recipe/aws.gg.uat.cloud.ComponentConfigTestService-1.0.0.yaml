@@ -1,7 +1,9 @@
 ---
 RecipeFormatVersion: "2020-01-25"
 ComponentName: _aws.gg.uat.cloud.ComponentConfigTestService_
-ComponentDescription: This is dedicated for testing component configuration for cloud and local deployments.
+ComponentDescription:
+  This is dedicated for testing component configuration for cloud and local
+  deployments.
 ComponentPublisher: Me
 ComponentVersion: "1.0.0"
 
@@ -28,28 +30,30 @@ Manifests:
       # Texts below are used for assertion in Component-29 and need to be changed together.
       run:
         Script: >-
-          powershell -command "& { echo $env:BypassCMD;
-          echo \"done\" }"
+          powershell -command "& { echo $env:BypassCMD; echo \"done\" }"
         Setenv:
           BypassCMD: >-
-            aws.iot.gg.uat.ComponentConfigTestService output
-            Value for /singleLevelKey: {configuration:/singleLevelKey}.
-            Value for /nestedKey/leafKey: {configuration:/nestedKey/leafKey}.
-            Value for /nestedKey: {configuration:/nestedKey}. I will be interpolated as a serialized JSON String.
-            Value for /listKey/0: {configuration:/listKey/0}.
-            Value for /emptyStringKey: {configuration:/emptyStringKey}.
-            Value for /defaultIsNullKey: {configuration:/defaultIsNullKey}.
-            Value for /newSingleLevelKey: {configuration:/newSingleLevelKey}. I was not in the default value.
+            aws.iot.gg.uat.ComponentConfigTestService output Value for
+            /singleLevelKey: {configuration:/singleLevelKey}. Value for
+            /nestedKey/leafKey: {configuration:/nestedKey/leafKey}. Value for
+            /nestedKey: {configuration:/nestedKey}. I will be interpolated as a
+            serialized JSON String. Value for /listKey/0:
+            {configuration:/listKey/0}. Value for /emptyStringKey:
+            {configuration:/emptyStringKey}. Value for /defaultIsNullKey:
+            {configuration:/defaultIsNullKey}. Value for /newSingleLevelKey:
+            {configuration:/newSingleLevelKey}. I was not in the default value.
   - Platform:
       os: "*"
       runtime: "*"
     Lifecycle:
       # Texts below are used for assertion in Component-29 and need to be changed together.
       run: >-
-        echo "aws.iot.gg.uat.ComponentConfigTestService output
-        Value for /singleLevelKey: {configuration:/singleLevelKey}.
-        Value for /nestedKey/leafKey: {configuration:/nestedKey/leafKey}.
-        Value for /nestedKey: {configuration:/nestedKey}. I will be interpolated as a serialized JSON String.
-        Value for /emptyStringKey: {configuration:/emptyStringKey}.
-        Value for /defaultIsNullKey: {configuration:/defaultIsNullKey}.
-        Value for /newSingleLevelKey: {configuration:/newSingleLevelKey}. I was not in the default value." && echo "done"
+        echo "aws.iot.gg.uat.ComponentConfigTestService output Value for
+        /singleLevelKey: {configuration:/singleLevelKey}. Value for
+        /nestedKey/leafKey: {configuration:/nestedKey/leafKey}. Value for
+        /nestedKey: {configuration:/nestedKey}. I will be interpolated as a
+        serialized JSON String. Value for /emptyStringKey:
+        {configuration:/emptyStringKey}. Value for /defaultIsNullKey:
+        {configuration:/defaultIsNullKey}. Value for /newSingleLevelKey:
+        {configuration:/newSingleLevelKey}. I was not in the default value." &&
+        echo "done"

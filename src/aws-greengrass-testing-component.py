@@ -135,17 +135,21 @@ def test_Component_27_T1(gg_util_obj: GGTestUtils,
         timeout=30,
     ) is True)
 
+
 # As an operator, I can interpolate component default configurations by local deployment.
 def test_Component_29_T0(gg_util_obj, system_interface):
     # I install the component aws.gg.uat.local.ComponentConfigTestService version 1.0.0 from local store
     component_artifacts_dir = "./components/local_artifacts/"
     component_recipe_dir = "./components/aws.gg.uat.local.ComponentConfigTestService/1.0.0/recipe/"
-    assert (gg_util_obj.create_local_deployment(component_artifacts_dir, component_recipe_dir, "aws.gg.uat.local.ComponentConfigTestService=1.0.0"))
+    assert (gg_util_obj.create_local_deployment(
+        component_artifacts_dir, component_recipe_dir,
+        "aws.gg.uat.local.ComponentConfigTestService=1.0.0"))
     # TODO: We can use the CLI to verify that a local deployment has finished once that feature exists
     # For now, check if the expected component is running within a timeout.
     timeout = 120
     while timeout > 0:
-        if system_interface.check_systemctl_status_for_component("aws.gg.uat.local.ComponentConfigTestService") == "FINISHED":
+        if system_interface.check_systemctl_status_for_component(
+                "aws.gg.uat.local.ComponentConfigTestService") == "FINISHED":
             break
         time.sleep(1)
         timeout -= 1
@@ -218,6 +222,7 @@ def test_Component_29_T0(gg_util_obj, system_interface):
     #     }
     #     """
     # GG_LITE CLI doesn't support this yet.
+
 
 # As an operator, I can update component configurations from multiple sources, by doing a mix of cloud and local deployments.
 def test_Component_29_T4(gg_util_obj, system_interface):
@@ -320,13 +325,14 @@ def test_Component_29_T4(gg_util_obj, system_interface):
     # """
     # GG_LITE CLI doesn't support this yet.
 
+
 # As a component developer, I can use automatic cleanup to delete component files further than last two deployments
 # Note: Heavily rewritten as GG_LITE only keeps files from the latest version.
 def test_Component_34_T4(gg_util_obj, system_interface):
     # I install the component Minimal version 1.0.0 from local store
     component_recipe_dir = "./components/Minimal/1.0.0/recipe/"
-    assert (gg_util_obj.create_local_deployment(
-        None, component_recipe_dir, "Minimal=1.0.0"))
+    assert (gg_util_obj.create_local_deployment(None, component_recipe_dir,
+                                                "Minimal=1.0.0"))
     # TODO: We can use the CLI to verify that a local deployment has finished once that feature exists
     # For now, check if the expected component is running within a timeout.
     timeout = 180
@@ -339,8 +345,8 @@ def test_Component_34_T4(gg_util_obj, system_interface):
 
     # I install the component Minimal version 2.0.0 from local store
     component_recipe_dir = "./components/Minimal/2.0.0/recipe/"
-    assert (gg_util_obj.create_local_deployment(
-        None, component_recipe_dir, "Minimal=2.0.0"))
+    assert (gg_util_obj.create_local_deployment(None, component_recipe_dir,
+                                                "Minimal=2.0.0"))
     # TODO: We can use the CLI to verify that a local deployment has finished once that feature exists
     # For now, check if the expected component is running within a timeout.
     timeout = 180

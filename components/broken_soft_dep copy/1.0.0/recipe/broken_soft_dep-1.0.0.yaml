@@ -1,0 +1,28 @@
+---
+RecipeFormatVersion: "2020-01-25"
+ComponentName: component_with_soft_dep
+ComponentVersion: "1.0.0"
+ComponentDescription: component_with_soft_dep
+ComponentPublisher: Amazon
+ComponentDependencies:
+  broken_soft_dep:
+    VersionRequirement: ">=1.0.0"
+    DependencyType: SOFT
+manifests:
+  - Platform:
+      os: windows
+    Lifecycle:
+      run: >-
+        powershell -command "& { while(1) { echo \"Hello Base Component\"; sleep
+        5 } }"
+  - Platform:
+      os: "*"
+      runtime: "*"
+    Lifecycle:
+      run: |-
+        INTERVAL=5
+        DEFAULT_MESSAGE="Hello Base Component"
+        while true; do
+          echo $DEFAULT_MESSAGE
+          sleep $INTERVAL
+        done
