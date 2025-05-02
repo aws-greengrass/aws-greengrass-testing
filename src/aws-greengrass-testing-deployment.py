@@ -140,7 +140,7 @@ def test_Deployment_1_T3(gg_util_obj: GGTestUtils,
     # I install the component SampleComponentWithConfiguration version 1.0.0 from local store with configuration
     #   | key                                          | value          |
     #   | SampleComponentWithConfiguration:MyConfigKey | NewConfigValue |
-    component_recipe_dir = "./components/SampleComponentWithArtifacts/1.0.0/recipe/"
+    component_recipe_dir = "./components/SampleComponentWithConfiguration/1.0.0/recipe/"
     assert (gg_util_obj.create_local_deployment(
         None, component_recipe_dir, "SampleComponentWithConfiguration=1.0.0")
             is True)
@@ -513,8 +513,9 @@ def test_Deployment_7_T3(gg_util_obj: GGTestUtils,
     assert new_thing_group is not None
 
     # And I add the device to thing group NewThingGroup
-    assert iot_obj.add_thing_to_thing_group(config.thing_name,
-                                            new_thing_group) is True
+    new_thing_group = iot_obj.add_thing_to_thing_group(config.thing_name,
+                                            new_thing_group)
+    assert new_thing_group is not None
 
     # Then my device is in following thing group
     #     | FirstThingGroup |
@@ -571,8 +572,9 @@ def test_Deployment_7_T4(gg_util_obj: GGTestUtils,
     assert new_thing_group is not None
 
     # And I add the device to thing group NewThingGroup
-    assert iot_obj.add_thing_to_thing_group(config.thing_name,
-                                            new_thing_group) is True
+    new_thing_group = iot_obj.add_thing_to_thing_group(config.thing_name,
+                                            new_thing_group)
+    assert new_thing_group is not None
 
     # Then my device is in following thing group
     #     | FirstThingGroup |
@@ -830,3 +832,99 @@ def test_Deployment_8_T4(gg_util_obj: GGTestUtils,
     assert system_interface.check_systemctl_status_for_component(
         hello_world_v1_cloud_name[0]) == "RUNNING"
 
+
+# Scenario: Deployment-8-T5: As a device application owner, I can remove device from thing
+# group to prevent dependency conflict from multiple thing group deployments
+def test_Deployment_8_T5(gg_util_obj: GGTestUtils,
+                         system_interface: SystemInterface,
+                         iot_obj: IoTTestUtils):
+    # # Deploy components with conflicting dependency version from another group, after device
+    # is removed from first group
+    # # Will fail if removal from first group is not handled correctly
+    # # A depends on HW-1.0.0
+    # Given kernel registered as a Thing with thing group GroupA
+    group_a_name = iot_obj.add_thing_to_thing_group(config.thing_name, "GroupA")
+    assert group_a_name is not None
+
+    # And I upload component "HelloWorld" version "1.0.0" from the local store
+    # And I ensure component "HelloWorld" version "1.0.0" exists on cloud within 60 seconds
+    hello_world_v0_cloud_name = gg_util_obj.upload_component_with_version(
+        "HelloWorld", "1.0.0")
+    assert hello_world_v0_cloud_name is not None
+
+    # And I upload component "HelloWorld" version "1.0.1" from the local store
+    # And I ensure component "HelloWorld" version "1.0.1" exists on cloud within 60 seconds
+    hello_world_v1_cloud_name = gg_util_obj.upload_component_with_version(
+        "HelloWorld", "1.0.1")
+    assert hello_world_v1_cloud_name is not None
+
+    # Given I upload component "DependsHelloWorldA" version "1.0.0" from the local store
+    # And I ensure component "DependsHelloWorldA" version "1.0.0" exists on cloud within 60 seconds
+    depends_hello_world_a_cloud_name = gg_util_obj.upload_component_with_version_and_deps(
+        "DependsHelloWorldA", "1.0.0",
+        [("_HelloWorld_", hello_world_v0_cloud_name.name)])
+    assert depends_hello_world_a_cloud_name is not None
+
+    # # B depends on HW-1.0.1
+    # Given I upload component "DependsHelloWorldB" version "1.0.0" from the local store
+    # And I ensure component "DependsHelloWorldB" version "1.0.0" exists on cloud within 60 seconds
+    depends_hello_world_b_cloud_name = gg_util_obj.upload_component_with_version_and_deps(
+        "DependsHelloWorldB", "1.0.0",
+        [("_HelloWorld_", hello_world_v1_cloud_name.name)])
+    assert depends_hello_world_b_cloud_name is not None
+
+    # When I create a deployment configuration for deployment deployment1 and thing group GroupA with components
+    #     | DependsHelloWorldA | 1.0.0 |
+    # And I deploy the configuration for deployment deployment1
+    deployment_1 = gg_util_obj.create_deployment(
+        gg_util_obj.get_thing_group_arn(group_a_name),
+        [depends_hello_world_a_cloud_name], "deployment1")["deploymentId"]
+    assert deployment_1 is not None
+
+    # Then the deployment deployment1 completes with SUCCEEDED within 240 seconds
+    assert (gg_util_obj.wait_for_deployment_till_timeout(
+        240, deployment_1) == "SUCCEEDED")
+
+    # And I can check the cli to see the component DependsHelloWorldA is listed within 30 seconds
+    # And I can check the cli to see the component DependsHelloWorldA is running with version 1.0.0
+    assert system_interface.check_systemctl_status_for_component(
+        depends_hello_world_a_cloud_name[0]) == "RUNNING"
+
+    # And I can check the cli to see the component HelloWorld is running with version 1.0.0
+    assert system_interface.check_systemctl_status_for_component(
+        hello_world_v0_cloud_name[0]) == "RUNNING"
+
+    # When I remove the device from thing group GroupA
+    assert iot_obj.remove_thing_from_thing_group(config.thing_name,
+                                                 group_a_name) is True
+
+    # And I add the device to thing group GroupB
+    group_b_name = iot_obj.add_thing_to_thing_group(config.thing_name, "GroupB")
+    assert group_b_name is not None
+
+    # When I create a deployment configuration for deployment deployment2 and thing group GroupB with components
+    #     | DependsHelloWorldB | 1.0.0 |
+    # And I deploy the configuration for deployment deployment2
+    deployment_2 = gg_util_obj.create_deployment(
+        gg_util_obj.get_thing_group_arn(group_b_name),
+        [depends_hello_world_b_cloud_name], "deployment2")["deploymentId"]
+    assert deployment_2 is not None
+
+    # Then the deployment deployment2 completes with SUCCEEDED within 240 seconds
+    assert (gg_util_obj.wait_for_deployment_till_timeout(
+        240, deployment_2) == "SUCCEEDED")
+
+    # And I can check the cli to see the component DependsHelloWorldB is listed within 30 seconds
+    # And I can check the cli to see the component DependsHelloWorldB is running with version 1.0.0
+    assert system_interface.check_systemctl_status_for_component(
+        depends_hello_world_b_cloud_name[0]) == "RUNNING"
+
+    # And I can check the cli to see the component HelloWorld is running with version 1.0.1
+    assert system_interface.check_systemctl_status_for_component(
+        hello_world_v1_cloud_name[0]) == "RUNNING"
+
+    # And I can check the cli to see the component DependsHelloWorldA is not listed
+    assert system_interface.check_systemctl_status_for_component(
+        depends_hello_world_a_cloud_name[0]) == "NOT_RUNNING"
+    assert system_interface.check_systemctl_status_for_component(
+        hello_world_v0_cloud_name[0]) == "NOT_RUNNING"

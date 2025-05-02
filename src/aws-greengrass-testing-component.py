@@ -63,7 +63,8 @@ def test_Component_12_T1(gg_util_obj: GGTestUtils,
 
 
 # GC developer can create a component with recipes containing s3 artifact. GGC operator can deploy it and artifact can be run.
-def test_Component_16_T1(gg_util_obj, system_interface):
+def test_Component_16_T1(gg_util_obj: GGTestUtils,
+                         system_interface: SystemInterface):
     # I upload component "HelloWorld" version "1.0.0" from the local store
     component_cloud_name = gg_util_obj.upload_component_with_version(
         "HelloWorld", "1.0.0")
@@ -96,7 +97,8 @@ def test_Component_16_T1(gg_util_obj, system_interface):
 
 
 # As a component developer, I expect kernel to fail the deployment if the checksum of downloaded artifacts does not match with the checksum in the recipe.
-def test_Component_27_T1(gg_util_obj, system_interface):
+def test_Component_27_T1(gg_util_obj: GGTestUtils,
+                         system_interface: SystemInterface):
     # Given I upload component "HelloWorld" version "1.0.0" from the local store
     # And I ensure component "HelloWorld" version "1.0.0" exists on cloud within 120 seconds
     # And kernel registered as a Thing

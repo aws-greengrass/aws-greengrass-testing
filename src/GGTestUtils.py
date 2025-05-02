@@ -177,9 +177,7 @@ class GGTestUtils:
                 merge = component.merge_config
             else:
                 merge = json.dumps(component.merge_config)
-            specification["configurationUpdate"] = {
-                "merge": merge
-            }
+            specification["configurationUpdate"] = {"merge": merge}
         return specification
 
     def create_deployment(
@@ -278,7 +276,8 @@ class GGTestUtils:
             modified_content = modified_content.replace(
                 "$testArtifactsDirectory$", S3_ARTIFACT_DIR)
 
-            modified_content = modified_content.replace(recipe_name, cloud_recipe_name)
+            modified_content = modified_content.replace(recipe_name,
+                                                        cloud_recipe_name)
 
             # Parse the modified content as YAML and convert it to JSON.
             recipe_yaml = yaml.safe_load(modified_content)
@@ -301,6 +300,95 @@ class GGTestUtils:
             except Exception as e:
                 print(f"Error uploading component: {e}")
                 raise
+
+    def upload_component_with_version_and_deps(self, component_name: str,
+                                               version: str,
+                                               dependencies: List[Tuple[str,
+                                                                        str]]):
+        try:
+            component_artifact_dir = os.path.join('components', component_name,
+                                                  version, 'artifacts')
+
+            artifact_files = os.listdir(component_artifact_dir)
+            artifact_files_full_paths = [
+                os.path.abspath(os.path.join(component_artifact_dir, file))
+                for file in artifact_files
+            ]
+            self._upload_files_to_s3(artifact_files_full_paths,
+                                     self.s3_artifact_bucket)
+        except FileNotFoundError:
+            print(
+                f"No artifact directory found for {component_name}-{version}.")
+        except PermissionError:
+            print(
+                f"Cannot access the directory with artifacts for {component_name}-{version}."
+            )
+            return None
+
+        try:
+            component_recipe_dir = os.path.join('components', component_name,
+                                                version, 'recipe')
+
+            recipes = os.listdir(component_recipe_dir)
+            recipes_full_paths = [
+                os.path.abspath(os.path.join(component_recipe_dir, file))
+                for file in recipes
+            ]
+
+            if len(recipes_full_paths) != 1:
+                print("More than one recipe files found.")
+                return None
+
+            with open(recipes_full_paths[0]) as recipe:
+                recipe_obj = yaml.safe_load(recipe)
+                if "ComponentDependencies" not in recipe_obj:
+                    print(
+                        "ComponentDependencies section not found in the original recipe."
+                    )
+                    return None
+
+                for dependency in dependencies:
+                    if dependency[0] not in recipe_obj["ComponentDependencies"]:
+                        print(
+                            f"The dependency {dependency[0]} not found in original recipe."
+                        )
+                        return None
+                    print(recipe_obj["ComponentDependencies"])
+                    stored_val = recipe_obj["ComponentDependencies"][
+                        dependency[0]]
+                    del recipe_obj["ComponentDependencies"][dependency[0]]
+                    recipe_obj["ComponentDependencies"][
+                        dependency[1]] = stored_val
+
+                # Ensure the output directory exists
+                output_dir = os.path.join(".", "ggtest", "modified_recipes")
+                os.makedirs(output_dir, exist_ok=True)
+
+                new_file_path = os.path.join(
+                    output_dir, os.path.basename(recipes_full_paths[0]))
+
+                print(yaml.safe_dump(recipe_obj))
+
+                # Read the original file and write the corrupted version
+                with open(new_file_path, "w") as f_out:
+                    f_out.write(yaml.safe_dump(recipe_obj))
+                    f_out.close()
+
+                cloud_name = self._upload_component_to_gg(new_file_path)
+
+                recipe.close()
+
+                return ComponentDeploymentInfo(name=cloud_name,
+                                               version=version,
+                                               merge_config=None)
+        except FileNotFoundError:
+            print(f"No recipe directory found for {component_name}-{version}.")
+            return None
+        except PermissionError:
+            print(
+                f"Cannot access the directory with recipe for {component_name}-{version}."
+            )
+            return None
 
     def upload_component_with_version(
             self, component_name: str,
@@ -334,6 +422,10 @@ class GGTestUtils:
                 os.path.abspath(os.path.join(component_recipe_dir, file))
                 for file in recipes
             ]
+
+            if len(recipes_full_paths) != 1:
+                print("More than one recipe files found.")
+                return None
 
             cloud_name = self._upload_component_to_gg(recipes_full_paths[0])
             return ComponentDeploymentInfo(name=cloud_name,
