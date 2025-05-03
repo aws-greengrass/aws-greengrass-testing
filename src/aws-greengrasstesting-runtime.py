@@ -134,3 +134,26 @@ def test_Runtime_25_T1(gg_util_obj, system_interface):
     assert (system_interface.check_systemctl_status_for_component(
         "SampleComponentWithArtifacts") == "RUNNING")
     # # And No errors were logged
+
+
+# Scenario: Runtime-28-T3: As a DO, I can run component as privileged user.
+def test_Runtime_28_T3(gg_util_obj, system_interface):
+    # Given my device is running the evergreen-kernel
+    # And I install the component process_status_component_privilege version 0.0.0 from local store
+    component_recipe_dir = "./components/process_status_component_privilege/0.0.0/recipe/"
+    assert (gg_util_obj.create_local_deployment(
+        None, component_recipe_dir, "process_status_component_privilege=0.0.0"))
+
+    # Then I can check the cli to see the status of component process_status_component_privilege is FINISHED
+    timeout = 10
+    while timeout > 0:
+        if system_interface.check_systemctl_status_for_component(
+                "process_status_component_privilege") == "FINISHED":
+            break
+        time.sleep(1)
+        timeout -= 1
+
+    # And I get assertions that the process was running as privileged user
+    time.sleep(5)    #wait for process to finish
+    assert (system_interface.check_systemd_user(
+        "process_status_component_privilege", 15) == "User=root\n")

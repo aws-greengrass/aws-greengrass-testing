@@ -108,6 +108,60 @@ class SystemInterface:
             except:
                 pass
 
+    def check_systemd_user(self, component_name, timeout: int | float) -> str:
+        try:
+            cmd = [
+                "systemctl", "show", "-p", "User",
+                f"ggl.{component_name}.service"
+            ]
+
+            # Run the command and stream output
+            process = subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                universal_newlines=True,
+            )
+
+            timeout = time.time() + timeout
+
+            # Call the readline is blocking, set it to non-blocking mode.
+            os.set_blocking(process.stdout.fileno(), False)
+
+            while True:
+                # Check timeout
+                if time.time() > timeout:
+                    print(f"Timeout after {timeout} seconds")
+                    process.terminate()
+                    return ""
+
+                output, errors = process.communicate()
+                if output:
+                    print(output)
+                    print(errors)
+                    return output
+
+                # Check if process has terminated
+                if process.poll() is not None:
+                    print("Shutdown process terminated.")
+                    return ""
+
+                time.sleep(0.01)
+
+        except KeyboardInterrupt:
+            print("\nExiting the shutdown attempt...")
+            process.terminate()
+            return ""
+        except Exception as e:
+            print(f"Error: {e}")
+            return ""
+        finally:
+            # Ensure process is terminated
+            try:
+                process.terminate()
+            except:
+                pass
+
     def start_systemd_nucleus_lite(self, timeout: int | float) -> bool:
         try:
             cmd = [

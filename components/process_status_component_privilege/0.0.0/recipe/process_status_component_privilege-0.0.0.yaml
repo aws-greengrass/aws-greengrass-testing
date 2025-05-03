@@ -1,0 +1,14 @@
+---
+RecipeFormatVersion: "2020-01-25"
+ComponentName: "process_status_component_privilege"
+ComponentVersion: "0.0.0"
+ComponentDescription: "MODIFIED: Runs a component as privileged user"
+ComponentPublisher: Amazon
+Manifests:
+  - Platform:
+      os: "linux"
+      runtime: "*"
+    Lifecycle:
+      run:
+        RequiresPrivilege: true
+        Script: echo Hello
