@@ -8,7 +8,7 @@ ComponentDependencies:
   broken_soft_dep:
     VersionRequirement: ">=1.0.0"
     DependencyType: SOFT
-manifests:
+Manifests:
   - Platform:
       os: windows
     Lifecycle:

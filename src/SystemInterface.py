@@ -51,6 +51,120 @@ class SystemInterface:
             print(f"Error: {e}")
             return "NOT_RUNNING"
 
+    def stop_systemd_nucleus_lite(self, timeout: int | float) -> bool:
+        try:
+            cmd = [
+                "sudo",
+                "systemctl",
+                "stop",
+                "--with-dependencies",
+                "greengrass-lite.target",
+            ]
+
+            # Run the command and stream output
+            process = subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                universal_newlines=True,
+            )
+
+            timeout = time.time() + timeout
+
+            # Call the readline is blocking, set it to non-blocking mode.
+            os.set_blocking(process.stdout.fileno(), False)
+
+            while True:
+                # Check timeout
+                if time.time() > timeout:
+                    print(f"Timeout after {timeout} seconds")
+                    process.terminate()
+                    return False
+
+                output, errors = process.communicate()
+                if output:
+                    print(output)
+                    print(errors)
+                    return True
+
+                # Check if process has terminated
+                if process.poll() is not None:
+                    print("Shutdown process terminated.")
+                    return False
+
+                time.sleep(0.01)
+
+        except KeyboardInterrupt:
+            print("\nExiting the shutdown attempt...")
+            process.terminate()
+            return False
+        except Exception as e:
+            print(f"Error: {e}")
+            return False
+        finally:
+            # Ensure process is terminated
+            try:
+                process.terminate()
+            except:
+                pass
+
+    def start_systemd_nucleus_lite(self, timeout: int | float) -> bool:
+        try:
+            cmd = [
+                "sudo",
+                "systemctl",
+                "start",
+                "--with-dependencies",
+                "greengrass-lite.target",
+            ]
+
+            # Run the command and stream output
+            process = subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                universal_newlines=True,
+            )
+
+            timeout = time.time() + timeout
+
+            # Call the readline is blocking, set it to non-blocking mode.
+            os.set_blocking(process.stdout.fileno(), False)
+
+            while True:
+                # Check timeout
+                if time.time() > timeout:
+                    print(f"Timeout after {timeout} seconds")
+                    process.terminate()
+                    return False
+
+                output, errors = process.communicate()
+                if output:
+                    print(output)
+                    print(errors)
+                    return False
+
+                # Check if process has terminated
+                if process.poll() is not None:
+                    print("Shutdown process terminated.")
+                    return False
+
+                time.sleep(0.01)
+
+        except KeyboardInterrupt:
+            print("\nExiting the shutdown attempt...")
+            process.terminate()
+            return False
+        except Exception as e:
+            print(f"Error: {e}")
+            return False
+        finally:
+            # Ensure process is terminated
+            try:
+                process.terminate()
+            except:
+                pass
+
     def monitor_journalctl_for_message(self, service_name: str, message: str,
                                        timeout: int | float) -> bool:
         try:

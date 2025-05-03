@@ -4,7 +4,7 @@ ComponentName: _Component2BaseCloud_
 ComponentVersion: "1.0.0"
 ComponentDescription: Component2BaseCloud
 ComponentPublisher: Amazon
-manifests:
+Manifests:
   - Platform:
       os: windows
     Lifecycle:

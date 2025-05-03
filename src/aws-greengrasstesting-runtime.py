@@ -1,3 +1,4 @@
+import time
 from pytest import fixture
 from pytest import mark
 from src.GGTestUtils import GGTestUtils
@@ -78,3 +79,58 @@ def test_Runtime_1_T5(gg_util_obj, system_interface):
     #Then I can check foreground_no_ipc_error is in state BROKEN within 30 seconds
     #And the greengrass log eventually contains the following patterns within 5 seconds
     #  | service-set-state.*serviceName=foreground_no_ipc_error, currentState=RUNNING, newState=ERROR | 2 | should retry 3 times and become broken |
+
+
+# Scenario: Runtime-1-T9: I can install a component with a soft dependency locally
+def test_Runtime_1_T9(gg_util_obj, system_interface):
+    # When I install the component component_with_soft_dep version 1.0.0 from local store
+    component_recipe_dir = "./components/component_with_soft_dep/1.0.0/recipe/"
+    assert (gg_util_obj.create_local_deployment(
+        None, component_recipe_dir, "component_with_soft_dep=1.0.0"))
+
+    # Then I can check component_with_soft_dep is in state RUNNING within 30 seconds
+    timeout = 30
+    while timeout > 0:
+        if system_interface.check_systemctl_status_for_component(
+                "component_with_soft_dep") == "RUNNING":
+            break
+        time.sleep(1)
+        timeout -= 1
+
+    # And I can check broken_soft_dep is in state BROKEN within 10 seconds
+    timeout = 10
+    while timeout > 0:
+        if system_interface.check_systemctl_status_for_component(
+                "broken_soft_dep") == "NOT_RUNNING":
+            break
+        time.sleep(1)
+        timeout -= 1
+
+
+# Scenario: Runtime-25-T1: As a device application owner, I can expect Greengrass-owner components being robust and can
+# recover from unexpected failures such as kernel reboot
+def test_Runtime_25_T1(gg_util_obj, system_interface):
+    # Given my device is running the evergreen-kernel
+    # When I install the component SampleComponentWithArtifacts version 1.0.0 from local store
+    component_artifacts_dir = "./components/local_artifacts/"
+    component_recipe_dir = "./components/SampleComponentWithArtifacts/1.0.0/recipe/"
+    assert (gg_util_obj.create_local_deployment(
+        component_artifacts_dir, component_recipe_dir,
+        "SampleComponentWithArtifacts=1.0.0"))
+    # And I can check SampleComponentWithArtifacts is in state RUNNING within 30 seconds
+    timeout = 30
+    while timeout > 0:
+        if system_interface.check_systemctl_status_for_component(
+                "SampleComponentWithArtifacts") == "RUNNING":
+            break
+        time.sleep(1)
+        timeout -= 1
+    # When I kill the kernel
+    sucess_status = system_interface.stop_systemd_nucleus_lite(30)
+
+    # And I start the kernel
+    sucess_status = system_interface.start_systemd_nucleus_lite(30)
+    # Then I can check the cli to see the status of component SampleComponentWithArtifacts is RUNNING
+    assert (system_interface.check_systemctl_status_for_component(
+        "SampleComponentWithArtifacts") == "RUNNING")
+    # # And No errors were logged
