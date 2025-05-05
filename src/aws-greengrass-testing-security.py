@@ -47,7 +47,7 @@ def test_Security_6_T2_mqtt(gg_util_obj: GGTestUtils,
             "Fatal error: IotMqttPublisher_cloud_name cannot be uploaded to cloud"
         )
 
-    #TODO: MOdify this to use the python pubsub assertion component.
+    #TODO: Modify this to use the python pubsub assertion component.
     deployment_id = gg_util_obj.create_deployment(
         gg_util_obj.get_thing_group_arn(config.thing_group_1), [
             IotMqttPublisher_cloud_name +
@@ -105,7 +105,7 @@ def test_Security_T2_Security_T3(gg_util_obj: GGTestUtils,
                 "aws.greengrass.ipc.pubsub": {
                     "policyId1": {
                         "policyDescription":
-                        "access to publish to mqtt topics",
+                        "access to publish to pubsub topics",
                         "operations": [
                             "aws.greengrass#PublishToTopic",
                             "aws.greengrass#SubscribeToTopic"
@@ -130,3 +130,72 @@ def test_Security_T2_Security_T3(gg_util_obj: GGTestUtils,
         assert (deployment_result == 'SUCCEEDED')
     else:
         assert (deployment_result == 'FAILED')
+
+
+# Scenario: Security-6-T23: As a service owner, If I have both invalid and valid resources specified in a policy, valid resources are still added
+def test_Security_6_T23(gg_util_obj: GGTestUtils, system_interface: SystemInterface):
+    # I install the component HelloWorldPubSub version 0.0.0 from local store with configuration
+    #   | value |
+    #   | {"MERGE":{"accessControl":{"aws.greengrass.ipc.pubsub":{"policyId1":{"policyDescription":"access to pubsub topics","operations":["aws.greengrass#PublishToTopic"],"resources":["invalid?/resource","valid/resource"]}}},"topic":"invalid?/resource"}}|
+    pubsub_cloud_name = gg_util_obj.upload_component_with_version(
+        "HelloWorldPubSub", "1.0.0")
+    if pubsub_cloud_name is None:
+        raise RuntimeError(
+            "Fatal error: HelloWorldPubSub_cloud_name cannot be uploaded to cloud"
+        )
+
+    payload = f"Test Component {pubsub_cloud_name}"
+    pubsub_cloud_name = pubsub_cloud_name._replace(
+        merge_config={
+            "accessControl": {
+                "aws.greengrass.ipc.pubsub": {
+                    "policyId1": {
+                        "policyDescription":
+                        "access to publish to pubsub topics",
+                        "operations": [
+                            "aws.greengrass#PublishToTopic"
+                        ],
+                        "resources":["invalid?/resource","valid/resource"]
+                    }
+                }
+            },
+            "Topic":"invalid?/resource",
+            "payload": payload
+        })
+
+    deployment_id = gg_util_obj.create_deployment(
+        thingArn=gg_util_obj.get_thing_group_arn(config.thing_group_1),
+        component_list=[pubsub_cloud_name],
+        deployment_name="FirstDeployment")["deploymentId"]
+
+    deployment_result = gg_util_obj.wait_for_deployment_till_timeout(
+        120, deployment_id)
+
+    # I can check the cli to see the status of component HelloWorldPubSub is RUNNING
+    # Skip. Our component should fail so that we can use the failure to test authorization.
+
+    # I get 1 assertion with context "Principal HelloWorldPubSub is not authorized to perform aws.greengrass.ipc.pubsub:aws.greengrass#PublishToTopic on resource invalid?/resource"
+    assert (deployment_result == 'FAILED')
+
+    # I restart the components HelloWorldPubSub
+    # TODO: Use the GG CLI when this feature is supported.
+    system_interface.restart_component(pubsub_cloud_name[0], True)
+
+    # I update the component HelloWorldPubSub with parameter configuration
+    #   | key       | value|
+    #   | topic     | valid/resource|
+    pubsub_cloud_name = pubsub_cloud_name._replace(
+        merge_config={
+            "Topic":"valid/resource"
+        })
+
+    deployment_id = gg_util_obj.create_deployment(
+        thingArn=gg_util_obj.get_thing_group_arn(config.thing_group_1),
+        component_list=[pubsub_cloud_name],
+        deployment_name="NextDeployment")["deploymentId"]
+
+    deployment_result = gg_util_obj.wait_for_deployment_till_timeout(
+        120, deployment_id)
+
+    # I get 1 assertion with context "Successfully published to valid/resource"
+    assert (deployment_result == 'SUCCEEDED')

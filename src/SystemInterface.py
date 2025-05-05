@@ -277,3 +277,56 @@ class SystemInterface:
                 process.terminate()
             except:
                 pass
+
+    def restart_component(self, component_name: str, reset: bool):
+        if reset:
+            try:
+                cmd = [
+                    "sudo",
+                    "systemctl",
+                    "reset-failed"
+                ]
+
+                # Run the command and stream output
+                process = subprocess.Popen(
+                    cmd,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    universal_newlines=True,
+                )
+            except Exception as e:
+                print(f"Error: {e}")
+            finally:
+                # Ensure process is terminated
+                try:
+                    process.terminate()
+                except:
+                    pass
+
+        print(f"Restarting component {component_name}")
+        try:
+            cmd = [
+                "sudo",
+                "systemctl",
+                "restart",
+                f"ggl.{component_name}.service",
+            ]
+
+            # Run the command and stream output
+            process = subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                universal_newlines=True,
+            )
+
+            return True
+        except Exception as e:
+            print(f"Error: {e}")
+            return False
+        finally:
+            # Ensure process is terminated
+            try:
+                process.terminate()
+            except:
+                pass
