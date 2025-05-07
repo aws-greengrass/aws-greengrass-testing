@@ -64,7 +64,7 @@ def test_FleetStatus_1_T1(gg_util_obj: GGTestUtils):
 
 
 #Scenario: FleetStatus-1-T3: As a customer I can get thing information with components whose statuses have changed after an IoT Jobs deployment fails
-@mark.skip(reason="TODO: Fix fleet status to update on GC faliure")
+@mark.skip(reason="TODO: Fix fleet status to update on GC failure")
 def test_FleetStatus_1_T3(gg_util_obj):
     # When I upload component BrokenAfterDeployed version 1.0.0 with configuration from the local store
     #         | key               | value |
