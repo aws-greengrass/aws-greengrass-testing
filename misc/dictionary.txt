@@ -10,10 +10,8 @@ greengrasscoreipc
 greengrassv
 guice
 javax
-Javax
 journalctl
 Mqtt
-mqttproxy
 mqttproxy
 Murty
 nixos
