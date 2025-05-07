@@ -3,6 +3,7 @@ cbor
 clientv
 coreutils
 ggcore
+ggdeploymentd
 gglite
 ggtest
 greengrasscoreipc
@@ -15,6 +16,7 @@ Mqtt
 mqttproxy
 mqttproxy
 Murty
+nixos
 nixpkgs
 Organisation
 picocli
@@ -22,6 +24,7 @@ PKCS
 pkgs
 Popma
 pyproject
+pytest
 Remko
 venv
 virtualenv
