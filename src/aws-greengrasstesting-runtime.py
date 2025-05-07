@@ -126,10 +126,10 @@ def test_Runtime_25_T1(gg_util_obj, system_interface):
         time.sleep(1)
         timeout -= 1
     # When I kill the kernel
-    sucess_status = system_interface.stop_systemd_nucleus_lite(30)
+    success_status = system_interface.stop_systemd_nucleus_lite(30)
 
     # And I start the kernel
-    sucess_status = system_interface.start_systemd_nucleus_lite(30)
+    success_status = system_interface.start_systemd_nucleus_lite(30)
     # Then I can check the cli to see the status of component SampleComponentWithArtifacts is RUNNING
     assert (system_interface.check_systemctl_status_for_component(
         "SampleComponentWithArtifacts") == "RUNNING")

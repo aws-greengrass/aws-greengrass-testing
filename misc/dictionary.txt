@@ -4,6 +4,7 @@ clientv
 coreutils
 ggcore
 gglite
+ggtest
 greengrasscoreipc
 greengrassv
 guice
@@ -21,6 +22,8 @@ PKCS
 pkgs
 Popma
 pyproject
+Remko
 venv
 virtualenv
+xeau
 yapf

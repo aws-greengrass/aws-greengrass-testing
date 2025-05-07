@@ -54,7 +54,7 @@ def test_Component_12_T1(gg_util_obj: GGTestUtils,
         180, deployment_id) == "SUCCEEDED")
 
     # And  I can check the cli to see the status of component MultiPlatform is RUNNING
-    """ GG LITE CLI DOESN"T SUPPORT THIS YET. """
+    """ GG LITE CLI DOES NOT SUPPORT THIS YET. """
 
     # And  the MultiPlatform log eventually contains the line "Hello world!" within 20 seconds
     assert (system_interface.monitor_journalctl_for_message(
@@ -87,7 +87,7 @@ def test_Component_16_T1(gg_util_obj: GGTestUtils,
         120, deployment_id) == "SUCCEEDED")
 
     # Then I can check the cli to see the status of component HelloWorld is RUNNING
-    """ GG LITE CLI DOESN"T SUPPORT THIS YET. """
+    """ GG LITE CLI DOES NOT SUPPORT THIS YET. """
 
     # Then the HelloWorld log contains the line "Evergreen's dev experience is great!"
     assert (system_interface.monitor_journalctl_for_message(
