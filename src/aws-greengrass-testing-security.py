@@ -168,3 +168,45 @@ def test_Security_6_T2_mqtt_Security_6_T3_mqtt(gg_util_obj: GGTestUtils,
         assert (deployment_result == 'SUCCEEDED')
     else:
         assert (deployment_result == 'FAILED')
+
+# Test Scenario: Authorization to Component A to publish/subscribe on a topic does not
+# Also give authorization to Component B to publish/subscribe on the same topics
+def test_Security_6_intransitive_policies(gg_util_obj: GGTestUtils, system_interface: SystemInterface):
+    permissive_cloud_name = gg_util_obj.upload_component_with_versions(
+        "HelloWorldPubSub", ["1.0.0"])
+    if permissive_cloud_name is None:
+        raise RuntimeError(
+            "Fatal error: HelloWorldPubSub cannot be uploaded to cloud"
+        )
+    restricted_cloud_name = gg_util_obj.upload_component_with_versions(
+        "HelloWorldPubSub", ["1.0.0"])
+    if restricted_cloud_name is None:
+        raise RuntimeError(
+            "Fatal error: HelloWorldPubSub cannot be uploaded to cloud"
+        )
+    BAD_LOG: str = "This component is not allowed to publish on test/topic, but it did so anyway."
+    restricted_cloud_name = restricted_cloud_name._replace( merge_config={
+            "accessControl": {                     
+                "HelloWorldPubSub:pubsub:1": {
+                    "policyDescription":
+                    "No access to subscribe/publish to anything.",
+                    "operations": [
+                        "aws.greengrass#PublishToTopic",
+                        "aws.greengrass#SubscribeToTopic"
+                    ],
+                    "resources": []
+                }
+            },
+            "Topic": "test/topic",
+            "Message": BAD_LOG
+        })
+    
+    deployment_id = gg_util_obj.create_deployment(
+        thingArn=gg_util_obj.get_thing_group_arn(config.thing_group_1),
+        component_list=[permissive_cloud_name, restricted_cloud_name],
+        deployment_name="FirstDeployment")["deploymentId"]
+    deployment_result = gg_util_obj.wait_for_deployment_till_timeout(120, deployment_id)
+
+    assert (deployment_result == 'FAILED')
+    assert (system_interface.monitor_journalctl_for_message(restricted_cloud_name.name, BAD_LOG, timeout=5) == False)
+    
