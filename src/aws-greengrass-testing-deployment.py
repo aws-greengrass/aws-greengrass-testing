@@ -1,13 +1,13 @@
 import time
 from typing import Generator
-import pytest
+from pytest import fixture, mark
 from src.IoTUtils import IoTTestUtils
 from src.GGTestUtils import GGTestUtils
 from src.SystemInterface import SystemInterface
 from config import config
 
 
-@pytest.fixture(scope="function")    # Runs for each test function
+@fixture(scope="function")    # Runs for each test function
 def gg_util_obj() -> Generator[GGTestUtils, None, None]:
     # Setup an instance of the GGUtils class. It is then passed to the
     # test functions.
@@ -24,7 +24,7 @@ def gg_util_obj() -> Generator[GGTestUtils, None, None]:
     gg_util.cleanup()
 
 
-@pytest.fixture(scope="function")    # Runs for each test function
+@fixture(scope="function")    # Runs for each test function
 def system_interface() -> Generator[SystemInterface, None, None]:
     interface = SystemInterface()
 
@@ -35,7 +35,7 @@ def system_interface() -> Generator[SystemInterface, None, None]:
     pass
 
 
-@pytest.fixture(scope="function")    # Runs for each test function
+@fixture(scope="function")    # Runs for each test function
 def iot_obj() -> Generator[IoTTestUtils, None, None]:
     # Setup an instance of the GGUtils class. It is then passed to the
     # test functions.
@@ -170,8 +170,10 @@ def test_Deployment_1_T3(gg_util_obj: GGTestUtils,
         timeout=20) is True)
 
 
-# As a developer, I can use the local cli to deploy multiple components to a device locally without cloud intervention and check the list of components using CLI.
-def test_Deployment_1_T6(gg_util_obj, system_interface):
+# As a developer, I can use the local cli to deploy multiple components to a device locally without
+# cloud intervention and check the list of components using CLI.
+def test_Deployment_1_T6(gg_util_obj: GGTestUtils,
+                         system_interface: SystemInterface):
     # I install the following components from local store
     #   | SampleComponentWithConfiguration | 1.0.0 |
     #   | SampleComponentWithArtifacts     | 1.0.0 |
@@ -189,7 +191,7 @@ def test_Deployment_1_T6(gg_util_obj, system_interface):
         timeout -= 1
 
     component_recipe_dir = "./components/SampleComponentWithArtifacts/1.0.0/recipe/"
-    component_artifacts_dir = "./components/SampleComponentWithArtifacts/1.0.0/artifacts/"
+    component_artifacts_dir = "./components/local_artifacts/"
     assert (gg_util_obj.create_local_deployment(
         component_artifacts_dir, component_recipe_dir,
         "SampleComponentWithArtifacts=1.0.0"))
@@ -224,7 +226,8 @@ def test_Deployment_1_T6(gg_util_obj, system_interface):
 
 
 # As a developer, I can use the local cli to deploy a single broken component to a device and check its failure status and cause.
-def test_Deployment_1_T12(gg_util_obj, system_interface):
+def test_Deployment_1_T12(gg_util_obj: GGTestUtils,
+                          system_interface: SystemInterface):
     # I check cli to get list of local deployments and verify it has 0 deployments in ANY state
     # GG_LITE CLI doesn't support this yet.
 
@@ -263,7 +266,13 @@ def test_Deployment_1_T12(gg_util_obj, system_interface):
 
 #As a device application owner, I can deploy configuration with updated components to a thing group.
 def test_Deployment_3_T1(gg_util_obj: GGTestUtils,
-                         system_interface: SystemInterface):
+                         system_interface: SystemInterface,
+                         iot_obj: IoTTestUtils):
+    # Get an auto generated thing group to which the thing is added.
+    new_thing_group = iot_obj.add_thing_to_thing_group(config.thing_name,
+                                                       "NewThingGroup")
+    assert new_thing_group is not None
+
     # I upload component "HelloWorld" version "1.0.0" from the local store
     component_cloud_name = gg_util_obj.upload_component_with_versions(
         "HelloWorld", ["1.0.0"])
@@ -275,7 +284,7 @@ def test_Deployment_3_T1(gg_util_obj: GGTestUtils,
     #   | HelloWorld | 1.0.0 |
     # And I deploy the configuration for deployment Deployment1
     deployment_id_1 = gg_util_obj.create_deployment(
-        gg_util_obj.get_thing_group_arn(config.thing_group_1),
+        gg_util_obj.get_thing_group_arn(new_thing_group),
         [component_cloud_name], "Deployment1")["deploymentId"]
     assert deployment_id_1 is not None
 
@@ -303,7 +312,7 @@ def test_Deployment_3_T1(gg_util_obj: GGTestUtils,
     #   | HelloWorld | 1.0.1 |
     # And I deploy the configuration for deployment Deployment2
     deployment_id_2 = gg_util_obj.create_deployment(
-        gg_util_obj.get_thing_group_arn(config.thing_group_1),
+        gg_util_obj.get_thing_group_arn(new_thing_group),
         [component_cloud_name1], "Deployment2")["deploymentId"]
     assert deployment_id_2 is not None
 
@@ -318,7 +327,13 @@ def test_Deployment_3_T1(gg_util_obj: GGTestUtils,
 
 # Scenario: Deployment-3-T2: As a device application owner, I can deploy configuration to a thing group which removes a component.
 def test_Deployment_3_T2(gg_util_obj: GGTestUtils,
-                         system_interface: SystemInterface):
+                         system_interface: SystemInterface,
+                         iot_obj: IoTTestUtils):
+    # Get an auto generated thing group to which the thing is added.
+    new_thing_group = iot_obj.add_thing_to_thing_group(config.thing_name,
+                                                       "NewThingGroup")
+    assert new_thing_group is not None
+
     # When I upload component "HelloWorld" version "1.0.0" from the local store
     # Then I ensure component "HelloWorld" version "1.0.0" exists on cloud within 60 seconds
     hello_world_cloud_name = gg_util_obj.upload_component_with_versions(
@@ -334,7 +349,7 @@ def test_Deployment_3_T2(gg_util_obj: GGTestUtils,
     #    | SampleComponent | 1.0.0 |
     # And I deploy the configuration for deployment Deployment1
     deployment_id_1 = gg_util_obj.create_deployment(
-        gg_util_obj.get_thing_group_arn(config.thing_group_1),
+        gg_util_obj.get_thing_group_arn(new_thing_group),
         [hello_world_cloud_name, sample_component_cloud_name],
         "Deployment1")["deploymentId"]
     assert deployment_id_1 is not None
@@ -362,7 +377,7 @@ def test_Deployment_3_T2(gg_util_obj: GGTestUtils,
     #    | HelloWorld | 1.0.1 |
     # And I deploy the configuration for deployment Deployment2
     deployment_id_2 = gg_util_obj.create_deployment(
-        gg_util_obj.get_thing_group_arn(config.thing_group_1),
+        gg_util_obj.get_thing_group_arn(new_thing_group),
         [hello_world_cloud_name_1], "Deployment2")["deploymentId"]
     assert deployment_id_2 is not None
 
@@ -383,7 +398,13 @@ def test_Deployment_3_T2(gg_util_obj: GGTestUtils,
 
 # Scenario: Deployment-3-T3: As a device application owner, if a component is broken and I deploy a fix it should succeed
 def test_Deployment_3_T3(gg_util_obj: GGTestUtils,
-                         system_interface: SystemInterface):
+                         system_interface: SystemInterface,
+                         iot_obj: IoTTestUtils):
+    # Get an auto generated thing group to which the thing is added.
+    new_thing_group = iot_obj.add_thing_to_thing_group(config.thing_name,
+                                                       "NewThingGroup")
+    assert new_thing_group is not None
+
     # When I upload component "BrokenComponent" version "1.0.0" from the local store
     # Then I ensure component "BrokenComponent" version "1.0.0" exists on cloud within 60 seconds
     broken_component_cloud_name = gg_util_obj.upload_component_with_versions(
@@ -393,7 +414,7 @@ def test_Deployment_3_T3(gg_util_obj: GGTestUtils,
     #     | BrokenComponent | 1.0.0 |
     # And I deploy the configuration for deployment FirstDeployment
     deployment_id = gg_util_obj.create_deployment(
-        gg_util_obj.get_thing_group_arn(config.thing_group_1),
+        gg_util_obj.get_thing_group_arn(new_thing_group),
         [broken_component_cloud_name], "FirstDeployment")["deploymentId"]
 
     assert deployment_id is not None
@@ -419,7 +440,7 @@ def test_Deployment_3_T3(gg_util_obj: GGTestUtils,
     #     | BrokenComponent | 1.0.2 |
     # And I deploy the configuration for deployment SecondDeployment
     deployment_id_2 = gg_util_obj.create_deployment(
-        gg_util_obj.get_thing_group_arn(config.thing_group_1),
+        gg_util_obj.get_thing_group_arn(new_thing_group),
         [broken_component_v2_cloud_name], "SecondDeployment")["deploymentId"]
     assert deployment_id_2 is not None
 
@@ -434,7 +455,13 @@ def test_Deployment_3_T3(gg_util_obj: GGTestUtils,
 
 # Scenario: Deployment-3-T4: As a device application owner, if a component is broken and I deploy a fix that doesn't work it should fail
 def test_Deployment_3_T4(gg_util_obj: GGTestUtils,
-                         system_interface: SystemInterface):
+                         system_interface: SystemInterface,
+                         iot_obj: IoTTestUtils):
+    # Get an auto generated thing group to which the thing is added.
+    new_thing_group = iot_obj.add_thing_to_thing_group(config.thing_name,
+                                                       "NewThingGroup")
+    assert new_thing_group is not None
+
     # When I upload component "BrokenComponent" version "1.0.0" from the local store
     # Then I ensure component "BrokenComponent" version "1.0.0" exists on cloud within 60 seconds
     broken_component_cloud_name = gg_util_obj.upload_component_with_versions(
@@ -444,7 +471,7 @@ def test_Deployment_3_T4(gg_util_obj: GGTestUtils,
     #     | BrokenComponent | 1.0.0 |
     # And I deploy the configuration for deployment FirstDeployment
     deployment_id = gg_util_obj.create_deployment(
-        gg_util_obj.get_thing_group_arn(config.thing_group_1),
+        gg_util_obj.get_thing_group_arn(new_thing_group),
         [broken_component_cloud_name], "FirstDeployment")["deploymentId"]
 
     assert deployment_id is not None
@@ -470,7 +497,7 @@ def test_Deployment_3_T4(gg_util_obj: GGTestUtils,
     #     | BrokenComponent | 1.0.1 |
     # And I deploy the configuration for deployment SecondDeployment
     deployment_id_v1 = gg_util_obj.create_deployment(
-        gg_util_obj.get_thing_group_arn(config.thing_group_1),
+        gg_util_obj.get_thing_group_arn(new_thing_group),
         [broken_component_v1_cloud_name], "SecondDeployment")["deploymentId"]
     assert deployment_id_v1 is not None
 
@@ -482,7 +509,13 @@ def test_Deployment_3_T4(gg_util_obj: GGTestUtils,
 
 # Scenario: Deployment-3-T5: As a device application owner, if a component is broken and I deploy a different component it should proceed as usual
 def test_Deployment_3_T5(gg_util_obj: GGTestUtils,
-                         system_interface: SystemInterface):
+                         system_interface: SystemInterface,
+                         iot_obj: IoTTestUtils):
+    # Get an auto generated thing group to which the thing is added.
+    new_thing_group = iot_obj.add_thing_to_thing_group(config.thing_name,
+                                                       "NewThingGroup")
+    assert new_thing_group is not None
+
     # When I upload component "BrokenComponent" version "1.0.0" from the local store
     # Then I ensure component "BrokenComponent" version "1.0.0" exists on cloud within 60 seconds
     broken_component_cloud_name = gg_util_obj.upload_component_with_versions(
@@ -492,7 +525,7 @@ def test_Deployment_3_T5(gg_util_obj: GGTestUtils,
     #     | BrokenComponent | 1.0.0 |
     # And I deploy the configuration for deployment FirstDeployment
     deployment_id = gg_util_obj.create_deployment(
-        gg_util_obj.get_thing_group_arn(config.thing_group_1),
+        gg_util_obj.get_thing_group_arn(new_thing_group),
         [broken_component_cloud_name], "FirstDeployment")["deploymentId"]
 
     assert deployment_id is not None
@@ -521,7 +554,7 @@ def test_Deployment_3_T5(gg_util_obj: GGTestUtils,
     #     | HelloWorld | 1.0.0 |
     # And I deploy the configuration for deployment Deployment2
     deployment_id_1 = gg_util_obj.create_deployment(
-        gg_util_obj.get_thing_group_arn(config.thing_group_1),
+        gg_util_obj.get_thing_group_arn(new_thing_group),
         [hello_world_cloud_name], "Deployment2")["deploymentId"]
     assert deployment_id_1 is not None
 
@@ -531,8 +564,13 @@ def test_Deployment_3_T5(gg_util_obj: GGTestUtils,
 
 
 # Scenario: Deployment-5-T2: As a device application owner, I can remove a common component from one of the group the device belongs to from an IoT Jobs deployment
-def test_Deployment_5_T2(gg_util_obj: GGTestUtils,
+def test_Deployment_5_T2(gg_util_obj: GGTestUtils, iot_obj: IoTTestUtils,
                          system_interface: SystemInterface):
+    # Get an auto generated thing group to which the thing is added.
+    first_thing_group = iot_obj.add_thing_to_thing_group(
+        config.thing_name, "FirstThingGroup")
+    assert first_thing_group is not None
+
     # When I upload component "Component2BaseCloud" version "1.0.0" from the local store
     # Then I ensure component "Component2BaseCloud" version "1.0.0" exists on cloud within 60 seconds
     Component2BaseCloud_cloud_name = gg_util_obj.upload_component_with_versions(
@@ -542,18 +580,23 @@ def test_Deployment_5_T2(gg_util_obj: GGTestUtils,
     #     | Component2BaseCloud | 1.0.0 |
     # And I deploy the configuration for deployment FirstDeployment
     deployment_id = gg_util_obj.create_deployment(
-        gg_util_obj.get_thing_group_arn(config.thing_group_1),
+        gg_util_obj.get_thing_group_arn(first_thing_group),
         [Component2BaseCloud_cloud_name], "FirstDeployment")["deploymentId"]
 
     # Then the deployment FirstDeployment completes with SUCCEEDED within 180 seconds
     assert (gg_util_obj.wait_for_deployment_till_timeout(
         180, deployment_id) == "SUCCEEDED")
 
+    # Get thing added to NewThingGroup.
+    new_thing_group = iot_obj.add_thing_to_thing_group(config.thing_name,
+                                                       "NewThingGroup")
+    assert new_thing_group is not None
+
     # When I create a deployment configuration for deployment SecondDeployment and thing group NewThingGroup with components
     #     | Component2BaseCloud | 1.0.0 |
     # And I deploy the configuration for deployment SecondDeployment
     deployment_id_2 = gg_util_obj.create_deployment(
-        gg_util_obj.get_thing_group_arn(config.thing_group_2),
+        gg_util_obj.get_thing_group_arn(new_thing_group),
         [Component2BaseCloud_cloud_name], "SecondDeployment")["deploymentId"]
 
     # Then the deployment SecondDeployment completes with SUCCEEDED within 180 seconds
@@ -568,7 +611,7 @@ def test_Deployment_5_T2(gg_util_obj: GGTestUtils,
     # When I create an empty deployment configuration for deployment ThirdDeployment and thing group FirstThingGroup
     # And I deploy the configuration for deployment ThirdDeployment
     deployment_id_3 = gg_util_obj.create_deployment(
-        gg_util_obj.get_thing_group_arn(config.thing_group_1), [],
+        gg_util_obj.get_thing_group_arn(first_thing_group), [],
         "ThirdDeployment")["deploymentId"]
 
     # Then the deployment ThirdDeployment completes with SUCCEEDED within 180 seconds
@@ -584,21 +627,29 @@ def test_Deployment_5_T2(gg_util_obj: GGTestUtils,
 def test_Deployment_7_T3(gg_util_obj: GGTestUtils,
                          system_interface: SystemInterface,
                          iot_obj: IoTTestUtils):
+    # Get an auto generated thing group to which the thing is added.
+    first_thing_group = iot_obj.add_thing_to_thing_group(
+        config.thing_name, "FirstThingGroup")
+    assert first_thing_group is not None
+
     # When I upload component "Component2BaseCloud" version "1.0.0" from the local store
     # Then I ensure component "Component2BaseCloud" version "1.0.0" exists on cloud within 60 seconds
     Component2BaseCloud_cloud_name = gg_util_obj.upload_component_with_versions(
         "Component2BaseCloud", ["1.0.0"])
+    assert Component2BaseCloud_cloud_name is not None
 
-    # When I create a deployment configuration for deployment FirstDeployment and thing group FirstThingGroup with components
+    # When I create a deployment configuration for deployment FirstDeployment and thing group
+    # FirstThingGroup with components
     #     | Component2BaseCloud | 1.0.0 |
     # And I deploy the configuration for deployment FirstDeployment
     deployment_id = gg_util_obj.create_deployment(
-        gg_util_obj.get_thing_group_arn(config.thing_group_1),
+        gg_util_obj.get_thing_group_arn(first_thing_group),
         [Component2BaseCloud_cloud_name], "FirstDeployment")["deploymentId"]
+    assert deployment_id is not None
 
     # Then the deployment FirstDeployment completes with SUCCEEDED within 180 seconds
-    assert (gg_util_obj.wait_for_deployment_till_timeout(
-        180, deployment_id) == "SUCCEEDED")
+    assert gg_util_obj.wait_for_deployment_till_timeout(
+        180, deployment_id) == "SUCCEEDED"
 
     # When I create a new thing group NewThingGroup
     new_thing_group = iot_obj.create_new_thing_group("NewThingGroup")
@@ -613,14 +664,15 @@ def test_Deployment_7_T3(gg_util_obj: GGTestUtils,
     #     | FirstThingGroup |
     #     | NewThingGroup   |
     assert iot_obj.is_thing_in_thing_groups(
-        config.thing_name, [config.thing_group_1, new_thing_group]) is True
+        config.thing_name, [first_thing_group, new_thing_group]) is True
 
     # When I upload component "HelloWorld" version "1.0.0" from the local store
     # Then I ensure component "HelloWorld" version "1.0.0" exists on cloud within 60 seconds
     hello_world_cloud_name = gg_util_obj.upload_component_with_versions(
         "HelloWorld", ["1.0.0"])
 
-    # When I create a deployment configuration for deployment SecondDeployment and thing group NewThingGroup with components
+    # When I create a deployment configuration for deployment SecondDeployment and thing
+    # group NewThingGroup with components
     #     | HelloWorld | 1.0.0 |
     # And I deploy the configuration for deployment SecondDeployment
     deployment_id_1 = gg_util_obj.create_deployment(
@@ -643,16 +695,22 @@ def test_Deployment_7_T3(gg_util_obj: GGTestUtils,
 def test_Deployment_7_T4(gg_util_obj: GGTestUtils,
                          system_interface: SystemInterface,
                          iot_obj: IoTTestUtils):
+    # Get an auto generated thing group to which the thing is added.
+    first_thing_group = iot_obj.add_thing_to_thing_group(
+        config.thing_name, "FirstThingGroup")
+    assert first_thing_group is not None
+
     # When I upload component "Component2BaseCloud" version "1.0.0" from the local store
     # Then I ensure component "Component2BaseCloud" version "1.0.0" exists on cloud within 60 seconds
     Component2BaseCloud_cloud_name = gg_util_obj.upload_component_with_versions(
         "Component2BaseCloud", ["1.0.0"])
 
-    # When I create a deployment configuration for deployment FirstDeployment and thing group FirstThingGroup with components
+    # When I create a deployment configuration for deployment FirstDeployment and thing
+    # group FirstThingGroup with components
     #     | Component2BaseCloud | 1.0.0 |
     # And I deploy the configuration for deployment FirstDeployment
     deployment_id = gg_util_obj.create_deployment(
-        gg_util_obj.get_thing_group_arn(config.thing_group_1),
+        gg_util_obj.get_thing_group_arn(first_thing_group),
         [Component2BaseCloud_cloud_name], "FirstDeployment")["deploymentId"]
 
     # Then the deployment FirstDeployment completes with SUCCEEDED within 180 seconds
@@ -672,7 +730,7 @@ def test_Deployment_7_T4(gg_util_obj: GGTestUtils,
     #     | FirstThingGroup |
     #     | NewThingGroup   |
     assert iot_obj.is_thing_in_thing_groups(
-        config.thing_name, [config.thing_group_1, new_thing_group]) is True
+        config.thing_name, [first_thing_group, new_thing_group]) is True
 
     # When I upload component "HelloWorld" version "1.0.0" from the local store
     # Then I ensure component "HelloWorld" version "1.0.0" exists on cloud within 60 seconds
@@ -1105,3 +1163,45 @@ def test_Deployment_8_T8_multigroup(gg_util_obj: GGTestUtils,
     # And I can check the cli to see the component HelloWorld is running with version 1.0.1
     assert system_interface.check_systemctl_status_for_component(
         hello_world_cloud_name[0]) == "RUNNING"
+
+
+# Scenario: Deployment-12-T4: As a device application owner if I modify the IoT credential endpoint
+# to a bad value in a deployment, then the deployment fails.
+@mark.skip(
+    reason=
+    "TODO: GG Lite doesn't support merge config for values used by nucleus like the data and iot endpoint."
+)
+def test_Deployment_12_T4():
+    # And I create an empty deployment configuration for deployment ChangeEndpoint
+    # And I update the deployment configuration ChangeEndpoint, setting the component "aws.greengrass.Nucleus" version "LATEST" configuration:
+    #             """
+    #             {
+    #             "MERGE": {
+    #                 "iotCredEndpoint": "invalidEndpoint.amazonaws.com"
+    #             }
+    #             }
+    #             """
+    # And I deploy the configuration for deployment ChangeEndpoint
+    # And the deployment ChangeEndpoint completes with FAILED within 200 seconds
+    pass
+
+
+# Scenario: Deployment-12-T5: As a device application owner if I modify the IoT data endpoint to a bad
+# value in a deployment, then the deployment fails.
+@mark.skip(
+    reason=
+    "TODO: GG Lite doesn't support merge config for values used by nucleus like the data and iot endpoint."
+)
+def test_Deployment_12_T5():
+    # And I create an empty deployment configuration for deployment ChangeEndpoint
+    # And I update the deployment configuration ChangeEndpoint, setting the component "aws.greengrass.Nucleus" version "LATEST" configuration:
+    #             """
+    #             {
+    #             "MERGE": {
+    #                 "iotDataEndpoint": "invalidEndpoint.amazonaws.com"
+    #             }
+    #             }
+    #             """
+    # And I deploy the configuration for deployment ChangeEndpoint
+    # And the deployment ChangeEndpoint completes with FAILED within 200 seconds
+    pass

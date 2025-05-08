@@ -1,12 +1,13 @@
-from typing import List, Tuple
+from typing import Generator, List, Tuple
 from pytest import fixture, mark
 from src.GGTestUtils import GGTestUtils
+from src.IoTUtils import IoTTestUtils
 from src.SystemInterface import SystemInterface
 from config import config
 
 
 @fixture(scope="function")    # Runs for each test function
-def gg_util_obj():
+def gg_util_obj() -> Generator[GGTestUtils, None, None]:
     # Setup an instance of the GGUtils class. It is then passed to the
     # test functions.
     gg_util = GGTestUtils(config.aws_account, config.s3_bucket_name,
@@ -23,14 +24,21 @@ def gg_util_obj():
 
 
 @fixture(scope="function")    # Runs for each test function
-def system_interface():
-    interface = SystemInterface()
+def iot_obj() -> Generator[IoTTestUtils, None, None]:
+    # Setup an instance of the GGUtils class. It is then passed to the
+    # test functions.
+    iot_obj = IoTTestUtils(
+        config.aws_account,
+        config.region,
+    )
 
     # yield the instance of the class to the tests.
-    yield interface
+    yield iot_obj
 
     # This section is called AFTER the test is run.
-    pass
+
+    # Cleanup the artifacts, components etc.
+    iot_obj.cleanup()
 
 
 ACL_TEST_TOPICS: List[Tuple[str, str, bool]] = [
@@ -62,8 +70,13 @@ MQTT_TEST_TOPICS: List[Tuple[str, str, bool]] = [
 # As a service owner, I want to specify which components can and cannot publish on which topic.
 @mark.parametrize("resource,topic,accepted", ACL_TEST_TOPICS)
 def test_Security_T2_Security_T3(gg_util_obj: GGTestUtils,
-                                 system_interface: SystemInterface,
-                                 resource: str, topic: str, accepted: bool):
+                                 iot_obj: IoTTestUtils, resource: str,
+                                 topic: str, accepted: bool):
+    # Get an auto generated thing group to which the thing is added.
+    new_thing_group = iot_obj.add_thing_to_thing_group(config.thing_name,
+                                                       "NewThingGroup")
+    assert new_thing_group is not None
+
     pubsub_cloud_name = gg_util_obj.upload_component_with_versions(
         "HelloWorldPubSub", ["1.0.0"])
     if pubsub_cloud_name is None:
@@ -93,7 +106,7 @@ def test_Security_T2_Security_T3(gg_util_obj: GGTestUtils,
         })
 
     deployment_id = gg_util_obj.create_deployment(
-        thingArn=gg_util_obj.get_thing_group_arn(config.thing_group_1),
+        thingArn=gg_util_obj.get_thing_group_arn(new_thing_group),
         component_list=[pubsub_cloud_name],
         deployment_name="FirstDeployment")["deploymentId"]
 
@@ -106,9 +119,15 @@ def test_Security_T2_Security_T3(gg_util_obj: GGTestUtils,
 
 
 @mark.parametrize("resource,topic,accepted", ACL_TEST_TOPICS + MQTT_TEST_TOPICS)
-def test_Security_6_T2_mqtt_Security_6_T3_mqtt(
-        gg_util_obj: GGTestUtils, system_interface: SystemInterface,
-        resource: str, topic: str, accepted: bool):
+def test_Security_6_T2_mqtt_Security_6_T3_mqtt(gg_util_obj: GGTestUtils,
+                                               iot_obj: IoTTestUtils,
+                                               resource: str, topic: str,
+                                               accepted: bool):
+    # Get an auto generated thing group to which the thing is added.
+    new_thing_group = iot_obj.add_thing_to_thing_group(config.thing_name,
+                                                       "NewThingGroup")
+    assert new_thing_group is not None
+
     mqtt_cloud_name = gg_util_obj.upload_component_with_versions(
         "HelloWorldMqtt", ["1.0.0"])
     if mqtt_cloud_name is None:
@@ -139,7 +158,7 @@ def test_Security_6_T2_mqtt_Security_6_T3_mqtt(
         })
 
     deployment_id = gg_util_obj.create_deployment(
-        thingArn=gg_util_obj.get_thing_group_arn(config.thing_group_1),
+        thingArn=gg_util_obj.get_thing_group_arn(new_thing_group),
         component_list=[mqtt_cloud_name],
         deployment_name="FirstDeployment")["deploymentId"]
 

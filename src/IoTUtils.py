@@ -1,5 +1,5 @@
-from time import sleep
-from typing import List
+from time import sleep, time
+from typing import List, Optional
 from uuid import uuid1
 from boto3 import client
 from types_boto3_iot import IoTClient
@@ -46,21 +46,31 @@ class IoTTestUtils():
                 raise error
 
     def add_thing_to_thing_group(self, thing: str,
-                                 thing_group: str) -> str | None:
+                                 thing_group: str) -> Optional[str]:
         thing_group_local = thing_group
         if self.thing_group_exists(thing_group_local) is not True:
             thing_group_local = self.create_new_thing_group(thing_group_local)
-            sleep(5)
+            if thing_group_local is None:
+                return None
+
+            # Wait for the thing group to show up.
+            end_time = time() + 60
+            while time() < end_time:
+                if self.thing_group_exists(
+                        thing_group=thing_group_local) is True:
+                    break
+                sleep(1)
 
         self._iotClient.add_thing_to_thing_group(
             thingGroupName=thing_group_local, thingName=thing)
 
         # Try to see whether the thing got added to the thing group.
-        for i in range(3):
+        end_time = time() + 60
+        while time() < end_time:
             if self.is_thing_in_thing_groups(thing,
                                              [thing_group_local]) is True:
                 return thing_group_local
-            sleep(2)
+            sleep(1)
 
         return None
 
@@ -74,21 +84,42 @@ class IoTTestUtils():
             thingGroupName=thing_group, thingName=thing)
 
         # Try to see whether the thing got removed from the thing group.
-        for i in range(3):
+        end_time = time() + 60
+        while time() < end_time:
             if self.is_thing_in_thing_groups(thing, [thing_group]) is not True:
                 return True
-            sleep(2)
+            sleep(1)
 
         return False
 
-    def is_thing_in_thing_groups(self, thing: str, thing_groups: list) -> bool:
+    def is_thing_in_thing_groups(self, thing: str,
+                                 thing_groups: List[str]) -> bool:
         for group in thing_groups:
-            response = self._iotClient.list_things_in_thing_group(
-                thingGroupName=group, maxResults=100)
-            if response is None or 'things' not in response:
-                return False
+            token = None
+            continue_loop = True
+            things_list = []
 
-            if thing in response['things']:
+            while continue_loop is True:
+                if token is None:
+                    response = self._iotClient.list_things_in_thing_group(
+                        thingGroupName=group, maxResults=100)
+                else:
+                    response = self._iotClient.list_things_in_thing_group(
+                        thingGroupName=group, maxResults=100, nextToken=token)
+
+                # If the response is invalid or there are no things in the thing
+                # group, no point in checking further.
+                if response is None or 'things' not in response:
+                    return False
+
+                things_list.extend(response['things'])
+
+                if 'nextToken' not in response:
+                    continue_loop = False
+                else:
+                    token = response['nextToken']
+
+            if thing in things_list:
                 continue
             else:
                 return False

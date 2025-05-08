@@ -128,12 +128,27 @@ class GGTestUtils:
 
             for thing in things_list:
                 try:
-                    # Get deployment statistics
-                    statistic = self._ggClient.list_effective_deployments(
-                        coreDeviceThingName=thing, maxResults=100)
-                    statistic = statistic["effectiveDeployments"]
-                    if statistic:
-                        statistics_list.append({thing: statistic})
+                    loop_again = True
+                    next_token = None
+                    while loop_again is True:
+                        # Get deployment statistics
+                        if next_token is None:
+                            statistic = self._ggClient.list_effective_deployments(
+                                coreDeviceThingName=thing, maxResults=100)
+                        else:
+                            statistic = self._ggClient.list_effective_deployments(
+                                coreDeviceThingName=thing, maxResults=100, nextToken=next_token)
+                        
+                        if "nextToken" in statistic:
+                            next_token = statistic["nextToken"]
+                        else:
+                            loop_again = False
+
+                        statistic = statistic["effectiveDeployments"]
+
+                        if statistic:
+                            statistics_list.append({thing: statistic})
+                        
                 except Exception as e:
                     print(f"Error getting statistics for {thing}: {str(e)}")
 
@@ -557,7 +572,9 @@ class GGTestUtils:
         )
 
         # Make sure that there is only one thing in the group.
-        assert len(things_in_group["things"]) == 1
+        if len(things_in_group["things"]) != 1:
+            print("The number of things in the thing-group must be 1.")
+            return False
 
         while timeout > 0:
             return_val = self._ggClient.get_core_device(

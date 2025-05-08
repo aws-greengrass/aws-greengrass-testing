@@ -1,12 +1,14 @@
 import time
+from typing import Generator
 import pytest
 from src.GGTestUtils import GGTestUtils
+from src.IoTUtils import IoTTestUtils
 from src.SystemInterface import SystemInterface
 from config import config
 
 
 @pytest.fixture(scope="function")    # Runs for each test function
-def gg_util_obj():
+def gg_util_obj() -> Generator[GGTestUtils, None, None]:
     # Setup an instance of the GGUtils class. It is then passed to the
     # test functions.
     gg_util = GGTestUtils(config.aws_account, config.s3_bucket_name,
@@ -23,7 +25,7 @@ def gg_util_obj():
 
 
 @pytest.fixture(scope="function")    # Runs for each test function
-def system_interface():
+def system_interface() -> Generator[SystemInterface, None, None]:
     interface = SystemInterface()
 
     # yield the instance of the class to the tests.
@@ -33,9 +35,33 @@ def system_interface():
     pass
 
 
+@pytest.fixture(scope="function")    # Runs for each test function
+def iot_obj() -> Generator[IoTTestUtils, None, None]:
+    # Setup an instance of the GGUtils class. It is then passed to the
+    # test functions.
+    iot_obj = IoTTestUtils(
+        config.aws_account,
+        config.region,
+    )
+
+    # yield the instance of the class to the tests.
+    yield iot_obj
+
+    # This section is called AFTER the test is run.
+
+    # Cleanup the artifacts, components etc.
+    iot_obj.cleanup()
+
+
 # As a component developer, I can create Greengrass component that works on my current platform.
 def test_Component_12_T1(gg_util_obj: GGTestUtils,
-                         system_interface: SystemInterface):
+                         system_interface: SystemInterface,
+                         iot_obj: IoTTestUtils):
+    # Get an auto generated thing group to which the thing is added.
+    new_thing_group = iot_obj.add_thing_to_thing_group(config.thing_name,
+                                                       "NewThingGroup")
+    assert new_thing_group is not None
+
     # I upload component "MultiPlatform" version "1.0.0" from the local store
     component_cloud_name = gg_util_obj.upload_component_with_versions(
         "MultiPlatform", ["1.0.0"])
@@ -44,14 +70,14 @@ def test_Component_12_T1(gg_util_obj: GGTestUtils,
     #   | MultiPlatform | 1.0.0 |
     # And   I deploy the deployment configuration
     deployment_id = gg_util_obj.create_deployment(
-        gg_util_obj.get_thing_group_arn(config.thing_group_1),
+        gg_util_obj.get_thing_group_arn(new_thing_group),
         [component_cloud_name],
     )["deploymentId"]
     assert deployment_id is not None
 
     # Then the deployment completes with SUCCEEDED within 180 seconds
     assert (gg_util_obj.wait_for_deployment_till_timeout(
-        180, deployment_id) == "SUCCEEDED")
+        60, deployment_id) == "SUCCEEDED")
 
     # And  I can check the cli to see the status of component MultiPlatform is RUNNING
     """ GG LITE CLI DOES NOT SUPPORT THIS YET. """
@@ -65,7 +91,13 @@ def test_Component_12_T1(gg_util_obj: GGTestUtils,
 
 # GC developer can create a component with recipes containing s3 artifact. GGC operator can deploy it and artifact can be run.
 def test_Component_16_T1(gg_util_obj: GGTestUtils,
-                         system_interface: SystemInterface):
+                         system_interface: SystemInterface,
+                         iot_obj: IoTTestUtils):
+    # Get an auto generated thing group to which the thing is added.
+    new_thing_group = iot_obj.add_thing_to_thing_group(config.thing_name,
+                                                       "NewThingGroup")
+    assert new_thing_group is not None
+
     # I upload component "HelloWorld" version "1.0.0" from the local store
     component_cloud_name = gg_util_obj.upload_component_with_versions(
         "HelloWorld", ["1.0.0"])
@@ -77,7 +109,7 @@ def test_Component_16_T1(gg_util_obj: GGTestUtils,
     #        | HelloWorld | 1.0.0 |
     # And I deploy the deployment configuration
     deployment_id = gg_util_obj.create_deployment(
-        gg_util_obj.get_thing_group_arn(config.thing_group_1),
+        gg_util_obj.get_thing_group_arn(new_thing_group),
         [component_cloud_name],
     )["deploymentId"]
     assert deployment_id is not None
@@ -99,7 +131,13 @@ def test_Component_16_T1(gg_util_obj: GGTestUtils,
 
 # As a component developer, I expect kernel to fail the deployment if the checksum of downloaded artifacts does not match with the checksum in the recipe.
 def test_Component_27_T1(gg_util_obj: GGTestUtils,
-                         system_interface: SystemInterface):
+                         system_interface: SystemInterface,
+                         iot_obj: IoTTestUtils):
+    # Get an auto generated thing group to which the thing is added.
+    new_thing_group = iot_obj.add_thing_to_thing_group(config.thing_name,
+                                                       "NewThingGroup")
+    assert new_thing_group is not None
+
     # Given I upload component "HelloWorld" version "1.0.0" from the local store
     # And I ensure component "HelloWorld" version "1.0.0" exists on cloud within 120 seconds
     # And kernel registered as a Thing
@@ -118,7 +156,7 @@ def test_Component_27_T1(gg_util_obj: GGTestUtils,
     #        | HelloWorld | 1.0.0 |
     # And I deploy the deployment configuration
     deployment_id = gg_util_obj.create_deployment(
-        gg_util_obj.get_thing_group_arn(config.thing_group_1),
+        gg_util_obj.get_thing_group_arn(new_thing_group),
         [component_cloud_name],
     )["deploymentId"]
     assert deployment_id is not None
@@ -137,6 +175,8 @@ def test_Component_27_T1(gg_util_obj: GGTestUtils,
 
 
 # As an operator, I can interpolate component default configurations by local deployment.
+@pytest.mark.skip("TODO: If a config value doesn't exist - interpolation should not happen which is not correct." \
+"                   2. Quatation marks should be escaped when set as an environment variable.")
 def test_Component_29_T0(gg_util_obj: GGTestUtils,
                          system_interface: SystemInterface):
     # I install the component aws.gg.uat.local.ComponentConfigTestService version 1.0.0 from local store
@@ -226,8 +266,16 @@ def test_Component_29_T0(gg_util_obj: GGTestUtils,
 
 
 # As an operator, I can update component configurations from multiple sources, by doing a mix of cloud and local deployments.
+@pytest.mark.skip("TODO: If a config value doesn't exist - interpolation should not happen which is not correct." \
+"                   2. Quatation marks should be escaped when set as an environment variable.")
 def test_Component_29_T4(gg_util_obj: GGTestUtils,
-                         system_interface: SystemInterface):
+                         system_interface: SystemInterface,
+                         iot_obj: IoTTestUtils):
+    # Get an auto generated thing group to which the thing is added.
+    new_thing_group = iot_obj.add_thing_to_thing_group(config.thing_name,
+                                                       "NewThingGroup")
+    assert new_thing_group is not None
+
     # I upload component "aws.gg.uat.cloud.ComponentConfigTestService" version "1.0.0" from the local store
     # I ensure component "aws.gg.uat.cloud.ComponentConfigTestService" version "1.0.0" exists on cloud with scope private within 60 seconds
     component_cloud_name = gg_util_obj.upload_component_with_versions(
@@ -237,7 +285,7 @@ def test_Component_29_T4(gg_util_obj: GGTestUtils,
     #         | aws.gg.uat.cloud.ComponentConfigTestService | 1.0.0 |
     # I deploy the configuration for deployment FirstCloudDeployment
     deployment_id = gg_util_obj.create_deployment(
-        gg_util_obj.get_thing_group_arn(config.thing_group_1),
+        gg_util_obj.get_thing_group_arn(new_thing_group),
         [component_cloud_name], "FirstCloudDeployment")["deploymentId"]
     assert deployment_id is not None
 

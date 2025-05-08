@@ -1,20 +1,14 @@
 # The AWS account ID in which the test resource will be created.
-aws_account = ""
+aws_account = "YOUR AWS ACCOUNT ID"
 
 # The S3 bucket used to store the artifacts.
-s3_bucket_name = ""
+s3_bucket_name = "THE BUCKET TO STORE ARTIFACTS"
 
 # The region of the AWS Account used for the tests.
-region = ""
+region = "AWS REGION TO RUN THE TESTS IN"
 
-# First thing group with 'thing' under test added to it.
-thing_group_1 = ""
-
-# Second thing group with 'thing' under test added to it.
-thing_group_2 = ""
-
-# Thing which is part of the above thing groups.
-thing_name = ""
+# Thing to which all the tests deploy.
+thing_name = "THING NAME"
 
 # Location of ggl-cli binary
 ggl_cli_bin_path = "../aws-greengrass-lite/build/bin/ggl-cli"

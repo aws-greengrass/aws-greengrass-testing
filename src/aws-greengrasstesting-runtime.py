@@ -1,13 +1,15 @@
 import time
+from typing import Generator
 from pytest import fixture
 from pytest import mark
 from src.GGTestUtils import GGTestUtils
+from src.IoTUtils import IoTTestUtils
 from src.SystemInterface import SystemInterface
 from config import config
 
 
 @fixture(scope="function")    # Runs for each test function
-def gg_util_obj():
+def gg_util_obj() -> Generator[GGTestUtils, None, None]:
     # Setup an instance of the GGUtils class. It is then passed to the
     # test functions.
     gg_util = GGTestUtils(config.aws_account, config.s3_bucket_name,
@@ -24,7 +26,7 @@ def gg_util_obj():
 
 
 @fixture(scope="function")    # Runs for each test function
-def system_interface():
+def system_interface() -> Generator[SystemInterface, None, None]:
     interface = SystemInterface()
 
     # yield the instance of the class to the tests.
@@ -34,15 +36,39 @@ def system_interface():
     pass
 
 
+@fixture(scope="function")    # Runs for each test function
+def iot_obj() -> Generator[IoTTestUtils, None, None]:
+    # Setup an instance of the GGUtils class. It is then passed to the
+    # test functions.
+    iot_obj = IoTTestUtils(
+        config.aws_account,
+        config.region,
+    )
+
+    # yield the instance of the class to the tests.
+    yield iot_obj
+
+    # This section is called AFTER the test is run.
+
+    # Cleanup the artifacts, components etc.
+    iot_obj.cleanup()
+
+
 #Scenario: Runtime-1-T4: As a component developer, if a state transition keeps timing out, then I expect my component
 # to be in BROKEN
 @mark.skip(reason="TODO: Needs a good way to look up the TIMEOUT log")
-def test_Runtime_1_T4(gg_util_obj, system_interface):
+def test_Runtime_1_T4(gg_util_obj: GGTestUtils,
+                      system_interface: SystemInterface, iot_obj: IoTTestUtils):
+    # Get an auto generated thing group to which the thing is added.
+    new_thing_group = iot_obj.add_thing_to_thing_group(config.thing_name,
+                                                       "NewThingGroup")
+    assert new_thing_group is not None
+
     # When I install the component state_transition_timeout version 1.0.0 from local store
     state_transition_timeout = gg_util_obj.upload_component_with_version(
         "state_transition_timeout", "1.0.0")
     deployment_id = gg_util_obj.create_deployment(
-        gg_util_obj.get_thing_group_arn(config.thing_group_1),
+        gg_util_obj.get_thing_group_arn(new_thing_group),
         [state_transition_timeout], "FirstDeployment")["deploymentId"]
     assert (gg_util_obj.wait_for_deployment_till_timeout(
         180, deployment_id) == "FAILED")
@@ -66,12 +92,17 @@ def test_Runtime_1_T4(gg_util_obj, system_interface):
 #   put into BROKEN.
 @mark.skip(
     reason="There isn't currently good way to test transient Errored state")
-def test_Runtime_1_T5(gg_util_obj, system_interface):
+def test_Runtime_1_T5(gg_util_obj: GGTestUtils, iot_obj: IoTTestUtils):
+    # Get an auto generated thing group to which the thing is added.
+    new_thing_group = iot_obj.add_thing_to_thing_group(config.thing_name,
+                                                       "NewThingGroup")
+    assert new_thing_group is not None
+
     #When I install the component foreground_no_ipc_error version 1.0.0 from local store
     foreground_no_ipc_error = gg_util_obj.upload_component_with_version(
         "foreground_no_ipc_error", "1.0.0")
     deployment_id = gg_util_obj.create_deployment(
-        gg_util_obj.get_thing_group_arn(config.thing_group_1),
+        gg_util_obj.get_thing_group_arn(new_thing_group),
         [foreground_no_ipc_error], "FirstDeployment")["deploymentId"]
     assert (gg_util_obj.wait_for_deployment_till_timeout(
         180, deployment_id) == "FAILED")
@@ -82,7 +113,8 @@ def test_Runtime_1_T5(gg_util_obj, system_interface):
 
 
 # Scenario: Runtime-1-T9: I can install a component with a soft dependency locally
-def test_Runtime_1_T9(gg_util_obj, system_interface):
+def test_Runtime_1_T9(gg_util_obj: GGTestUtils,
+                      system_interface: SystemInterface):
     # When I install the component component_with_soft_dep version 1.0.0 from local store
     component_recipe_dir = "./components/component_with_soft_dep/1.0.0/recipe/"
     assert (gg_util_obj.create_local_deployment(
@@ -109,7 +141,8 @@ def test_Runtime_1_T9(gg_util_obj, system_interface):
 
 # Scenario: Runtime-25-T1: As a device application owner, I can expect Greengrass-owner components being robust and can
 # recover from unexpected failures such as kernel reboot
-def test_Runtime_25_T1(gg_util_obj, system_interface):
+def test_Runtime_25_T1(gg_util_obj: GGTestUtils,
+                       system_interface: SystemInterface):
     # Given my device is running the evergreen-kernel
     # When I install the component SampleComponentWithArtifacts version 1.0.0 from local store
     component_artifacts_dir = "./components/local_artifacts/"
@@ -137,7 +170,8 @@ def test_Runtime_25_T1(gg_util_obj, system_interface):
 
 
 # Scenario: Runtime-28-T3: As a DO, I can run component as privileged user.
-def test_Runtime_28_T3(gg_util_obj, system_interface):
+def test_Runtime_28_T3(gg_util_obj: GGTestUtils,
+                       system_interface: SystemInterface):
     # Given my device is running the evergreen-kernel
     # And I install the component process_status_component_privilege version 0.0.0 from local store
     component_recipe_dir = "./components/process_status_component_privilege/0.0.0/recipe/"
