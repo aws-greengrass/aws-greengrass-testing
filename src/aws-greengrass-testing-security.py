@@ -1,3 +1,4 @@
+import time
 from typing import Generator, List, Tuple
 from pytest import fixture, mark
 from src.GGTestUtils import GGTestUtils
@@ -25,7 +26,7 @@ def gg_util_obj() -> Generator[GGTestUtils, None, None]:
 
 @fixture(scope="function")    # Runs for each test function
 def iot_obj() -> Generator[IoTTestUtils, None, None]:
-    # Setup an instance of the GGUtils class. It is then passed to the
+    # Setup an IoT object. It is then passed to the
     # test functions.
     iot_obj = IoTTestUtils(
         config.aws_account,
@@ -39,6 +40,16 @@ def iot_obj() -> Generator[IoTTestUtils, None, None]:
 
     # Cleanup the artifacts, components etc.
     iot_obj.cleanup()
+
+@fixture(scope="function") # Runs for each test function
+def system_interface() -> Generator[SystemInterface, None, None]:
+    interface = SystemInterface()
+
+    # yield the instance of the class to the tests.
+    yield interface
+
+    # This secion is called AFTER the test is run.
+    pass
 
 
 ACL_TEST_TOPICS: List[Tuple[str, str, bool]] = [
@@ -66,10 +77,10 @@ MQTT_TEST_TOPICS: List[Tuple[str, str, bool]] = [
 ]
 
 
-# Scenario: Security-6-T2 & Security-6-T3
-# As a service owner, I want to specify which components can and cannot publish on which topic.
+# Scenario: Security-6-T2 & Security-6-T3 & Security-6-T4 & Security-6-T5
+# As a service owner, I want to specify which components can and cannot publish and subscribe on which topic.
 @mark.parametrize("resource,topic,accepted", ACL_TEST_TOPICS)
-def test_Security_T2_Security_T3(gg_util_obj: GGTestUtils,
+def test_Security_6_T2_T3_T4_T5(gg_util_obj: GGTestUtils,
                                  iot_obj: IoTTestUtils, resource: str,
                                  topic: str, accepted: bool):
     # Get an auto generated thing group to which the thing is added.
@@ -81,7 +92,7 @@ def test_Security_T2_Security_T3(gg_util_obj: GGTestUtils,
         "HelloWorldPubSub", ["1.0.0"])
     if pubsub_cloud_name is None:
         raise RuntimeError(
-            "Fatal error: IotMqttPublisher_cloud_name cannot be uploaded to cloud"
+            "Fatal error: HelloWorldPubSub cannot be uploaded to cloud"
         )
 
     payload = f"Test Component {pubsub_cloud_name}"
@@ -92,7 +103,7 @@ def test_Security_T2_Security_T3(gg_util_obj: GGTestUtils,
                 "aws.greengrass.ipc.pubsub": {
                     "HelloWorldPubSub:pubsub:1": {
                         "policyDescription":
-                        "access to publish to local topics",
+                        "access to publish and subscribe to local topics",
                         "operations": [
                             "aws.greengrass#PublishToTopic",
                             "aws.greengrass#SubscribeToTopic"
@@ -111,15 +122,17 @@ def test_Security_T2_Security_T3(gg_util_obj: GGTestUtils,
         deployment_name="FirstDeployment")["deploymentId"]
 
     deployment_result = gg_util_obj.wait_for_deployment_till_timeout(
-        120, deployment_id)
+        180, deployment_id)
     if accepted:
         assert (deployment_result == 'SUCCEEDED')
     else:
         assert (deployment_result == 'FAILED')
 
 
+# Scenario: Security-6-T2-mqtt & Security-6-T3-mqtt & Security-6-T4-mqtt & Security-6-T5-mqtt
+# As a service owner, I want to specify which components can or cannot publish and subscribe on which mqtt topic
 @mark.parametrize("resource,topic,accepted", ACL_TEST_TOPICS + MQTT_TEST_TOPICS)
-def test_Security_6_T2_mqtt_Security_6_T3_mqtt(gg_util_obj: GGTestUtils,
+def test_Security_6_T2_T3_T4_T5_mqtt(gg_util_obj: GGTestUtils,
                                                iot_obj: IoTTestUtils,
                                                resource: str, topic: str,
                                                accepted: bool):
@@ -132,7 +145,7 @@ def test_Security_6_T2_mqtt_Security_6_T3_mqtt(gg_util_obj: GGTestUtils,
         "HelloWorldMqtt", ["1.0.0"])
     if mqtt_cloud_name is None:
         raise RuntimeError(
-            "Fatal error: IotMqttPublisher_cloud_name cannot be uploaded to cloud"
+            "Fatal error: HelloWorldMqtt cannot be uploaded to cloud"
         )
 
     payload = f"\"Test Component {mqtt_cloud_name}\""
@@ -143,7 +156,7 @@ def test_Security_6_T2_mqtt_Security_6_T3_mqtt(gg_util_obj: GGTestUtils,
                 "aws.greengrass.ipc.mqttproxy": {
                     "HelloWorldMqtt:mqttproxy:1": {
                         "policyDescription":
-                        "access to publish to mqtt topics",
+                        "access to publish and subscribe to mqtt topics",
                         "operations": [
                             "aws.greengrass#PublishToIoTCore",
                             "aws.greengrass#SubscribeToIoTCore"
@@ -163,8 +176,105 @@ def test_Security_6_T2_mqtt_Security_6_T3_mqtt(gg_util_obj: GGTestUtils,
         deployment_name="FirstDeployment")["deploymentId"]
 
     deployment_result = gg_util_obj.wait_for_deployment_till_timeout(
-        120, deployment_id)
+        180, deployment_id)
     if accepted:
         assert (deployment_result == 'SUCCEEDED')
     else:
         assert (deployment_result == 'FAILED')
+
+
+# Scenario: Security-6-T6
+# As a service owner, I want to specify that all components can publish and subscribe on all topics
+def test_Security_6_T6(gg_util_obj: GGTestUtils, iot_obj: IoTTestUtils,
+                       system_interface: SystemInterface):
+    security_thing_group = iot_obj.add_thing_to_thing_group(config.thing_name,
+                                                       "SecurityThingGroup")
+    assert security_thing_group is not None
+
+    # When I install the component HelloWorldPubSub version 1.0.0 from local store
+    pubsub_cloud_name = gg_util_obj.upload_component_with_versions(
+        "HelloWorldPubSub", ["1.0.0"])
+
+    if pubsub_cloud_name is None:
+        raise RuntimeError(
+            "Fatal error: HelloWorldPubSub cannot be uploaded to cloud"
+        )
+
+    deployment_id = gg_util_obj.create_deployment(
+        thingArn=gg_util_obj.get_thing_group_arn(security_thing_group),
+        component_list=[pubsub_cloud_name],
+        deployment_name="FirstDeployment")["deploymentId"]
+
+    assert (gg_util_obj.wait_for_deployment_till_timeout(
+        180, deployment_id) == "SUCCEEDED")
+
+    # And I get 1 assertion with context "Successfully subscribed to test/topic"
+    assert (system_interface.monitor_journalctl_for_message(
+        "ggl." + pubsub_cloud_name[0] + ".service",
+        "Successfully subscribed to test/topic",
+        timeout=20) is True)
+
+    #And I get 1 assertion with context "Successfully published to test/topic"
+    assert (system_interface.monitor_journalctl_for_message(
+        "ggl." + pubsub_cloud_name[0] + ".service",
+        "Successfully published to test/topic",
+        timeout=20) is True)
+
+# Scenario: Security-6-T7
+# As a service owner, I want to ensure authorization persists across fresh restarts
+def test_Security_6_T7(gg_util_obj: GGTestUtils, iot_obj: IoTTestUtils,
+                       system_interface: SystemInterface):
+    security_thing_group = iot_obj.add_thing_to_thing_group(config.thing_name,
+                                                       "SecurityThingGroup")
+    assert security_thing_group is not None
+
+    # When I install the component HelloWorldPubSub version 1.0.0 from local store
+    pubsub_cloud_name = gg_util_obj.upload_component_with_versions(
+        "HelloWorldPubSub", ["1.0.0"])
+
+    if pubsub_cloud_name is None:
+        raise RuntimeError(
+            "Fatal error: HelloWorldPubSub cannot be uploaded to cloud"
+        )
+
+    deployment_id = gg_util_obj.create_deployment(
+        thingArn=gg_util_obj.get_thing_group_arn(security_thing_group),
+        component_list=[pubsub_cloud_name],
+        deployment_name="FirstDeployment")["deploymentId"]
+
+    assert (gg_util_obj.wait_for_deployment_till_timeout(
+        180, deployment_id) == "SUCCEEDED")
+
+    # And I get 1 assertion with context "Successfully subscribed to test/topic"
+    assert (system_interface.monitor_journalctl_for_message(
+        "ggl." + pubsub_cloud_name[0] + ".service",
+        "Successfully subscribed to test/topic",
+        timeout=20) is True)
+
+    #And I get 1 assertion with context "Successfully published to test/topic"
+    assert (system_interface.monitor_journalctl_for_message(
+        "ggl." + pubsub_cloud_name[0] + ".service",
+        "Successfully published to test/topic",
+        timeout=20) is True)
+
+    time.sleep(5)
+
+    # When I restart the kernel
+    assert (system_interface.restart_systemd_nucleus_lite(30) is True)
+
+    # Then I can check the cli to see the status of component HelloWorldPubSub is RUNNING
+    assert (system_interface.check_systemctl_status_for_component(
+        pubsub_cloud_name[0]) == "RUNNING")
+
+    time.sleep(5)
+    # And I get 1 assertion with context "Successfully subscribed to test/topic"
+    assert (system_interface.monitor_journalctl_for_message(
+        "ggl." + pubsub_cloud_name[0] + ".service",
+        "Successfully subscribed to test/topic",
+        timeout=20) is True)
+
+    # And I get 1 assertion with context "Successfully published to test/topic"
+    assert (system_interface.monitor_journalctl_for_message(
+        "ggl." + pubsub_cloud_name[0] + ".service",
+        "Successfully published to test/topic",
+        timeout=20) is True)

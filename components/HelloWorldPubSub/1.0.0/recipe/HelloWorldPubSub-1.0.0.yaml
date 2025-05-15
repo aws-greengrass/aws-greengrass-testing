@@ -10,7 +10,7 @@ ComponentPublisher: "Me"
 ComponentConfiguration:
   DefaultConfiguration:
     Message: "Hello from local pubsub topic"
-    Topic: "topic"
+    Topic: "test/topic"
     accessControl:
       aws.greengrass.ipc.pubsub:
         HelloWorldPubSub:pubsub:1:

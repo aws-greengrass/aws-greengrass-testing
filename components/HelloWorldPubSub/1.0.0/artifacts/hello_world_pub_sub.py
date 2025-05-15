@@ -6,6 +6,7 @@ from awsiot.greengrasscoreipc.model import BinaryMessage, PublishMessage, Subscr
 
 
 def subscribe_to_topic(ipc_client: GreengrassCoreIPCClientV2, topic):
+    print("Successfully subscribed to %s" % topic)
     return ipc_client.subscribe_to_topic(topic=topic,
                                          on_stream_event=_on_stream_event,
                                          on_stream_error=_on_stream_error,
@@ -34,6 +35,7 @@ def _on_stream_closed() -> None:
 
 def publish_binary_message_to_topic(ipc_client: GreengrassCoreIPCClientV2,
                                     topic, message):
+    print("Successfully published to %s" % topic)
     binary_message = BinaryMessage(message=bytes(message, "utf-8"))
     publish_message = PublishMessage(binary_message=binary_message)
     return ipc_client.publish_to_topic(topic=topic,
