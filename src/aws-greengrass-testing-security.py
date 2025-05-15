@@ -41,7 +41,8 @@ def iot_obj() -> Generator[IoTTestUtils, None, None]:
     # Cleanup the artifacts, components etc.
     iot_obj.cleanup()
 
-@fixture(scope="function") # Runs for each test function
+
+@fixture(scope="function")    # Runs for each test function
 def system_interface() -> Generator[SystemInterface, None, None]:
     interface = SystemInterface()
 
@@ -80,9 +81,8 @@ MQTT_TEST_TOPICS: List[Tuple[str, str, bool]] = [
 # Scenario: Security-6-T2 & Security-6-T3 & Security-6-T4 & Security-6-T5
 # As a service owner, I want to specify which components can and cannot publish and subscribe on which topic.
 @mark.parametrize("resource,topic,accepted", ACL_TEST_TOPICS)
-def test_Security_6_T2_T3_T4_T5(gg_util_obj: GGTestUtils,
-                                 iot_obj: IoTTestUtils, resource: str,
-                                 topic: str, accepted: bool):
+def test_Security_6_T2_T3_T4_T5(gg_util_obj: GGTestUtils, iot_obj: IoTTestUtils,
+                                resource: str, topic: str, accepted: bool):
     # Get an auto generated thing group to which the thing is added.
     new_thing_group = iot_obj.add_thing_to_thing_group(config.thing_name,
                                                        "NewThingGroup")
@@ -92,8 +92,7 @@ def test_Security_6_T2_T3_T4_T5(gg_util_obj: GGTestUtils,
         "HelloWorldPubSub", ["1.0.0"])
     if pubsub_cloud_name is None:
         raise RuntimeError(
-            "Fatal error: HelloWorldPubSub cannot be uploaded to cloud"
-        )
+            "Fatal error: HelloWorldPubSub cannot be uploaded to cloud")
 
     payload = f"Test Component {pubsub_cloud_name}"
 
@@ -133,9 +132,8 @@ def test_Security_6_T2_T3_T4_T5(gg_util_obj: GGTestUtils,
 # As a service owner, I want to specify which components can or cannot publish and subscribe on which mqtt topic
 @mark.parametrize("resource,topic,accepted", ACL_TEST_TOPICS + MQTT_TEST_TOPICS)
 def test_Security_6_T2_T3_T4_T5_mqtt(gg_util_obj: GGTestUtils,
-                                               iot_obj: IoTTestUtils,
-                                               resource: str, topic: str,
-                                               accepted: bool):
+                                     iot_obj: IoTTestUtils, resource: str,
+                                     topic: str, accepted: bool):
     # Get an auto generated thing group to which the thing is added.
     new_thing_group = iot_obj.add_thing_to_thing_group(config.thing_name,
                                                        "NewThingGroup")
@@ -145,8 +143,7 @@ def test_Security_6_T2_T3_T4_T5_mqtt(gg_util_obj: GGTestUtils,
         "HelloWorldMqtt", ["1.0.0"])
     if mqtt_cloud_name is None:
         raise RuntimeError(
-            "Fatal error: HelloWorldMqtt cannot be uploaded to cloud"
-        )
+            "Fatal error: HelloWorldMqtt cannot be uploaded to cloud")
 
     payload = f"\"Test Component {mqtt_cloud_name}\""
 
@@ -187,8 +184,8 @@ def test_Security_6_T2_T3_T4_T5_mqtt(gg_util_obj: GGTestUtils,
 # As a service owner, I want to specify that all components can publish and subscribe on all topics
 def test_Security_6_T6(gg_util_obj: GGTestUtils, iot_obj: IoTTestUtils,
                        system_interface: SystemInterface):
-    security_thing_group = iot_obj.add_thing_to_thing_group(config.thing_name,
-                                                       "SecurityThingGroup")
+    security_thing_group = iot_obj.add_thing_to_thing_group(
+        config.thing_name, "SecurityThingGroup")
     assert security_thing_group is not None
 
     # When I install the component HelloWorldPubSub version 1.0.0 from local store
@@ -197,8 +194,7 @@ def test_Security_6_T6(gg_util_obj: GGTestUtils, iot_obj: IoTTestUtils,
 
     if pubsub_cloud_name is None:
         raise RuntimeError(
-            "Fatal error: HelloWorldPubSub cannot be uploaded to cloud"
-        )
+            "Fatal error: HelloWorldPubSub cannot be uploaded to cloud")
 
     deployment_id = gg_util_obj.create_deployment(
         thingArn=gg_util_obj.get_thing_group_arn(security_thing_group),
@@ -220,12 +216,13 @@ def test_Security_6_T6(gg_util_obj: GGTestUtils, iot_obj: IoTTestUtils,
         "Successfully published to test/topic",
         timeout=20) is True)
 
+
 # Scenario: Security-6-T7
 # As a service owner, I want to ensure authorization persists across fresh restarts
 def test_Security_6_T7(gg_util_obj: GGTestUtils, iot_obj: IoTTestUtils,
                        system_interface: SystemInterface):
-    security_thing_group = iot_obj.add_thing_to_thing_group(config.thing_name,
-                                                       "SecurityThingGroup")
+    security_thing_group = iot_obj.add_thing_to_thing_group(
+        config.thing_name, "SecurityThingGroup")
     assert security_thing_group is not None
 
     # When I install the component HelloWorldPubSub version 1.0.0 from local store
@@ -234,8 +231,7 @@ def test_Security_6_T7(gg_util_obj: GGTestUtils, iot_obj: IoTTestUtils,
 
     if pubsub_cloud_name is None:
         raise RuntimeError(
-            "Fatal error: HelloWorldPubSub cannot be uploaded to cloud"
-        )
+            "Fatal error: HelloWorldPubSub cannot be uploaded to cloud")
 
     deployment_id = gg_util_obj.create_deployment(
         thingArn=gg_util_obj.get_thing_group_arn(security_thing_group),
