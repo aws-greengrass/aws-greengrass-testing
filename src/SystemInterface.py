@@ -239,9 +239,6 @@ class SystemInterface:
 
             timeout = time.time() + timeout
 
-            # Call the readline is blocking, set it to non-blocking mode.
-            os.set_blocking(process.stdout.fileno(), False)
-
             while True:
                 # Check timeout
                 if time.time() > timeout:
