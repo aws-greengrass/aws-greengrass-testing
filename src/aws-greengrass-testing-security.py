@@ -263,6 +263,7 @@ def test_Security_6_T7(gg_util_obj: GGTestUtils, iot_obj: IoTTestUtils,
         pubsub_cloud_name[0]) == "RUNNING")
 
     time.sleep(5)
+
     # And I get 1 assertion with context "Successfully subscribed to test/topic"
     assert (system_interface.monitor_journalctl_for_message(
         "ggl." + pubsub_cloud_name[0] + ".service",
