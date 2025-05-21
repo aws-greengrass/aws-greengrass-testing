@@ -1,7 +1,7 @@
 ---
 RecipeFormatVersion: "2020-01-25"
 ComponentName: "HelloWorldPubSub"
-ComponentVersion: "1.0.0"
+ComponentVersion: "0.0.0"
 ComponentType: "aws.greengrass.generic"
 ComponentDescription: "This example component shows how to publish and
   subscribe\
@@ -10,15 +10,7 @@ ComponentPublisher: "Me"
 ComponentConfiguration:
   DefaultConfiguration:
     Message: "Hello from local pubsub topic"
-    Topic: "test/topic"
-    accessControl:
-      aws.greengrass.ipc.pubsub:
-        HelloWorldPubSub:pubsub:1:
-          policyDescription: "Allows access to publish and subscribe to a topic"
-          operations:
-            - "aws.greengrass#SubscribeToTopic"
-            - "aws.greengrass#PublishToTopic"
-          resources: ["*"]
+    Topic: "topic"
 Manifests:
   - Platform:
       os: "linux"
@@ -26,9 +18,9 @@ Manifests:
     Lifecycle:
       install:
         "python3 -m venv ./venv && . ./venv/bin/activate && python3 -m pip
-        install boto3 greengrasssdk awsiotsdk"
-      run: |-
-        ./venv/bin/python -u {artifacts:path}/hello_world_pub_sub.py "{configuration:/Topic}" "{configuration:/Message}"
+        install awsiotsdk"
+      run: "./venv/bin/python -u {artifacts:path}/hello_world_pub_sub.py \
+        {configuration:/Topic} {configuration:/Message}"
     Artifacts:
       - Uri: "s3://$bucketName$/$testArtifactsDirectory$/hello_world_pub_sub.py"
 Lifecycle: {}

@@ -25,6 +25,17 @@ def gg_util_obj() -> Generator[GGTestUtils, None, None]:
 
 
 @fixture(scope="function")    # Runs for each test function
+def system_interface() -> Generator[SystemInterface, None, None]:
+    interface = SystemInterface()
+
+    # yield the instance of the class to the tests.
+    yield interface
+
+    # This section is called AFTER the test is run.
+    pass
+
+
+@fixture(scope="function")    # Runs for each test function
 def iot_obj() -> Generator[IoTTestUtils, None, None]:
     # Setup an IoT object. It is then passed to the
     # test functions.
@@ -274,4 +285,90 @@ def test_Security_6_T7(gg_util_obj: GGTestUtils, iot_obj: IoTTestUtils,
     assert (system_interface.monitor_journalctl_for_message(
         "ggl." + pubsub_cloud_name[0] + ".service",
         "Successfully published to test/topic",
+        timeout=20) is True)
+
+
+# Scenario: Security-6-T15: As a service owner, when I remove a component, all of that component's ACLs are removed as well
+def test_Security_6_T15(gg_util_obj: GGTestUtils,
+                        system_interface: SystemInterface):
+    # When I install the component HelloWorldPubSub version 1.0.0 from local store
+    hello_world_pubSub = gg_util_obj.upload_component_with_versions(
+        "HelloWorldPubSub", ["0.0.0"])
+    if hello_world_pubSub is None:
+        raise RuntimeError(
+            "Fatal error: HelloWorldPubSub cannot be uploaded to cloud")
+
+    hello_world_pubSub = hello_world_pubSub._replace(
+        merge_config={
+            "accessControl": {
+                "aws.greengrass.ipc.pubsub": {
+                    "HelloWorldMqtt:pubsub:1": {
+                        "policyDescription":
+                        "access to publish to mqtt topics",
+                        "operations": [
+                            "aws.greengrass#PublishToTopic",
+                            "aws.greengrass#SubscribeToTopic"
+                        ],
+                        "resources": ["test/topic"]
+                    }
+                }
+            },
+            "Topic": "test/topic",
+            "QOS": "1",
+            "Message": "Hello from local pubsub topic"
+        })
+
+    deployment_id = gg_util_obj.create_deployment(
+        thingArn=gg_util_obj.get_thing_group_arn(config.thing_group_1),
+        component_list=[hello_world_pubSub],
+        deployment_name="FirstDeployment")["deploymentId"]
+
+    # Then I can check the cli to see the status of component HelloWorldPubSub is RUNNING
+    deployment_result = gg_util_obj.wait_for_deployment_till_timeout(
+        120, deployment_id)
+    print(f"The deployment ({deployment_id}): {deployment_result}")
+    assert (deployment_result == 'SUCCEEDED')
+
+    # And I get 1 assertion with context "Successfully subscribed to test/topic"
+    # And I get 1 assertion with context "Successfully published to test/topic"
+    assert (system_interface.monitor_journalctl_for_message(
+        "ggl." + hello_world_pubSub[0] + ".service",
+        "Successfully published 1 message(s)",
+        timeout=20) is True)
+    assert (system_interface.monitor_journalctl_for_message(
+        "ggl." + hello_world_pubSub[0] + ".service",
+        "Received new message on topic test/topic: Hello from local pubsub topic",
+        timeout=20) is True)
+
+    # When I remove the components HelloWorldPubSub
+    # Then I can check the cli to see the component HelloWorldPubSub is not listed
+    status = gg_util_obj.remove_component(
+        deployment_id, hello_world_pubSub.name,
+        gg_util_obj.get_thing_group_arn(config.thing_group_1))
+
+    assert (status == 'SUCCEEDED')
+
+    #This version of HelloWorldPubSub has no ACL
+    #And I install the component HelloWorldPubSub version 0.0.1 from local store
+    hello_world_pubSub = hello_world_pubSub._replace(
+        merge_config={
+            "Topic": "test/topic",
+            "QOS": "1",
+            "Message": "Hello from local pubsub topic"
+        })
+    deployment_id = gg_util_obj.create_deployment(
+        thingArn=gg_util_obj.get_thing_group_arn(config.thing_group_1),
+        component_list=[hello_world_pubSub],
+        deployment_name="FirstDeployment")["deploymentId"]
+    # Then I can check the cli to see the status of component HelloWorldPubSub is RUNNING
+    deployment_result = gg_util_obj.wait_for_deployment_till_timeout(
+        120, deployment_id)
+    print(f"The deployment ({deployment_id}): {deployment_result}")
+    assert (deployment_result == 'FAILED')
+
+    # And I get 1 assertion with context "Principal HelloWorldPubSub is not authorized to perform aws.greengrass.ipc.pubsub:aws.greengrass#PublishToTopic on resource test/topic"
+    # And I get 1 assertion with context "Principal HelloWorldPubSub is not authorized to perform aws.greengrass.ipc.pubsub:aws.greengrass#SubscribeToTopic on resource test/topic"
+    assert (system_interface.monitor_journalctl_for_message(
+        "ggl." + hello_world_pubSub[0] + ".service",
+        "awsiot.greengrasscoreipc.model.UnauthorizedError",
         timeout=20) is True)

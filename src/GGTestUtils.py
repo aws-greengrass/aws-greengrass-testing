@@ -230,6 +230,34 @@ class GGTestUtils:
 
         return result
 
+    def remove_component(self, deployment_id:str, component_name_to_remove:str, thing_group_arn) -> Literal['SUCCEEDED', 'FAILED', 'TIMEOUT']:
+        # Get deployment details
+        deployment_info = self._ggClient.get_deployment(deploymentId=deployment_id)
+
+        # Retrieve the actual component configuration
+        components = deployment_info.get("components", {})
+
+        if component_name_to_remove not in components:
+            raise ValueError(f"Component '{component_name_to_remove}' not found in deployment '{deployment_id}'.")
+
+        # Remove the component
+        del components[component_name_to_remove]
+        print(f"Removed component '{component_name_to_remove}' from deployment '{deployment_id}'.")
+
+        # Create a new deployment with the updated components
+        new_deployment = self.create_deployment(
+            thingArn=thing_group_arn,
+            component_list=components,
+            deployment_name="FirstDeployment")["deploymentId"]
+
+        print(f"New deployment created: {new_deployment}")
+        
+        result = self.wait_for_deployment_till_timeout(120, new_deployment)
+        
+        print(f"The removal of component through deployment: {result}")
+        
+        return result
+    
     def wait_for_deployment_till_timeout(
             self, timeout: float,
             deployment_id: str) -> Literal['SUCCEEDED', 'FAILED', 'TIMEOUT']:
