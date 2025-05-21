@@ -37,7 +37,7 @@ class GGTestUtils:
     _ggComponentToDeleteArn: List[str]
     _ggS3ObjToDelete: List[str]
     _ggServiceList: List[str]
-    _ggDeploymentList: List[str]
+    _ggDeploymentList: List[Tuple[str,str]]
 
     def __init__(self, account: str, bucket: str, region: str,
                  cli_bin_path: str, install_dir: str):
@@ -226,7 +226,7 @@ class GGTestUtils:
         if result is not None:
             self._ggServiceList.extend(
                 [component.name for component in component_list])
-            self._ggDeploymentList.append(result["deploymentId"])
+            self._ggDeploymentList.append((result["deploymentId"], thingArn))
 
         return result
 
@@ -248,6 +248,21 @@ class GGTestUtils:
         new_deployment = self.create_deployment(
             thingArn=thing_group_arn,
             component_list=components,
+            deployment_name="FirstDeployment")["deploymentId"]
+
+        print(f"New deployment created: {new_deployment}")
+        
+        result = self.wait_for_deployment_till_timeout(120, new_deployment)
+        
+        print(f"The removal of component through deployment: {result}")
+        
+        return result
+    
+    def remove_all_components(self, thing_group_arn:str)-> Literal['SUCCEEDED', 'FAILED', 'TIMEOUT']:
+        # Create a new deployment with the empty components
+        new_deployment = self.create_deployment(
+            thingArn=thing_group_arn,
+            component_list=[],
             deployment_name="FirstDeployment")["deploymentId"]
 
         print(f"New deployment created: {new_deployment}")
@@ -573,8 +588,9 @@ class GGTestUtils:
                     f'Failed to delete s3 key {artifact} from configured test bucket.'
                 )
 
-        for deployment in self._ggDeploymentList:
+        for (deployment,thing_group_arn) in self._ggDeploymentList:
             try:
+                self.remove_all_components(thing_group_arn=thing_group_arn)
                 self._ggClient.cancel_deployment(deploymentId=deployment)
                 self._ggClient.delete_deployment(deploymentId=deployment)
             except Exception as e:
