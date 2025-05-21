@@ -92,8 +92,9 @@ MQTT_TEST_TOPICS: List[Tuple[str, str, bool]] = [
 # Scenario: Security-6-T2 & Security-6-T3 & Security-6-T4 & Security-6-T5
 # As a service owner, I want to specify which components can and cannot publish and subscribe on which topic.
 @mark.parametrize("resource,topic,accepted", ACL_TEST_TOPICS)
-def test_Security_6_T2_T3_T4_T5(gg_util_obj: GGTestUtils, iot_obj: IoTTestUtils,
-                                resource: str, topic: str, accepted: bool):
+def test_Security_6_T2_T3_T4_T5_T10(gg_util_obj: GGTestUtils,
+                                    iot_obj: IoTTestUtils, resource: str,
+                                    topic: str, accepted: bool):
     # Get an auto generated thing group to which the thing is added.
     new_thing_group = iot_obj.add_thing_to_thing_group(config.thing_name,
                                                        "NewThingGroup")
@@ -371,4 +372,96 @@ def test_Security_6_T15(gg_util_obj: GGTestUtils,
     assert (system_interface.monitor_journalctl_for_message(
         "ggl." + hello_world_pubSub[0] + ".service",
         "awsiot.greengrasscoreipc.model.UnauthorizedError",
+        timeout=20) is True)
+
+
+# Scenario: Security-6-T22
+# As a service owner, if I have multiple ACL policies, I can update one at a time
+def test_Security_6_T22(gg_util_obj: GGTestUtils, iot_obj: IoTTestUtils,
+                        system_interface: SystemInterface):
+    security_thing_group = iot_obj.add_thing_to_thing_group(
+        config.thing_name, "SecurityThingGroup")
+    assert security_thing_group is not None
+
+    # PubsubSubscriber-0.0.0 depends on evergreen_assertion
+    evergreen_cloud_name = gg_util_obj.upload_component_with_versions(
+        "evergreen_assertion", ["0.0.0"])
+
+    # When I install the component PubsubSubscriber version 0.0.0 from local store
+    subscriber_cloud_name = gg_util_obj.upload_component_with_version_and_deps(
+        "PubsubSubscriber", "0.0.0",
+        [("evergreen_assertion", evergreen_cloud_name.name)])
+    assert subscriber_cloud_name is not None
+
+    # And I install the component PubsubPublisher version 0.0.0 from local store
+    publisher_cloud_name = gg_util_obj.upload_component_with_version_and_deps(
+        "PubsubPublisher", "0.0.0",
+        [("evergreen_assertion", evergreen_cloud_name.name),
+         ("PubsubSubscriber", subscriber_cloud_name.name)])
+    assert publisher_cloud_name is not None
+
+    deployment_1 = gg_util_obj.create_deployment(
+        thingArn=gg_util_obj.get_thing_group_arn(security_thing_group),
+        component_list=[subscriber_cloud_name, publisher_cloud_name],
+        deployment_name="FirstDeployment")["deploymentId"]
+
+    assert (gg_util_obj.wait_for_deployment_till_timeout(
+        180, deployment_1) == "SUCCEEDED")
+
+    time.sleep(5)
+
+    # And I get 1 assertion with context "Subscribed to pubsub topic"
+    assert (system_interface.monitor_journalctl_for_message(
+        "ggl." + subscriber_cloud_name[0] + ".service",
+        "Subscribed to pubsub topic",
+        timeout=20) is True)
+
+    # And I get 1 assertion with context "Published to pubsub topic"
+    assert (system_interface.monitor_journalctl_for_message(
+        "ggl." + publisher_cloud_name[0] + ".service",
+        "Published to pubsub topic",
+        timeout=20) is True)
+
+    # And I get 1 assertion with context "Received new message: Hello world"
+    assert (system_interface.monitor_journalctl_for_message(
+        "ggl." + subscriber_cloud_name[0] + ".service",
+        "Received new message: Hello world",
+        timeout=20) is True)
+
+    time.sleep(5)
+
+    # And I install the component PubsubPublisher version 0.0.0 from local store with replaced configuration and restart
+    publisher_cloud_name = publisher_cloud_name._replace(
+        merge_config={
+            "accessControl": {
+                "aws.greengrass.ipc.pubsub": {
+                    "policyId2": {
+                        "policyDescription": "access to pubsub topics",
+                        "operations": ["aws.greengrass#SubscribeToTopic"],
+                        "resources": ["*"]
+                    }
+                }
+            }
+        })
+
+    deployment_2 = gg_util_obj.create_deployment(
+        thingArn=gg_util_obj.get_thing_group_arn(security_thing_group),
+        component_list=[subscriber_cloud_name, publisher_cloud_name],
+        deployment_name="FirstDeployment")["deploymentId"]
+
+    assert (gg_util_obj.wait_for_deployment_till_timeout(
+        180, deployment_2) == "FAILED")
+
+    time.sleep(5)
+
+    # And I get 1 assertion with context "Subscribed to pubsub topic"
+    assert (system_interface.monitor_journalctl_for_message(
+        "ggl." + subscriber_cloud_name[0] + ".service",
+        "Subscribed to pubsub topic",
+        timeout=20) is True)
+
+    # And I get 1 assertion with context "Principal PubsubPublisher is not authorized to perform aws.greengrass.ipc.pubsub:aws.greengrass#PublishToTopic on resource pubsub"
+    assert (system_interface.monitor_journalctl_for_message(
+        "ggl." + publisher_cloud_name[0] + ".service",
+        "Unauthorized error while publishing to topic: pubsub",
         timeout=20) is True)

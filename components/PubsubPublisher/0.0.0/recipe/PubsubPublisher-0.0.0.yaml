@@ -1,0 +1,39 @@
+---
+RecipeFormatVersion: "2020-01-25"
+ComponentName: PubsubPublisher
+ComponentVersion: "0.0.0"
+ComponentDescription: Pubsub Generic Publisher
+ComponentPublisher: Amazon
+ComponentDependencies:
+  evergreen_assertion:
+    VersionRequirement: ">=0.0.0"
+    DependencyType: SOFT
+  PubsubSubscriber:
+    VersionRequirement: ">=0.0.0"
+    DependencyType: HARD
+ComponentConfiguration:
+  DefaultConfiguration:
+    Message: Hello world
+    Topic: pubsub
+    assertionServerPort: 8080
+    accessControl:
+      aws.greengrass.ipc.pubsub:
+        policyId2:
+          policyDescription: access to pubsub topics
+          operations:
+            - "aws.greengrass#PublishToTopic"
+          resources:
+            - "*"
+Manifests:
+  - Platform:
+      os: "linux"
+      runtime: "*"
+    Lifecycle:
+      install: |-
+        python3 -m venv .venv
+        .venv/bin/python3 -m pip install awsiotsdk
+      run: |-
+        .venv/bin/python3 -u {artifacts:path}/publisher.py "{configuration:/Topic}" "{configuration:/Message}"
+    Artifacts:
+      - Uri: "s3://$bucketName$/$testArtifactsDirectory$/publisher.py"
+Lifecycle: {}
