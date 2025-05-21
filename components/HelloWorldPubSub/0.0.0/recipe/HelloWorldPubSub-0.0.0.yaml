@@ -17,9 +17,9 @@ Manifests:
       runtime: "*"
     Lifecycle:
       install:
-        "python3 -m venv ./venv && . ./venv/bin/activate && python3 -m pip
-        install awsiotsdk"
-      run: "./venv/bin/python -u {artifacts:path}/hello_world_pub_sub.py \
+        "python3 -m venv .venv && . .venv/bin/activate && python3 -m pip install
+        awsiotsdk"
+      run: ".venv/bin/python -u {artifacts:path}/hello_world_pub_sub.py \
         {configuration:/Topic} {configuration:/Message}"
     Artifacts:
       - Uri: "s3://$bucketName$/$testArtifactsDirectory$/hello_world_pub_sub.py"

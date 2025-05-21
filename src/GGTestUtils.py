@@ -37,7 +37,7 @@ class GGTestUtils:
     _ggComponentToDeleteArn: List[str]
     _ggS3ObjToDelete: List[str]
     _ggServiceList: List[str]
-    _ggDeploymentList: List[str]
+    _ggDeploymentToThingNameList: List[Tuple[str,str]]
 
     def __init__(self, account: str, bucket: str, region: str,
                  cli_bin_path: str, install_dir: str):
@@ -52,7 +52,7 @@ class GGTestUtils:
         self._ggComponentToDeleteArn = []
         self._ggS3ObjToDelete = []
         self._ggServiceList = []
-        self._ggDeploymentList = []
+        self._ggDeploymentToThingNameList = []
 
     @property
     def aws_account(self) -> str:
@@ -226,7 +226,7 @@ class GGTestUtils:
         if result is not None:
             self._ggServiceList.extend(
                 [component.name for component in component_list])
-            self._ggDeploymentList.append(result["deploymentId"])
+            self._ggDeploymentToThingNameList.append((result["deploymentId"], thingArn))
 
         return result
 
@@ -248,6 +248,21 @@ class GGTestUtils:
         new_deployment = self.create_deployment(
             thingArn=thing_group_arn,
             component_list=components,
+            deployment_name="FirstDeployment")["deploymentId"]
+
+        print(f"New deployment created: {new_deployment}")
+        
+        result = self.wait_for_deployment_till_timeout(120, new_deployment)
+        
+        print(f"The removal of component through deployment: {result}")
+        
+        return result
+    
+    def remove_all_components(self, thing_group_arn:str)-> Literal['SUCCEEDED', 'FAILED', 'TIMEOUT']:
+        # Create a new deployment with the empty components
+        new_deployment = self.create_deployment(
+            thingArn=thing_group_arn,
+            component_list=[],
             deployment_name="FirstDeployment")["deploymentId"]
 
         print(f"New deployment created: {new_deployment}")
@@ -573,8 +588,19 @@ class GGTestUtils:
                     f'Failed to delete s3 key {artifact} from configured test bucket.'
                 )
 
-        for deployment in self._ggDeploymentList:
+        # Extract unique thing_group_arns
+        unique_thing_groups = {thing_group_arn for _, thing_group_arn in self._ggDeploymentToThingNameList}
+        
+        for unique in unique_thing_groups:
             try:
+                print(f"Cleaning up thing group arn: {unique}")
+                self.remove_all_components(thing_group_arn=unique)
+            except Exception as e:
+                print(e)
+        
+        for (deployment,thing_group_arn) in self._ggDeploymentToThingNameList:
+            try:
+                print(f"Cleaning up deployment: {deployment}, with thing group arn: {thing_group_arn}")
                 self._ggClient.cancel_deployment(deploymentId=deployment)
                 self._ggClient.delete_deployment(deploymentId=deployment)
             except Exception as e:
@@ -583,10 +609,11 @@ class GGTestUtils:
         # Reset the lists.
         self._ggComponentToDeleteArn = []
         self._ggS3ObjToDelete = []
-        self._ggDeploymentList = []
+        self._ggDeploymentToThingNameList = []
 
+        logging.debug("Cleaned up services List:")
         for service in self._ggServiceList:
-            print(f"ggl.{service}.service")
+            logging.debug(f"ggl.{service}.service")
         self._ggServiceList = []
 
     def wait_ggcore_device_status(
