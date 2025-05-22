@@ -367,8 +367,7 @@ def test_Security_6_T15(gg_util_obj: GGTestUtils,
     print(f"The deployment ({deployment_id}): {deployment_result}")
     assert (deployment_result == 'FAILED')
 
-    # And I get 1 assertion with context "Principal HelloWorldPubSub is not authorized to perform aws.greengrass.ipc.pubsub:aws.greengrass#PublishToTopic on resource test/topic"
-    # And I get 1 assertion with context "Principal HelloWorldPubSub is not authorized to perform aws.greengrass.ipc.pubsub:aws.greengrass#SubscribeToTopic on resource test/topic"
+    # And I get 1 assertion with context "awsiot.greengrasscoreipc.model.UnauthorizedError"
     assert (system_interface.monitor_journalctl_for_message(
         "ggl." + hello_world_pubSub[0] + ".service",
         "awsiot.greengrasscoreipc.model.UnauthorizedError",
@@ -454,7 +453,7 @@ def test_Security_6_T22(gg_util_obj: GGTestUtils, iot_obj: IoTTestUtils,
         "Subscribed to pubsub topic",
         timeout=20) is True)
 
-    # And I get 1 assertion with context "Principal PubsubPublisher is not authorized to perform aws.greengrass.ipc.pubsub:aws.greengrass#PublishToTopic on resource pubsub"
+    # And I get 1 assertion with context "Unauthorized error while publishing to topic: pubsub"
     assert (system_interface.monitor_journalctl_for_message(
         "ggl." + publisher_cloud_name[0] + ".service",
         "Unauthorized error while publishing to topic: pubsub",
