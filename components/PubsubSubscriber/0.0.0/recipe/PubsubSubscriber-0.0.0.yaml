@@ -4,15 +4,10 @@ ComponentName: PubsubSubscriber
 ComponentVersion: "0.0.0"
 ComponentDescription: Pubsub Generic Subscriber
 ComponentPublisher: Amazon
-ComponentDependencies:
-  evergreen_assertion:
-    VersionRequirement: ">=0.0.0"
-    DependencyType: SOFT
 ComponentConfiguration:
   DefaultConfiguration:
     Message: Hello world
     Topic: pubsub
-    assertionServerPort: 8080
     accessControl:
       aws.greengrass.ipc.pubsub:
         policyId1:

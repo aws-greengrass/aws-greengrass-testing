@@ -383,21 +383,15 @@ def test_Security_6_T22(gg_util_obj: GGTestUtils, iot_obj: IoTTestUtils,
         config.thing_name, "SecurityThingGroup")
     assert security_thing_group is not None
 
-    # PubsubSubscriber-0.0.0 depends on evergreen_assertion
-    evergreen_cloud_name = gg_util_obj.upload_component_with_versions(
-        "evergreen_assertion", ["0.0.0"])
-
     # When I install the component PubsubSubscriber version 0.0.0 from local store
-    subscriber_cloud_name = gg_util_obj.upload_component_with_version_and_deps(
-        "PubsubSubscriber", "0.0.0",
-        [("evergreen_assertion", evergreen_cloud_name.name)])
+    subscriber_cloud_name = gg_util_obj.upload_component_with_versions(
+        "PubsubSubscriber", ["0.0.0"])
     assert subscriber_cloud_name is not None
 
     # And I install the component PubsubPublisher version 0.0.0 from local store
     publisher_cloud_name = gg_util_obj.upload_component_with_version_and_deps(
         "PubsubPublisher", "0.0.0",
-        [("evergreen_assertion", evergreen_cloud_name.name),
-         ("PubsubSubscriber", subscriber_cloud_name.name)])
+        [("PubsubSubscriber", subscriber_cloud_name.name)])
     assert publisher_cloud_name is not None
 
     deployment_1 = gg_util_obj.create_deployment(
