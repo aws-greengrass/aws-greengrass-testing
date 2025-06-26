@@ -1,0 +1,17 @@
+def pytest_addoption(parser):
+    parser.addoption("--security_thing_group",
+                     action="store",
+                     default="NewThingGroup",
+                     help="Specify the security thing group")
+    parser.addoption("--aws-account",
+                     action="store",
+                     default="",
+                     help="AWS Account ID")
+    parser.addoption("--s3-bucket",
+                     action="store",
+                     default="",
+                     help="S3 Bucket Name")
+    parser.addoption("--region",
+                     action="store",
+                     default="us-west-2",
+                     help="AWS Region")
