@@ -131,7 +131,7 @@ class GGTestUtils:
                         else:
                             statistic = self._ggClient.list_effective_deployments(
                                 coreDeviceThingName=thing, maxResults=100, nextToken=next_token)
-                        
+
                         if "nextToken" in statistic:
                             next_token = statistic["nextToken"]
                         else:
@@ -141,7 +141,7 @@ class GGTestUtils:
 
                         if statistic:
                             statistics_list.append({thing: statistic})
-                        
+
                 except Exception as e:
                     print(f"Error getting statistics for {thing}: {str(e)}")
 
@@ -244,13 +244,13 @@ class GGTestUtils:
             deployment_name="FirstDeployment")["deploymentId"]
 
         print(f"New deployment created: {new_deployment}")
-        
+
         result = self.wait_for_deployment_till_timeout(120, new_deployment)
-        
+
         print(f"The removal of component through deployment: {result}")
-        
+
         return result
-    
+
     def remove_all_components(self, thing_group_arn:str)-> Literal['SUCCEEDED', 'FAILED', 'TIMEOUT']:
         # Create a new deployment with the empty components
         new_deployment = self.create_deployment(
@@ -259,13 +259,13 @@ class GGTestUtils:
             deployment_name="FirstDeployment")["deploymentId"]
 
         print(f"New deployment created: {new_deployment}")
-        
+
         result = self.wait_for_deployment_till_timeout(120, new_deployment)
-        
+
         print(f"The removal of component through deployment: {result}")
-        
+
         return result
-    
+
     def wait_for_deployment_till_timeout(
             self, timeout: float,
             deployment_id: str) -> Literal['SUCCEEDED', 'FAILED', 'TIMEOUT']:
@@ -595,14 +595,14 @@ class GGTestUtils:
 
         # Extract unique thing_group_arns
         unique_thing_groups = {thing_group_arn for _, thing_group_arn in self._ggDeploymentToThingNameList}
-        
+
         for unique in unique_thing_groups:
             try:
                 print(f"Cleaning up thing group arn: {unique}")
                 self.remove_all_components(thing_group_arn=unique)
             except Exception as e:
                 print(e)
-        
+
         for (deployment,thing_group_arn) in self._ggDeploymentToThingNameList:
             try:
                 print(f"Cleaning up deployment: {deployment}, with thing group arn: {thing_group_arn}")

@@ -410,7 +410,7 @@ def _stop_and_disable_services():
         except Exception as e:
             print(f"Error when executing {' '.join(cmd)}: {e}")
             return False
-    print("Successfully stopped and disabled all sevices")
+    print("Successfully stopped and disabled all services")
     return True
 
 

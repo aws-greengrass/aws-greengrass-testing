@@ -64,7 +64,7 @@ setup_and_cleanup() {
 main() {
     # Get all test functions
     test_functions=($(get_test_functions))
-    
+
     # Run setup_and_cleanup for each test function
     for test_func in "${test_functions[@]}"; do
         read -p ">> Press enter to run setup and cleanup for $test_func"
