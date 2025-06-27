@@ -156,8 +156,8 @@ def delete_thing(thing_name: str, iot_client: client):
             cert_id = principal.split('/')[-1]
 
             # Detach all policies from the certificate
-            policies = iot_client.list_principal_policies(
-                principal=principal)['policies']
+            policies = iot_client.list_attached_policies(
+                target=principal)['policies']
 
             for policy in policies:
                 iot_client.detach_policy(policyName=policy['policyName'],

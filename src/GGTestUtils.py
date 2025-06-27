@@ -39,11 +39,11 @@ class GGTestUtils:
     _ggServiceList: List[str]
     _ggDeploymentToThingNameList: List[Tuple[str,str]]
 
-    def __init__(self, account: str, bucket: str, region: str):
+    def __init__(self, account: str, bucket: str, region: str, cli_bin_path: str):
         self._region = region
         self._account = account
         self._bucket = bucket
-        self._cli_bin_path = "../aws-greengrass-lite/build/bin/ggl-cli"
+        self._cli_bin_path = cli_bin_path
         self._ggClient = boto3.client("greengrassv2", region_name=self._region)
         self._iotClient = boto3.client("iot", region_name=self._region)
         self._s3Client = boto3.client("s3", region_name=self._region)

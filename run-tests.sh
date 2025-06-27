@@ -3,6 +3,7 @@
 IOT_SCRIPT_PATH="src/iot-setup.py"
 GGL_SCRIPT_PATH="src/ggl-setup.py"
 JSON_FILE="iot_setup_data.json"
+CLI_BIN_PATH="$(pwd)/aws-greengrass-lite/build/bin/ggl-cli"
 
 # Get all test cases
 # TODO: get all tests from all test files
@@ -14,11 +15,11 @@ setup_and_cleanup() {
     local test_name=$1
 
     echo "Running IoT setup..."
-    python3 $IOT_SCRIPT_PATH set_up_core_device --region=$AWS_REGION
+    python3 "$IOT_SCRIPT_PATH" set_up_core_device --region="$AWS_REGION"
 
     # Read from JSON file
     if [ -f "$JSON_FILE" ]; then
-        THING_GROUP_NAME=$(jq -r '.THING_GROUP_NAME' $JSON_FILE)
+        THING_GROUP_NAME=$(jq -r '.THING_GROUP_NAME' "$JSON_FILE")
         echo "IoT Setup completed."
     else
         echo "Error: Setup data file not found"
@@ -30,7 +31,7 @@ setup_and_cleanup() {
     read -p "Press enter to continue with Greengrass-Lite setup..."
 
     printf "\nRunning Greengrass-Lite setup...\n"
-    python3 $GGL_SCRIPT_PATH install_greengrass_lite_from_source --id=$COMMIT_ID --region=$AWS_REGION
+    python3 "$GGL_SCRIPT_PATH" install_greengrass_lite_from_source --id="$COMMIT_ID" --region="$AWS_REGION"
     echo "GGL Setup completed."
 
     # Run tests
@@ -44,18 +45,19 @@ setup_and_cleanup() {
         --security_thing_group="$THING_GROUP_NAME" \
         --aws-account="$AWS_ACCOUNT" \
         --s3-bucket="$S3_BUCKET" \
-        --region="$AWS_REGION"
+        --region="$AWS_REGION" \
+        --ggl-cli-path="$CLI_BIN_PATH"
 
 
     # Add a pause before ggl cleanup
     read -p "Press enter to continue with Greengrass-Lite cleanup..."
     printf "\nRunning Greengrass-Lite clean up...\n"
-    python3 $GGL_SCRIPT_PATH clean_up
+    python3 "$GGL_SCRIPT_PATH" clean_up
     echo "GGL clean-up completed."
 
     read -p "Press enter to continue with IoT cleanup..."
     printf "\nRunning IoT cleanup...\n"
-    python3 $IOT_SCRIPT_PATH clean_up --region=$AWS_REGION --thing_group=$THING_GROUP_NAME
+    python3 "$IOT_SCRIPT_PATH" clean_up --region="$AWS_REGION" --thing_group="$THING_GROUP_NAME"
     echo "IoT cleanup completed."
 
 }

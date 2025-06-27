@@ -15,8 +15,9 @@ def gg_util_obj(request) -> Generator[GGTestUtils, None, None]:
     aws_account = request.config.getoption("--aws-account")
     s3_bucket = request.config.getoption("--s3-bucket")
     region = request.config.getoption("--region")
+    ggl_cli_path = request.config.getoption("--ggl-cli-path")
 
-    gg_util_obj = GGTestUtils(aws_account, s3_bucket, region)
+    gg_util_obj = GGTestUtils(aws_account, s3_bucket, region, ggl_cli_path)
     yield gg_util_obj
 
     # Cleanup the artifacts, components etc.

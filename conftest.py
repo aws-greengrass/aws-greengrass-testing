@@ -15,3 +15,7 @@ def pytest_addoption(parser):
                      action="store",
                      default="us-west-2",
                      help="AWS Region")
+    parser.addoption("--ggl-cli-path",
+                     action="store",
+                     default="",
+                     help="GGL CLI Path")
