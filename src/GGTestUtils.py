@@ -143,7 +143,7 @@ class GGTestUtils:
                             statistics_list.append({thing: statistic})
 
                 except Exception as e:
-                    print(f"Error getting statistics for {thing}: {str(e)}")
+                    print(f"Waiting to get statistics for {thing}: {str(e)}...")
 
             return {
                 "status": deployment_status,

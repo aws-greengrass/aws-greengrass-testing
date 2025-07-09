@@ -8,9 +8,11 @@ requires-python = ">=3.12"
 dependencies = [
     "awsiotsdk>=1.22.2",
     "boto3>=1.38.4",
+    "botocore>=1.39.3",
     "pytest>=8.3.5",
     "pyyaml>=6.0.2",
-    "types-boto3[essential,greengrassv2,iot,iot-data]>=1.38.4",
+    "requests>=2.32.4",
+    "types-boto3[essential,greengrassv2,iot,iot-data]>=1.38.4"
 ]
 
 [dependency-groups]

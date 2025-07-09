@@ -13,65 +13,94 @@ get_test_functions() {
 
 setup_and_cleanup() {
     local test_name=$1
+    local test_status=0
 
-    echo "Running IoT setup..."
-    python3 "$IOT_SCRIPT_PATH" set_up_core_device --region="$AWS_REGION"
+    # Setup phase
+    echo "Setting up test environment for: $test_name"
+    {
+        echo "setup python3 venv environment..."
+        sudo apt install python3-venv
+        python3 -m venv env
+        . ./env/bin/activate
+        pip install .
 
-    # Read from JSON file
-    if [ -f "$JSON_FILE" ]; then
+        echo "Running IoT setup..."
+        python3 "$IOT_SCRIPT_PATH" set_up_core_device --region="$AWS_REGION"
+
+        if [ ! -f "$JSON_FILE" ]; then
+            echo "Error: Setup data file not found"
+            exit 1
+        fi
         THING_GROUP_NAME=$(jq -r '.THING_GROUP_NAME' "$JSON_FILE")
         echo "IoT Setup completed."
-    else
-        echo "Error: Setup data file not found"
-        exit 1
-    fi
 
-    # Set up greengrass-lite
-    # TODO: delete the pause
-    read -p "Press enter to continue with Greengrass-Lite setup..."
+        printf "\nRunning Greengrass-Lite setup...\n"
+        python3 "$GGL_SCRIPT_PATH" install_greengrass_lite_from_source --id="$COMMIT_ID" --region="$AWS_REGION"
+        echo "GGL Setup completed."
+    } || {
+        echo "Setup failed for test: $test_name"
+        return 1
+    }
 
-    printf "\nRunning Greengrass-Lite setup...\n"
-    python3 "$GGL_SCRIPT_PATH" install_greengrass_lite_from_source --id="$COMMIT_ID" --region="$AWS_REGION"
-    echo "GGL Setup completed."
-
-    # Run tests
-    read -p "Press enter to continue with test cases running..."
-    python3 -m venv env
-    . ./env/bin/activate
-    pip install .
-    pytest -q -s -v \
+    # Test execution phase
+    echo "Executing test: $test_name"
+    if ! pytest -q -s -v \
         ./src/aws-greengrass-testing-security.py \
         -k "$test_name" \
         --security_thing_group="$THING_GROUP_NAME" \
         --aws-account="$AWS_ACCOUNT" \
         --s3-bucket="$S3_BUCKET" \
         --region="$AWS_REGION" \
-        --ggl-cli-path="$CLI_BIN_PATH"
+        --ggl-cli-path="$CLI_BIN_PATH"; then
+        test_status=1
+        echo "Test failed: $test_name"
+    fi
 
+    # Cleanup phase (always executed)
+    echo "Starting cleanup for test: $test_name"
+    {
+        printf "\nRunning Greengrass-Lite clean up...\n"
+        python3 "$GGL_SCRIPT_PATH" clean_up
+        echo "GGL clean-up completed."
 
-    # Add a pause before ggl cleanup
-    read -p "Press enter to continue with Greengrass-Lite cleanup..."
-    printf "\nRunning Greengrass-Lite clean up...\n"
-    python3 "$GGL_SCRIPT_PATH" clean_up
-    echo "GGL clean-up completed."
+        printf "\nRunning IoT cleanup...\n"
+        python3 "$IOT_SCRIPT_PATH" clean_up --region="$AWS_REGION" --thing_group="$THING_GROUP_NAME"
+        echo "IoT cleanup completed."
+    } || {
+        echo "Warning: Cleanup failed for test: $test_name"
+        # Don't override test failure status with cleanup failure
+        if [ $test_status -eq 0 ]; then
+            test_status=1
+        fi
+    }
 
-    read -p "Press enter to continue with IoT cleanup..."
-    printf "\nRunning IoT cleanup...\n"
-    python3 "$IOT_SCRIPT_PATH" clean_up --region="$AWS_REGION" --thing_group="$THING_GROUP_NAME"
-    echo "IoT cleanup completed."
-
+    return $test_status
 }
 
 # Get all test functions and run setup_and_cleanup for each
 main() {
-    # Get all test functions
+    local overall_status=0
     test_functions=($(get_test_functions))
 
     # Run setup_and_cleanup for each test function
     for test_func in "${test_functions[@]}"; do
-        read -p ">> Press enter to run setup and cleanup for $test_func"
-        setup_and_cleanup "$test_func"
+        echo "=============================================="
+        echo "Starting test suite for: $test_func"
+        echo "=============================================="
+        if ! setup_and_cleanup "$test_func"; then
+            echo "Test suite failed: $test_func"
+            overall_status=1
+            break
+        fi
     done
+    
+    if [ $overall_status -eq 0 ]; then
+        echo "All tests completed successfully"
+    else
+        echo "Testing failed"
+    fi
+
+    exit $overall_status
 }
 
 # Parse command line arguments
