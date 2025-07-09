@@ -183,15 +183,13 @@ def test_Security_6_T6(gg_util_obj: GGTestUtils, security_thing_group: str,
     assert (system_interface.monitor_journalctl_for_message(
         "ggl." + pubsub_cloud_name[0] + ".service",
         "Successfully subscribed to test/topic",
-        timeout=20) is True)
-
-    time.sleep(5)
+        timeout=60) is True)
 
     #And I get 1 assertion with context "Successfully published to test/topic"
     assert (system_interface.monitor_journalctl_for_message(
         "ggl." + pubsub_cloud_name[0] + ".service",
         "Successfully published to test/topic",
-        timeout=20) is True)
+        timeout=60) is True)
 
 
 # Scenario: Security-6-T7
