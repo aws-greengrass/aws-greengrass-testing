@@ -13,7 +13,6 @@ import zipfile
 from typing import Any, Dict, List, Literal, Optional, Sequence, Tuple
 from uuid import uuid1
 from boto3 import client
-from botocore.exceptions import ClientError
 import time
 import logging
 import yaml
@@ -36,7 +35,6 @@ def install_greengrass_lite_from_source(commit_id: str, region: str):
     device_cert = data['DEVICE_CERT']
     private_key = data['PRIVATE_KEY']
     thing_name = data['THING_NAME']
-    thing_group_name = data['THING_GROUP_NAME']
 
     # Download the source repo
     download_result = _download_source(commit_id)
@@ -78,11 +76,6 @@ def install_greengrass_lite_from_source(commit_id: str, region: str):
         if not dir1_result or not dir2_result or not dir3_result:
             return False
 
-        # Build
-        build_result = _build_with_cmake()
-        if not build_result:
-            return False
-
         # TES setup
         tes_result = _tes_setup(device_cert, private_key)
         if not tes_result:
@@ -99,6 +92,11 @@ def install_greengrass_lite_from_source(commit_id: str, region: str):
         move_result2 = _copy_file(temp_path, dest_path)
         remove_result = _remove_file(temp_path)
         if not config_result or not move_result1 or not move_result2 or not remove_result:
+            return False
+
+        # Build
+        build_result = _build_with_cmake()
+        if not build_result:
             return False
 
         # run nucleus
@@ -451,7 +449,7 @@ def _remove_dir(dir: str) -> bool:
             print(f"Successfully removed {dir}")
             return True
         else:
-            print("Error when removing directory: directory does not exist")
+            print(f"Error when removing directory: {dir} does not exist")
             return False
     except subprocess.CalledProcessError as e:
         print(f"Error when removing directory: {str(e)}")

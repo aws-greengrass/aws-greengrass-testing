@@ -1,27 +1,35 @@
-import time
 from typing import Generator
 from pytest import fixture, mark
-from src.IoTUtils import IoTTestUtils
+from src.IoTUtils import IoTUtils
 from src.GGTestUtils import GGTestUtils
 from src.SystemInterface import SystemInterface
-from config import config
+
+import time
+import src.GGLSetup as ggl_setup
 
 
-@fixture(scope="function")    # Runs for each test function
-def gg_util_obj() -> Generator[GGTestUtils, None, None]:
-    # Setup an instance of the GGUtils class. It is then passed to the
-    # test functions.
-    gg_util = GGTestUtils(config.aws_account, config.s3_bucket_name,
-                          config.region, config.ggl_cli_bin_path,
-                          config.ggl_install_dir)
+@fixture(scope="function")
+def gg_util_obj(request) -> Generator[GGTestUtils, None, None]:
+    aws_account = request.config.getoption("--aws-account")
+    s3_bucket = request.config.getoption("--s3-bucket")
+    region = request.config.getoption("--region")
+    ggl_cli_path = request.config.getoption("--ggl-cli-path")
 
-    # yield the instance of the class to the tests.
-    yield gg_util
+    gg_util_obj = GGTestUtils(aws_account, s3_bucket, region, ggl_cli_path)
 
-    # This section is called AFTER the test is run.
+    yield gg_util_obj
 
-    # Cleanup the artifacts, components etc.
-    gg_util.cleanup()
+
+@fixture(scope="function")
+def iot_obj(request) -> Generator[IoTUtils, None, None]:
+    region = request.config.getoption("--region")
+    commit_id = request.config.getoption("--commit-id")
+    iot_obj = IoTUtils(region)
+
+    iot_obj.set_up_core_device()
+    ggl_setup.install_greengrass_lite_from_source(commit_id, region)
+
+    yield iot_obj
 
 
 @fixture(scope="function")    # Runs for each test function
@@ -33,24 +41,6 @@ def system_interface() -> Generator[SystemInterface, None, None]:
 
     # This section is called AFTER the test is run.
     pass
-
-
-@fixture(scope="function")    # Runs for each test function
-def iot_obj() -> Generator[IoTTestUtils, None, None]:
-    # Setup an instance of the GGUtils class. It is then passed to the
-    # test functions.
-    iot_obj = IoTTestUtils(
-        config.aws_account,
-        config.region,
-    )
-
-    # yield the instance of the class to the tests.
-    yield iot_obj
-
-    # This section is called AFTER the test is run.
-
-    # Cleanup the artifacts, components etc.
-    iot_obj.cleanup()
 
 
 #As a developer, I can use the local cli to deploy a single component to a device locally without cloud intervention.
@@ -564,63 +554,71 @@ def test_Deployment_3_T5(gg_util_obj: GGTestUtils,
 
 
 # Scenario: Deployment-5-T2: As a device application owner, I can remove a common component from one of the group the device belongs to from an IoT Jobs deployment
-def test_Deployment_5_T2(gg_util_obj: GGTestUtils, iot_obj: IoTTestUtils,
+def test_Deployment_5_T2(gg_util_obj: GGTestUtils, iot_obj: IoTUtils,
                          system_interface: SystemInterface):
-    # Get an auto generated thing group to which the thing is added.
-    first_thing_group = iot_obj.add_thing_to_thing_group(
-        config.thing_name, "FirstThingGroup")
-    assert first_thing_group is not None
+    try:
+        # Get an auto generated thing group to which the thing is added.
+        first_thing_name = iot_obj.thing_name
+        first_thing_group_name = iot_obj.thing_group_name
 
-    # When I upload component "Component2BaseCloud" version "1.0.0" from the local store
-    # Then I ensure component "Component2BaseCloud" version "1.0.0" exists on cloud within 60 seconds
-    Component2BaseCloud_cloud_name = gg_util_obj.upload_component_with_versions(
-        "Component2BaseCloud", ["1.0.0"])
+        # When I upload component "Component2BaseCloud" version "1.0.0" from the local store
+        # Then I ensure component "Component2BaseCloud" version "1.0.0" exists on cloud within 60 seconds
+        Component2BaseCloud_cloud_name = gg_util_obj.upload_component_with_versions(
+            "Component2BaseCloud", ["1.0.0"])
 
-    # When I create a deployment configuration for deployment FirstDeployment and thing group FirstThingGroup with components
-    #     | Component2BaseCloud | 1.0.0 |
-    # And I deploy the configuration for deployment FirstDeployment
-    deployment_id = gg_util_obj.create_deployment(
-        gg_util_obj.get_thing_group_arn(first_thing_group),
-        [Component2BaseCloud_cloud_name], "FirstDeployment")["deploymentId"]
+        # When I create a deployment configuration for deployment FirstDeployment and thing group FirstThingGroup with components
+        #     | Component2BaseCloud | 1.0.0 |
+        # And I deploy the configuration for deployment FirstDeployment
+        deployment_id = gg_util_obj.create_deployment(
+            gg_util_obj.get_thing_group_arn(first_thing_group_name),
+            [Component2BaseCloud_cloud_name], "FirstDeployment")["deploymentId"]
 
-    # Then the deployment FirstDeployment completes with SUCCEEDED within 180 seconds
-    assert (gg_util_obj.wait_for_deployment_till_timeout(
-        180, deployment_id) == "SUCCEEDED")
+        # Then the deployment FirstDeployment completes with SUCCEEDED within 180 seconds
+        assert (gg_util_obj.wait_for_deployment_till_timeout(
+            180, deployment_id) == "SUCCEEDED")
 
-    # Get thing added to NewThingGroup.
-    new_thing_group = iot_obj.add_thing_to_thing_group(config.thing_name,
-                                                       "NewThingGroup")
-    assert new_thing_group is not None
+        # Get thing added to NewThingGroup.
+        id = iot_obj.set_random_id()
+        second_thing_group_name = iot_obj.set_thing_group_name(id)
+        second_thing_group_result = iot_obj.add_thing_to_thing_group(
+            first_thing_name, second_thing_group_name)
+        assert second_thing_group_result is not None
 
-    # When I create a deployment configuration for deployment SecondDeployment and thing group NewThingGroup with components
-    #     | Component2BaseCloud | 1.0.0 |
-    # And I deploy the configuration for deployment SecondDeployment
-    deployment_id_2 = gg_util_obj.create_deployment(
-        gg_util_obj.get_thing_group_arn(new_thing_group),
-        [Component2BaseCloud_cloud_name], "SecondDeployment")["deploymentId"]
+        # When I create a deployment configuration for deployment SecondDeployment and thing group NewThingGroup with components
+        #     | Component2BaseCloud | 1.0.0 |
+        # And I deploy the configuration for deployment SecondDeployment
+        deployment_id_2 = gg_util_obj.create_deployment(
+            gg_util_obj.get_thing_group_arn(second_thing_group_name),
+            [Component2BaseCloud_cloud_name],
+            "SecondDeployment")["deploymentId"]
 
-    # Then the deployment SecondDeployment completes with SUCCEEDED within 180 seconds
-    assert (gg_util_obj.wait_for_deployment_till_timeout(
-        180, deployment_id_2) == "SUCCEEDED")
+        # Then the deployment SecondDeployment completes with SUCCEEDED within 180 seconds
+        assert (gg_util_obj.wait_for_deployment_till_timeout(
+            180, deployment_id_2) == "SUCCEEDED")
 
-    # Then I can check the cli to see the status of component Component2BaseCloud is RUNNING
-    assert system_interface.check_systemctl_status_for_component(
-        Component2BaseCloud_cloud_name[0]) == "RUNNING"
+        # Then I can check the cli to see the status of component Component2BaseCloud is RUNNING
+        assert system_interface.check_systemctl_status_for_component(
+            Component2BaseCloud_cloud_name[0]) == "RUNNING"
 
-    #     # This following step removes the Component2BaseCloud from the first group
-    # When I create an empty deployment configuration for deployment ThirdDeployment and thing group FirstThingGroup
-    # And I deploy the configuration for deployment ThirdDeployment
-    deployment_id_3 = gg_util_obj.create_deployment(
-        gg_util_obj.get_thing_group_arn(first_thing_group), [],
-        "ThirdDeployment")["deploymentId"]
+        # This following step removes the Component2BaseCloud from the first group
+        # When I create an empty deployment configuration for deployment ThirdDeployment and thing group FirstThingGroup
+        # And I deploy the configuration for deployment ThirdDeployment
+        deployment_id_3 = gg_util_obj.create_deployment(
+            gg_util_obj.get_thing_group_arn(first_thing_group_name), [],
+            "ThirdDeployment")["deploymentId"]
 
-    # Then the deployment ThirdDeployment completes with SUCCEEDED within 180 seconds
-    assert (gg_util_obj.wait_for_deployment_till_timeout(
-        180, deployment_id_3) == "SUCCEEDED")
+        # Then the deployment ThirdDeployment completes with SUCCEEDED within 180 seconds
+        assert (gg_util_obj.wait_for_deployment_till_timeout(
+            180, deployment_id_3) == "SUCCEEDED")
 
-    # Then I can check the cli to see the status of component Component2BaseCloud is RUNNING
-    assert system_interface.check_systemctl_status_for_component(
-        Component2BaseCloud_cloud_name[0]) == "RUNNING"
+        # Then I can check the cli to see the status of component Component2BaseCloud is RUNNING
+        assert system_interface.check_systemctl_status_for_component(
+            Component2BaseCloud_cloud_name[0]) == "RUNNING"
+    finally:
+        print("\n ===== Start cleaning up =====")
+        gg_util_obj.cleanup()
+        ggl_setup.clean_up()
+        iot_obj.clean_up(thing_name=first_thing_name)
 
 
 # Scenario: Deployment-7-T3: As a device application owner, I can deploy from IoT Jobs different set of components to the device belonging to multiple thing groups

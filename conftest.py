@@ -1,8 +1,8 @@
 def pytest_addoption(parser):
-    parser.addoption("--security_thing_group",
+    parser.addoption("--commit-id",
                      action="store",
-                     default="NewThingGroup",
-                     help="Specify the security thing group")
+                     default="",
+                     help="Commit id")
     parser.addoption("--aws-account",
                      action="store",
                      default="",

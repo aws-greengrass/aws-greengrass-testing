@@ -1,14 +1,20 @@
 #!/bin/bash
 
-IOT_SCRIPT_PATH="src/iot-setup.py"
-GGL_SCRIPT_PATH="src/ggl-setup.py"
-JSON_FILE="iot_setup_data.json"
 CLI_BIN_PATH="$(pwd)/aws-greengrass-lite/build/bin/ggl-cli"
 
+# Arrays to track test results
+declare -a PASSED_TESTS=()
+declare -a FAILED_TESTS=()
+
 # Get all test cases
-# TODO: get all tests from all test files
 get_test_functions() {
-    grep -o "test_[[:alnum:]_]*" ./src/aws-greengrass-testing-security.py | sort -u
+    local test_file="./src/aws-greengrass-testing-$TEST_CATEGORY.py"
+    # Check if the file exists
+    if [ ! -f "$test_file" ]; then
+        echo "Error: Test file $test_file does not exist" >&2
+        return 1
+    fi
+    grep -o "test_[[:alnum:]_]*" "$test_file" | sort -u
 }
 
 setup_and_cleanup() {
@@ -16,65 +22,64 @@ setup_and_cleanup() {
     local test_status=0
 
     # Setup phase
-    echo "Setting up test environment for: $test_name"
+    echo "Setting up python3 venv environment"
     {
-        echo "setup python3 venv environment..."
         sudo apt install python3-venv
         python3 -m venv env
         . ./env/bin/activate
         pip install .
-
-        echo "Running IoT setup..."
-        python3 "$IOT_SCRIPT_PATH" set_up_core_device --region="$AWS_REGION"
-
-        if [ ! -f "$JSON_FILE" ]; then
-            echo "Error: Setup data file not found"
-            exit 1
-        fi
-        THING_GROUP_NAME=$(jq -r '.THING_GROUP_NAME' "$JSON_FILE")
-        echo "IoT Setup completed."
-
-        printf "\nRunning Greengrass-Lite setup...\n"
-        python3 "$GGL_SCRIPT_PATH" install_greengrass_lite_from_source --id="$COMMIT_ID" --region="$AWS_REGION"
-        echo "GGL Setup completed."
     } || {
         echo "Setup failed for test: $test_name"
+        FAILED_TESTS+=("$test_name (Setup Failed)")
         return 1
     }
 
     # Test execution phase
     echo "Executing test: $test_name"
     if ! pytest -q -s -v \
-        ./src/aws-greengrass-testing-security.py \
+        ./src/aws-greengrass-testing-$TEST_CATEGORY.py \
         -k "$test_name" \
-        --security_thing_group="$THING_GROUP_NAME" \
+        --commit-id="$COMMIT_ID" \
         --aws-account="$AWS_ACCOUNT" \
         --s3-bucket="$S3_BUCKET" \
         --region="$AWS_REGION" \
         --ggl-cli-path="$CLI_BIN_PATH"; then
         test_status=1
         echo "Test failed: $test_name"
+        FAILED_TESTS+=("$test_name")
+    else
+        PASSED_TESTS+=("$test_name")
     fi
 
-    # Cleanup phase (always executed)
-    echo "Starting cleanup for test: $test_name"
-    {
-        printf "\nRunning Greengrass-Lite clean up...\n"
-        python3 "$GGL_SCRIPT_PATH" clean_up
-        echo "GGL clean-up completed."
-
-        printf "\nRunning IoT cleanup...\n"
-        python3 "$IOT_SCRIPT_PATH" clean_up --region="$AWS_REGION" --thing_group="$THING_GROUP_NAME"
-        echo "IoT cleanup completed."
-    } || {
-        echo "Warning: Cleanup failed for test: $test_name"
-        # Don't override test failure status with cleanup failure
-        if [ $test_status -eq 0 ]; then
-            test_status=1
-        fi
-    }
-
     return $test_status
+}
+
+# Print test report
+print_report() {
+    echo ""
+    echo "=============================================="
+    echo "              TEST EXECUTION REPORT           "
+    echo "=============================================="
+    echo "Total tests: $((${#PASSED_TESTS[@]} + ${#FAILED_TESTS[@]}))"
+    echo "Passed: ${#PASSED_TESTS[@]}"
+    echo "Failed: ${#FAILED_TESTS[@]}"
+    echo ""
+
+    if [ ${#PASSED_TESTS[@]} -gt 0 ]; then
+        echo "PASSED TESTS:"
+        for test in "${PASSED_TESTS[@]}"; do
+            echo "✅ $test"
+        done
+        echo ""
+    fi
+
+    if [ ${#FAILED_TESTS[@]} -gt 0 ]; then
+        echo "FAILED TESTS:"
+        for test in "${FAILED_TESTS[@]}"; do
+            echo "❌ $test"
+        done
+        echo ""
+    fi
 }
 
 # Get all test functions and run setup_and_cleanup for each
@@ -90,14 +95,17 @@ main() {
         if ! setup_and_cleanup "$test_func"; then
             echo "Test suite failed: $test_func"
             overall_status=1
-            break
         fi
     done
-    
-    if [ $overall_status -eq 0 ]; then
+
+    # Print the test report
+    print_report
+
+    if [ $overall_status -eq 0 ] && [ ${#FAILED_TESTS[@]} -eq 0 ]; then
         echo "All tests completed successfully"
     else
-        echo "Testing failed"
+        echo "Some tests failed. Check the report above for details."
+        overall_status=1
     fi
 
     exit $overall_status
@@ -118,6 +126,9 @@ while [ $# -gt 0 ]; do
         --commit-id=*)
         COMMIT_ID="${1#*=}"
         ;;
+        --test-category=*)
+        TEST_CATEGORY="${1#*=}"
+        ;;
         *)
         echo "Unknown parameter passed: $1"
         exit 1
@@ -125,7 +136,6 @@ while [ $# -gt 0 ]; do
     esac
     shift
 done
-
 
 # Run the main function
 main
