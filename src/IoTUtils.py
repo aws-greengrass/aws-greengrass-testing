@@ -270,7 +270,7 @@ class IoTUtils():
 
             # Delete the JSON file
             try:
-                subprocess.run(['sudo', 'rm', '-rf', JSON_FILE], check=True)
+                subprocess.run(['rm', '-rf', JSON_FILE], check=True)
             except Exception as e:
                 print(f"Error when removing the JSON file, {str(e)}")
 
