@@ -265,7 +265,9 @@ class IoTUtils():
                 self.remove_all_things_from_thing_group(thing_group_name)
 
             # Delete the core device
+            self.delete_core_device()
             self.delete_thing(self._thing_name)
+            self.delete_thing_group(self.thing_group_name)
             print("IoT clean-up completed.\n")
 
             # Delete the JSON file
