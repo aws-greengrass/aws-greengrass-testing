@@ -242,27 +242,11 @@ class IoTUtils():
             )
             return False
 
-    def clean_up(self, thing_name=None, thing_group_name=None):
-        """
-        Comprehensive cleanup method that handles both scenarios:
-        1. When a thing is added to multiple thing groups
-        2. When multiple things are added to a single thing group
-        """
+    def clean_up(self):
         print("\nRunning IoT clean up...")
         try:
-            if thing_name:
-                # Scenario 1: Clean up a specific thing and all its associated thing groups
-                print(
-                    f"Cleaning up thing '{thing_name}' and all its associated thing groups"
-                )
-                self.remove_all_thing_groups_from_thing(thing_name)
 
-            if thing_group_name:
-                # Scenario 2: Clean up a specific thing group and all its associated things
-                print(
-                    f"Cleaning up thing group '{thing_group_name}' and all its associated things"
-                )
-                self.remove_all_things_from_thing_group(thing_group_name)
+            self.remove_all_thing_groups_from_thing(self._thing_name)
 
             # Delete the core device
             self.delete_core_device()
