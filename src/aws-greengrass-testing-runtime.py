@@ -19,6 +19,8 @@ def gg_util_obj(request) -> Generator[GGTestUtils, None, None]:
 
     yield gg_util_obj
 
+    gg_util_obj.cleanup()
+
 
 @fixture(scope="function")
 def iot_obj(request) -> Generator[IoTUtils, None, None]:
@@ -30,6 +32,9 @@ def iot_obj(request) -> Generator[IoTUtils, None, None]:
     ggl_setup.install_greengrass_lite_from_source(commit_id, region)
 
     yield iot_obj
+
+    ggl_setup.clean_up()
+    iot_obj.clean_up()
 
 
 @fixture(scope="function")    # Runs for each test function
@@ -48,38 +53,32 @@ def system_interface() -> Generator[SystemInterface, None, None]:
 @mark.skip(reason="TODO: Needs a good way to look up the TIMEOUT log")
 def test_Runtime_1_T4(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
                       system_interface: SystemInterface):
-    try:
-        # Get an auto generated thing group to which the thing is added.
-        new_thing_name = iot_obj.thing_name
-        new_thing_group_name = iot_obj.thing_group_name
-        assert new_thing_group_name is not None
+    # Get an auto generated thing group to which the thing is added.
+    new_thing_name = iot_obj.thing_name
+    new_thing_group_name = iot_obj.thing_group_name
+    assert new_thing_group_name is not None
 
-        # When I install the component state_transition_timeout version 1.0.0 from local store
-        state_transition_timeout = gg_util_obj.upload_component_with_version(
-            "state_transition_timeout", "1.0.0")
-        deployment_id = gg_util_obj.create_deployment(
-            gg_util_obj.get_thing_group_arn(new_thing_group_name),
-            [state_transition_timeout], "FirstDeployment")["deploymentId"]
-        assert (gg_util_obj.wait_for_deployment_till_timeout(
-            180, deployment_id) == "FAILED")
+    # When I install the component state_transition_timeout version 1.0.0 from local store
+    state_transition_timeout = gg_util_obj.upload_component_with_version(
+        "state_transition_timeout", "1.0.0")
+    deployment_id = gg_util_obj.create_deployment(
+        gg_util_obj.get_thing_group_arn(new_thing_group_name),
+        [state_transition_timeout], "FirstDeployment")["deploymentId"]
+    assert (gg_util_obj.wait_for_deployment_till_timeout(
+        180, deployment_id) == "FAILED")
 
-        # Then I can check state_transition_timeout is in state BROKEN within 60 seconds
-        assert system_interface.check_systemctl_status_for_component(
-            state_transition_timeout[0]) == "NOT_RUNNING"
+    # Then I can check state_transition_timeout is in state BROKEN within 60 seconds
+    assert system_interface.check_systemctl_status_for_component(
+        state_transition_timeout[0]) == "NOT_RUNNING"
 
-        #TODO: Monitor timeout logs
-        # And the greengrass log eventually contains the following patterns within 5 seconds
-        #   | service-errored.*reason=Timeout in install, serviceName=state_transition_timeout | 2 | should retry 3 times and become broken |
-        assert (system_interface.monitor_journalctl_for_message(
-            state_transition_timeout[0],
-            "Failed with result 'timeout'",
-            timeout=30,
-        ) is True)
-    finally:
-        print("\n ===== Start cleaning up =====")
-        gg_util_obj.cleanup()
-        ggl_setup.clean_up()
-        iot_obj.clean_up(thing_name=new_thing_name)
+    #TODO: Monitor timeout logs
+    # And the greengrass log eventually contains the following patterns within 5 seconds
+    #   | service-errored.*reason=Timeout in install, serviceName=state_transition_timeout | 2 | should retry 3 times and become broken |
+    assert (system_interface.monitor_journalctl_for_message(
+        state_transition_timeout[0],
+        "Failed with result 'timeout'",
+        timeout=30,
+    ) is True)
 
 
 # Scenario: Runtime-1-T5: As a component developer, if my foreground component without IPC exits with a non-zero exit
@@ -89,126 +88,102 @@ def test_Runtime_1_T4(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     reason="There isn't currently good way to test transient Errored state")
 def test_Runtime_1_T5(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
                       system_interface: SystemInterface):
-    try:
-        # Get an auto generated thing group to which the thing is added.
-        new_thing_name = iot_obj.thing_name
-        new_thing_group_name = iot_obj.thing_group_name
-        assert new_thing_group_name is not None
 
-        #When I install the component foreground_no_ipc_error version 1.0.0 from local store
-        foreground_no_ipc_error = gg_util_obj.upload_component_with_version(
-            "foreground_no_ipc_error", "1.0.0")
-        deployment_id = gg_util_obj.create_deployment(
-            gg_util_obj.get_thing_group_arn(new_thing_group_name),
-            [foreground_no_ipc_error], "FirstDeployment")["deploymentId"]
-        assert (gg_util_obj.wait_for_deployment_till_timeout(
-            180, deployment_id) == "FAILED")
+    # Get an auto generated thing group to which the thing is added.
+    new_thing_name = iot_obj.thing_name
+    new_thing_group_name = iot_obj.thing_group_name
+    assert new_thing_group_name is not None
 
-        #Then I can check foreground_no_ipc_error is in state BROKEN within 30 seconds
-        #And the greengrass log eventually contains the following patterns within 5 seconds
-        #  | service-set-state.*serviceName=foreground_no_ipc_error, currentState=RUNNING, newState=ERROR | 2 | should retry 3 times and become broken |
-    finally:
-        print("\n ===== Start cleaning up =====")
-        gg_util_obj.cleanup()
-        ggl_setup.clean_up()
-        iot_obj.clean_up(thing_name=new_thing_name)
+    #When I install the component foreground_no_ipc_error version 1.0.0 from local store
+    foreground_no_ipc_error = gg_util_obj.upload_component_with_version(
+        "foreground_no_ipc_error", "1.0.0")
+    deployment_id = gg_util_obj.create_deployment(
+        gg_util_obj.get_thing_group_arn(new_thing_group_name),
+        [foreground_no_ipc_error], "FirstDeployment")["deploymentId"]
+    assert (gg_util_obj.wait_for_deployment_till_timeout(
+        180, deployment_id) == "FAILED")
+
+    #Then I can check foreground_no_ipc_error is in state BROKEN within 30 seconds
+    #And the greengrass log eventually contains the following patterns within 5 seconds
+    #  | service-set-state.*serviceName=foreground_no_ipc_error, currentState=RUNNING, newState=ERROR | 2 | should retry 3 times and become broken |
 
 
 # Scenario: Runtime-1-T9: I can install a component with a soft dependency locally
 def test_Runtime_1_T9(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
                       system_interface: SystemInterface):
-    try:
-        # When I install the component component_with_soft_dep version 1.0.0 from local store
-        component_recipe_dir = "./components/component_with_soft_dep/1.0.0/recipe/"
-        assert (gg_util_obj.create_local_deployment(
-            None, component_recipe_dir, "component_with_soft_dep=1.0.0"))
+    # When I install the component component_with_soft_dep version 1.0.0 from local store
+    component_recipe_dir = "./components/component_with_soft_dep/1.0.0/recipe/"
+    assert (gg_util_obj.create_local_deployment(
+        None, component_recipe_dir, "component_with_soft_dep=1.0.0"))
 
-        # Then I can check component_with_soft_dep is in state RUNNING within 30 seconds
-        timeout = 30
-        while timeout > 0:
-            if system_interface.check_systemctl_status_for_component(
-                    "component_with_soft_dep") == "RUNNING":
-                break
-            time.sleep(1)
-            timeout -= 1
+    # Then I can check component_with_soft_dep is in state RUNNING within 30 seconds
+    timeout = 30
+    while timeout > 0:
+        if system_interface.check_systemctl_status_for_component(
+                "component_with_soft_dep") == "RUNNING":
+            break
+        time.sleep(1)
+        timeout -= 1
 
-        # And I can check broken_soft_dep is in state BROKEN within 10 seconds
-        timeout = 10
-        while timeout > 0:
-            if system_interface.check_systemctl_status_for_component(
-                    "broken_soft_dep") == "NOT_RUNNING":
-                break
-            time.sleep(1)
-            timeout -= 1
-    finally:
-        print("\n ===== Start cleaning up =====")
-        gg_util_obj.cleanup()
-        ggl_setup.clean_up()
-        iot_obj.clean_up()
+    # And I can check broken_soft_dep is in state BROKEN within 10 seconds
+    timeout = 10
+    while timeout > 0:
+        if system_interface.check_systemctl_status_for_component(
+                "broken_soft_dep") == "NOT_RUNNING":
+            break
+        time.sleep(1)
+        timeout -= 1
 
 
 # Scenario: Runtime-25-T1: As a device application owner, I can expect Greengrass-owner components being robust and can
 # recover from unexpected failures such as kernel reboot
 def test_Runtime_25_T1(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
                        system_interface: SystemInterface):
-    try:
-        # Given my device is running the evergreen-kernel
-        # When I install the component SampleComponentWithArtifacts version 1.0.0 from local store
-        component_artifacts_dir = "./components/local_artifacts/"
-        component_recipe_dir = "./components/SampleComponentWithArtifacts/1.0.0/recipe/"
-        assert (gg_util_obj.create_local_deployment(
-            component_artifacts_dir, component_recipe_dir,
-            "SampleComponentWithArtifacts=1.0.0"))
-        # And I can check SampleComponentWithArtifacts is in state RUNNING within 30 seconds
-        timeout = 30
-        while timeout > 0:
-            if system_interface.check_systemctl_status_for_component(
-                    "SampleComponentWithArtifacts") == "RUNNING":
-                break
-            time.sleep(1)
-            timeout -= 1
-        # When I kill the kernel
-        success_status = system_interface.stop_systemd_nucleus_lite(30)
+    # Given my device is running the evergreen-kernel
+    # When I install the component SampleComponentWithArtifacts version 1.0.0 from local store
+    component_artifacts_dir = "./components/local_artifacts/"
+    component_recipe_dir = "./components/SampleComponentWithArtifacts/1.0.0/recipe/"
+    assert (gg_util_obj.create_local_deployment(
+        component_artifacts_dir, component_recipe_dir,
+        "SampleComponentWithArtifacts=1.0.0"))
+    # And I can check SampleComponentWithArtifacts is in state RUNNING within 30 seconds
+    timeout = 30
+    while timeout > 0:
+        if system_interface.check_systemctl_status_for_component(
+                "SampleComponentWithArtifacts") == "RUNNING":
+            break
+        time.sleep(1)
+        timeout -= 1
+    # When I kill the kernel
+    success_status = system_interface.stop_systemd_nucleus_lite(30)
 
-        # And I start the kernel
-        success_status = system_interface.start_systemd_nucleus_lite(30)
-        # Then I can check the cli to see the status of component SampleComponentWithArtifacts is RUNNING
-        assert (system_interface.check_systemctl_status_for_component(
-            "SampleComponentWithArtifacts") == "RUNNING")
-        # # And No errors were logged
-    finally:
-        print("\n ===== Start cleaning up =====")
-        gg_util_obj.cleanup()
-        ggl_setup.clean_up()
-        iot_obj.clean_up()
+    # And I start the kernel
+    success_status = system_interface.start_systemd_nucleus_lite(30)
+    # Then I can check the cli to see the status of component SampleComponentWithArtifacts is RUNNING
+    assert (system_interface.check_systemctl_status_for_component(
+        "SampleComponentWithArtifacts") == "RUNNING")
+    # # And No errors were logged
 
 
 # Scenario: Runtime-28-T3: As a DO, I can run component as privileged user.
 def test_Runtime_28_T3(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
                        system_interface: SystemInterface):
-    try:
-        # Given my device is running the evergreen-kernel
-        # And I install the component process_status_component_privilege version 0.0.0 from local store
-        component_recipe_dir = "./components/process_status_component_privilege/0.0.0/recipe/"
-        assert (gg_util_obj.create_local_deployment(
-            None, component_recipe_dir,
-            "process_status_component_privilege=0.0.0"))
+    # Given my device is running the evergreen-kernel
+    # And I install the component process_status_component_privilege version 0.0.0 from local store
+    component_recipe_dir = "./components/process_status_component_privilege/0.0.0/recipe/"
+    assert (gg_util_obj.create_local_deployment(
+        None, component_recipe_dir, "process_status_component_privilege=0.0.0"))
 
-        # Then I can check the cli to see the status of component process_status_component_privilege is FINISHED
-        timeout = 10
-        while timeout > 0:
-            if system_interface.check_systemctl_status_for_component(
-                    "process_status_component_privilege") == "FINISHED":
-                break
-            time.sleep(1)
-            timeout -= 1
+    # Then I can check the cli to see the status of component process_status_component_privilege is FINISHED
+    timeout = 10
+    while timeout > 0:
+        if system_interface.check_systemctl_status_for_component(
+                "process_status_component_privilege") == "FINISHED":
+            break
+        time.sleep(1)
+        timeout -= 1
 
-        # And I get assertions that the process was running as privileged user
-        time.sleep(5)    #wait for process to finish
-        assert (system_interface.check_systemd_user(
-            "process_status_component_privilege", 15) == "User=root\n")
-    finally:
-        print("\n ===== Start cleaning up =====")
-        gg_util_obj.cleanup()
-        ggl_setup.clean_up()
-        iot_obj.clean_up()
+    # And I get assertions that the process was running as privileged user
+    time.sleep(5)    #wait for process to finish
+    assert (system_interface.check_systemd_user(
+        "process_status_component_privilege", 15) == "User=root\n")
