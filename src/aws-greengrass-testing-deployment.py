@@ -265,8 +265,10 @@ def test_Deployment_3_T1(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
                          system_interface: SystemInterface):
     # Get an auto generated thing group to which the thing is added.
     new_thing_name = iot_obj.thing_name
-    new_thing_group_name = iot_obj.thing_group_name
-    assert new_thing_group_name is not None
+    id = iot_obj.generate_random_id()
+    new_thing_group_name = iot_obj.generate_thing_group_name(id)
+    new_thing_group_result = iot_obj.add_thing_to_thing_group(new_thing_name, new_thing_group_name)
+    assert new_thing_group_result is True
 
     # I upload component "HelloWorld" version "1.0.0" from the local store
     component_cloud_name = gg_util_obj.upload_component_with_versions(
@@ -326,8 +328,10 @@ def test_Deployment_3_T2(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
 
     # Get an auto generated thing group to which the thing is added.
     new_thing_name = iot_obj.thing_name
-    new_thing_group_name = iot_obj.thing_group_name
-    assert new_thing_group_name is not None
+    id = iot_obj.generate_random_id()
+    new_thing_group_name = iot_obj.generate_thing_group_name(id)
+    new_thing_group_result = iot_obj.add_thing_to_thing_group(new_thing_name, new_thing_group_name)
+    assert new_thing_group_result is True
 
     # When I upload component "HelloWorld" version "1.0.0" from the local store
     # Then I ensure component "HelloWorld" version "1.0.0" exists on cloud within 60 seconds
@@ -396,8 +400,10 @@ def test_Deployment_3_T3(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
                          system_interface: SystemInterface):
     # Get an auto generated thing group to which the thing is added.
     new_thing_name = iot_obj.thing_name
-    new_thing_group_name = iot_obj.thing_group_name
-    assert new_thing_group_name is not None
+    id = iot_obj.generate_random_id()
+    new_thing_group_name = iot_obj.generate_thing_group_name(id)
+    new_thing_group_result = iot_obj.add_thing_to_thing_group(new_thing_name, new_thing_group_name)
+    assert new_thing_group_result is True
 
     # When I upload component "BrokenComponent" version "1.0.0" from the local store
     # Then I ensure component "BrokenComponent" version "1.0.0" exists on cloud within 60 seconds
@@ -452,8 +458,10 @@ def test_Deployment_3_T4(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
                          system_interface: SystemInterface):
     # Get an auto generated thing group to which the thing is added.
     new_thing_name = iot_obj.thing_name
-    new_thing_group_name = iot_obj.thing_group_name
-    assert new_thing_group_name is not None
+    id = iot_obj.generate_random_id()
+    new_thing_group_name = iot_obj.generate_thing_group_name(id)
+    new_thing_group_result = iot_obj.add_thing_to_thing_group(new_thing_name, new_thing_group_name)
+    assert new_thing_group_result is True
 
     # When I upload component "BrokenComponent" version "1.0.0" from the local store
     # Then I ensure component "BrokenComponent" version "1.0.0" exists on cloud within 60 seconds
@@ -505,8 +513,10 @@ def test_Deployment_3_T5(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
                          system_interface: SystemInterface):
     # Get an auto generated thing group to which the thing is added.
     new_thing_name = iot_obj.thing_name
-    new_thing_group_name = iot_obj.thing_group_name
-    assert new_thing_group_name is not None
+    id = iot_obj.generate_random_id()
+    new_thing_group_name = iot_obj.generate_thing_group_name(id)
+    new_thing_group_result = iot_obj.add_thing_to_thing_group(new_thing_name, new_thing_group_name)
+    assert new_thing_group_result is True
 
     # When I upload component "BrokenComponent" version "1.0.0" from the local store
     # Then I ensure component "BrokenComponent" version "1.0.0" exists on cloud within 60 seconds
@@ -558,9 +568,12 @@ def test_Deployment_3_T5(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
 # Scenario: Deployment-5-T2: As a device application owner, I can remove a common component from one of the group the device belongs to from an IoT Jobs deployment
 def test_Deployment_5_T2(gg_util_obj: GGTestUtils, iot_obj: IoTUtils,
                          system_interface: SystemInterface):
-    # Get an auto generated thing group to which the thing is added.
+    # Get an auto generated thing group to which the thing is added. <-- can I set inside the fixture?
     first_thing_name = iot_obj.thing_name
-    first_thing_group_name = iot_obj.thing_group_name
+    id = iot_obj.generate_random_id()
+    first_thing_group_name = iot_obj.generate_thing_group_name(id)
+    first_thing_group_result = iot_obj.add_thing_to_thing_group(first_thing_name, first_thing_group_name)
+    assert first_thing_group_result is True
 
     # When I upload component "Component2BaseCloud" version "1.0.0" from the local store
     # Then I ensure component "Component2BaseCloud" version "1.0.0" exists on cloud within 60 seconds
@@ -579,8 +592,8 @@ def test_Deployment_5_T2(gg_util_obj: GGTestUtils, iot_obj: IoTUtils,
         180, deployment_id) == "SUCCEEDED")
 
     # Get thing added to NewThingGroup.
-    id = iot_obj.set_random_id()
-    second_thing_group_name = iot_obj.set_thing_group_name(id)
+    id = iot_obj.generate_random_id()
+    second_thing_group_name = iot_obj.generate_thing_group_name(id)
     second_thing_group_result = iot_obj.add_thing_to_thing_group(
         first_thing_name, second_thing_group_name)
     assert second_thing_group_result is True
@@ -621,8 +634,10 @@ def test_Deployment_7_T3(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
                          system_interface: SystemInterface):
     # Get an auto generated thing group to which the thing is added.
     first_thing_name = iot_obj.thing_name
-    first_thing_group_name = iot_obj.thing_group_name
-    assert first_thing_group_name is not None
+    id = iot_obj.generate_random_id()
+    first_thing_group_name = iot_obj.generate_thing_group_name(id)
+    first_thing_group_result = iot_obj.add_thing_to_thing_group(first_thing_name, first_thing_group_name)
+    assert first_thing_group_result is True
 
     # When I upload component "Component2BaseCloud" version "1.0.0" from the local store
     # Then I ensure component "Component2BaseCloud" version "1.0.0" exists on cloud within 60 seconds
@@ -644,8 +659,8 @@ def test_Deployment_7_T3(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
         180, deployment_id) == "SUCCEEDED"
 
     # When I create a new thing group
-    id = iot_obj.set_random_id()
-    second_thing_group_name = iot_obj.set_thing_group_name(id)
+    id = iot_obj.generate_random_id()
+    second_thing_group_name = iot_obj.generate_thing_group_name(id)
     second_thing_group_result = iot_obj.add_thing_to_thing_group(
         first_thing_name, second_thing_group_name)
     assert second_thing_group_result is True
@@ -680,8 +695,10 @@ def test_Deployment_7_T4(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
                          system_interface: SystemInterface):
     # Get an auto generated thing group to which the thing is added.
     first_thing_name = iot_obj.thing_name
-    first_thing_group_name = iot_obj.thing_group_name
-    assert first_thing_group_name is not None
+    id = iot_obj.generate_random_id()
+    first_thing_group_name = iot_obj.generate_thing_group_name(id)
+    first_thing_group_result = iot_obj.add_thing_to_thing_group(first_thing_name, first_thing_group_name)
+    assert first_thing_group_result is True
 
     # When I upload component "Component2BaseCloud" version "1.0.0" from the local store
     # Then I ensure component "Component2BaseCloud" version "1.0.0" exists on cloud within 60 seconds
@@ -701,8 +718,8 @@ def test_Deployment_7_T4(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
         180, deployment_id) == "SUCCEEDED")
 
     # When I create a new thing group
-    id = iot_obj.set_random_id()
-    second_thing_group_name = iot_obj.set_thing_group_name(id)
+    id = iot_obj.generate_random_id()
+    second_thing_group_name = iot_obj.generate_thing_group_name(id)
     second_thing_group_result = iot_obj.add_thing_to_thing_group(
         first_thing_name, second_thing_group_name)
     assert second_thing_group_result is True
@@ -740,19 +757,21 @@ def test_Deployment_8_T1(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
                          system_interface: SystemInterface):
     # Given kernel registered as a Thing with thing group GroupA
     a_thing_name = iot_obj.thing_name
-    a_thing_group_name = iot_obj.thing_group_name
-    assert a_thing_group_name is not None
+    id = iot_obj.generate_random_id()
+    a_thing_group_name = iot_obj.generate_thing_group_name(id)
+    a_thing_group_result = iot_obj.add_thing_to_thing_group(a_thing_name, a_thing_group_name)
+    assert a_thing_group_result is True
 
     # Given I add the device to thing group GroupB
-    id = iot_obj.set_random_id()
-    b_thing_group_name = iot_obj.set_thing_group_name(id)
+    id = iot_obj.generate_random_id()
+    b_thing_group_name = iot_obj.generate_thing_group_name(id)
     b_thing_group_result = iot_obj.add_thing_to_thing_group(
         a_thing_name, b_thing_group_name)
     assert b_thing_group_result is True
 
     # And I add the device to thing group GroupC
-    id = iot_obj.set_random_id()
-    c_thing_group_name = iot_obj.set_thing_group_name(id)
+    id = iot_obj.generate_random_id()
+    c_thing_group_name = iot_obj.generate_thing_group_name(id)
     c_thing_group_result = iot_obj.add_thing_to_thing_group(
         a_thing_name, c_thing_group_name)
     assert c_thing_group_result is True
@@ -842,8 +861,10 @@ def test_Deployment_8_T3(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
                          system_interface: SystemInterface):
     # Given kernel registered as a Thing with thing group GroupA
     a_thing_name = iot_obj.thing_name
-    a_thing_group_name = iot_obj.thing_group_name
-    assert a_thing_group_name is not None
+    id = iot_obj.generate_random_id()
+    a_thing_group_name = iot_obj.generate_thing_group_name(id)
+    a_thing_group_result = iot_obj.add_thing_to_thing_group(a_thing_name, a_thing_group_name)
+    assert a_thing_group_result is True
 
     # And I upload component "HelloWorld" version "1.0.0" from the local store
     # And I ensure component "HelloWorld" version "1.0.0" exists on cloud within 60 seconds
@@ -874,12 +895,13 @@ def test_Deployment_8_T3(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     assert system_interface.check_systemctl_status_for_component(
         hello_world_v0_cloud_name[0]) == "RUNNING"
 
-    # When I remove the device's thing group GroupA
-    assert iot_obj.remove_all_thing_groups_from_thing(a_thing_name) is True
+    # When I remove the device from thing group GroupA
+    assert iot_obj.remove_thing_from_thing_group(a_thing_name,
+                                                a_thing_group_name) is True
 
     # And I add the same device to thing group GroupB
-    id = iot_obj.set_random_id()
-    b_thing_group_name = iot_obj.set_thing_group_name(id)
+    id = iot_obj.generate_random_id()
+    b_thing_group_name = iot_obj.generate_thing_group_name(id)
     b_thing_group_result = iot_obj.add_thing_to_thing_group(
         a_thing_name, b_thing_group_name)
     assert b_thing_group_result is True
@@ -910,8 +932,10 @@ def test_Deployment_8_T4(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     # # Will fail if removal from first group is not handled correctly
     # Given kernel registered as a Thing with thing group GroupA
     a_thing_name = iot_obj.thing_name
-    a_thing_group_name = iot_obj.thing_group_name
-    assert a_thing_group_name is not None
+    id = iot_obj.generate_random_id()
+    a_thing_group_name = iot_obj.generate_thing_group_name(id)
+    a_thing_group_result = iot_obj.add_thing_to_thing_group(a_thing_name, a_thing_group_name)
+    assert a_thing_group_result is True
 
     # And I upload component "HelloWorld" version "1.0.0" from the local store
     # And I ensure component "HelloWorld" version "1.0.0" exists on cloud within 60 seconds
@@ -940,12 +964,13 @@ def test_Deployment_8_T4(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     assert system_interface.check_systemctl_status_for_component(
         hello_world_v0_cloud_name[0]) == "RUNNING"
 
-    # When I remove the device's thing group GroupA
-    assert iot_obj.remove_all_thing_groups_from_thing(a_thing_name) is True
+    # When I remove the device from thing group GroupA
+    assert iot_obj.remove_thing_from_thing_group(a_thing_name,
+                                                a_thing_group_name) is True
 
     # And I add the same device to thing group GroupB
-    id = iot_obj.set_random_id()
-    b_thing_group_name = iot_obj.set_thing_group_name(id)
+    id = iot_obj.generate_random_id()
+    b_thing_group_name = iot_obj.generate_thing_group_name(id)
     b_thing_group_result = iot_obj.add_thing_to_thing_group(
         a_thing_name, b_thing_group_name)
     assert b_thing_group_result is True
@@ -978,8 +1003,10 @@ def test_Deployment_8_T5(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     # # A depends on HW-1.0.0
     # Given kernel registered as a Thing with thing group GroupA
     a_thing_name = iot_obj.thing_name
-    a_thing_group_name = iot_obj.thing_group_name
-    assert a_thing_group_name is not None
+    id = iot_obj.generate_random_id()
+    a_thing_group_name = iot_obj.generate_thing_group_name(id)
+    a_thing_group_result = iot_obj.add_thing_to_thing_group(a_thing_name, a_thing_group_name)
+    assert a_thing_group_result is True
 
     # And I upload component "HelloWorld" version "1.0.0" from the local store
     # And I ensure component "HelloWorld" version "1.0.0" exists on cloud within 60 seconds
@@ -1029,12 +1056,13 @@ def test_Deployment_8_T5(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     assert system_interface.check_systemctl_status_for_component(
         hello_world_v0_cloud_name[0]) == "RUNNING"
 
-    # When I remove the device's thing group GroupA
-    assert iot_obj.remove_all_thing_groups_from_thing(a_thing_name) is True
+    # When I remove the device from thing group GroupA
+    assert iot_obj.remove_thing_from_thing_group(a_thing_name,
+                                                a_thing_group_name) is True
 
     # And I add the same device to thing group GroupB
-    id = iot_obj.set_random_id()
-    b_thing_group_name = iot_obj.set_thing_group_name(id)
+    id = iot_obj.generate_random_id()
+    b_thing_group_name = iot_obj.generate_thing_group_name(id)
     b_thing_group_result = iot_obj.add_thing_to_thing_group(
         a_thing_name, b_thing_group_name)
     assert b_thing_group_result is True
@@ -1074,8 +1102,10 @@ def test_Deployment_8_T8_multigroup(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     # # HelloWorld version 1.0.0 and 1.0.1 are uploaded in the scenario background
     # Given kernel registered as a Thing with thing group GroupA
     a_thing_name = iot_obj.thing_name
-    a_thing_group_name = iot_obj.thing_group_name
-    assert a_thing_group_name is not None
+    id = iot_obj.generate_random_id()
+    a_thing_group_name = iot_obj.generate_thing_group_name(id)
+    a_thing_group_result = iot_obj.add_thing_to_thing_group(a_thing_name, a_thing_group_name)
+    assert a_thing_group_result is True
 
     # And I upload component "HelloWorld" version "1.0.0" from the local store
     # And I upload component "HelloWorld" version "1.0.1" from the local store
@@ -1125,8 +1155,8 @@ def test_Deployment_8_T8_multigroup(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
         hello_world_cloud_name[0]) == "RUNNING"
 
     # And I add the device to thing group GroupB
-    id = iot_obj.set_random_id()
-    b_thing_group_name = iot_obj.set_thing_group_name(id)
+    id = iot_obj.generate_random_id()
+    b_thing_group_name = iot_obj.generate_thing_group_name(id)
     b_thing_group_result = iot_obj.add_thing_to_thing_group(
         a_thing_name, b_thing_group_name)
     assert b_thing_group_result is True

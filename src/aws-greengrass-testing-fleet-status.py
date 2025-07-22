@@ -53,8 +53,10 @@ def test_FleetStatus_1_T1(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
                           system_interface: SystemInterface):
     # Get an auto generated thing group to which the thing is added.
     fss_thing_name = iot_obj.thing_name
-    fss_thing_group_name = iot_obj.thing_group_name
-    assert fss_thing_group_name is not None
+    id = iot_obj.generate_random_id()
+    fss_thing_group_name = iot_obj.generate_thing_group_name(id)
+    fss_thing_group_result = iot_obj.add_thing_to_thing_group(fss_thing_name, fss_thing_group_name)
+    assert fss_thing_group_result is True
 
     # When I upload component "HelloWorld" version "1.0.0" from the local store
     component_cloud_name = gg_util_obj.upload_component_with_versions(
@@ -89,8 +91,10 @@ def test_FleetStatus_1_T3(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
                           system_interface: SystemInterface):
     # Get an auto generated thing group to which the thing is added.
     fss_thing_name = iot_obj.thing_name
-    fss_thing_group_name = iot_obj.thing_group_name
-    assert fss_thing_group_name is not None
+    id = iot_obj.generate_random_id()
+    fss_thing_group_name = iot_obj.generate_thing_group_name(id)
+    fss_thing_group_result = iot_obj.add_thing_to_thing_group(fss_thing_name, fss_thing_group_name)
+    assert fss_thing_group_result is True
 
     # When I upload component BrokenAfterDeployed version 1.0.0 with configuration from the local store
     #         | key               | value |

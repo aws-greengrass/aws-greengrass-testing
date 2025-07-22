@@ -53,8 +53,10 @@ def test_Component_12_T1(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
                          system_interface: SystemInterface):
     # Get an auto generated thing group to which the thing is added.
     new_thing_name = iot_obj.thing_name
-    new_thing_group_name = iot_obj.thing_group_name
-    assert new_thing_group_name is not None
+    id = iot_obj.generate_random_id()
+    new_thing_group_name = iot_obj.generate_thing_group_name(id)
+    new_thing_group_result = iot_obj.add_thing_to_thing_group(new_thing_name, new_thing_group_name)
+    assert new_thing_group_result is True
 
     # I upload component "MultiPlatform" version "1.0.0" from the local store
     component_cloud_name = gg_util_obj.upload_component_with_versions(
@@ -88,8 +90,10 @@ def test_Component_16_T1(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
                          system_interface: SystemInterface):
     # Get an auto generated thing group to which the thing is added.
     new_thing_name = iot_obj.thing_name
-    new_thing_group_name = iot_obj.thing_group_name
-    assert new_thing_group_name is not None
+    id = iot_obj.generate_random_id()
+    new_thing_group_name = iot_obj.generate_thing_group_name(id)
+    new_thing_group_result = iot_obj.add_thing_to_thing_group(new_thing_name, new_thing_group_name)
+    assert new_thing_group_result is True
 
     # I upload component "HelloWorld" version "1.0.0" from the local store
     component_cloud_name = gg_util_obj.upload_component_with_versions(
@@ -128,8 +132,10 @@ def test_Component_27_T1(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
 
     # Get an auto generated thing group to which the thing is added.
     new_thing_name = iot_obj.thing_name
-    new_thing_group_name = iot_obj.thing_group_name
-    assert new_thing_group_name is not None
+    id = iot_obj.generate_random_id()
+    new_thing_group_name = iot_obj.generate_thing_group_name(id)
+    new_thing_group_result = iot_obj.add_thing_to_thing_group(new_thing_name, new_thing_group_name)
+    assert new_thing_group_result is True
 
     # Given I upload component "HelloWorld" version "1.0.0" from the local store
     # And I ensure component "HelloWorld" version "1.0.0" exists on cloud within 120 seconds
@@ -266,8 +272,10 @@ def test_Component_29_T4(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
 
     # Get an auto generated thing group to which the thing is added.
     new_thing_name = iot_obj.thing_name
-    new_thing_group_name = iot_obj.thing_group_name
-    assert new_thing_group_name is not None
+    id = iot_obj.generate_random_id()
+    new_thing_group_name = iot_obj.generate_thing_group_name(id)
+    new_thing_group_result = iot_obj.add_thing_to_thing_group(new_thing_name, new_thing_group_name)
+    assert new_thing_group_result is True
 
     # I upload component "aws.gg.uat.cloud.ComponentConfigTestService" version "1.0.0" from the local store
     # I ensure component "aws.gg.uat.cloud.ComponentConfigTestService" version "1.0.0" exists on cloud with scope private within 60 seconds
