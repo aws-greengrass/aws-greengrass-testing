@@ -19,7 +19,7 @@ class IoTUtils():
         self._iam_client = client("iam", region_name=self._region)
         self._gg_client = client("greengrassv2", region_name=self._region)
         self._thing_groups = []
-        
+
     @property
     def thing_name(self):
         return self._thing_name
@@ -56,7 +56,7 @@ class IoTUtils():
             cert_arn = cert_response['certificateArn']
 
             self._iot_client.attach_thing_principal(thingName=thing_name,
-                                                   principal=cert_arn)
+                                                    principal=cert_arn)
 
         except Exception as error:
             print(f"Error when creating thing: {str(error)}")
@@ -103,32 +103,32 @@ class IoTUtils():
             return True
         return False
 
-    def remove_thing_from_thing_group(self, thing_name: str, thing_group_name: str) -> bool | None:
+    def remove_thing_from_thing_group(self, thing_name: str,
+                                      thing_group_name: str) -> bool | None:
         try:
             # Check if the thing group exists
-            self._iot_client.describe_thing_group(thingGroupName=thing_group_name)
-            
+            self._iot_client.describe_thing_group(
+                thingGroupName=thing_group_name)
+
             # Check if the thing is in the group before attempting removal
             response = self._iot_client.list_things_in_thing_group(
-                thingGroupName=thing_group_name,
-                recursive=True
-            )
-            
+                thingGroupName=thing_group_name, recursive=True)
+
             # If the thing is not in the group, return False
             if thing_name not in response.get('things', []):
                 return False
-            
+
             # Proceed with removal
             self._iot_client.remove_thing_from_thing_group(
-                thingName=thing_name,
-                thingGroupName=thing_group_name
-            )
+                thingName=thing_name, thingGroupName=thing_group_name)
             return True
         except self._iot_client.exceptions.ResourceNotFoundException:
             print(f"Thing group {thing_group_name} does not exist")
             return None
         except self._iot_client.exceptions.ClientError as e:
-            print(f"Error removing thing '{thing_name}' from thing group '{thing_group_name}': {e}")
+            print(
+                f"Error removing thing '{thing_name}' from thing group '{thing_group_name}': {e}"
+            )
             return False
 
     def delete_core_device(self):
@@ -180,15 +180,15 @@ class IoTUtils():
 
                 # Detach certificate from thing
                 self._iot_client.detach_thing_principal(thingName=thing_name,
-                                                       principal=principal)
+                                                        principal=principal)
 
                 # Update certificate to INACTIVE
                 self._iot_client.update_certificate(certificateId=cert_id,
-                                                   newStatus='INACTIVE')
+                                                    newStatus='INACTIVE')
 
                 # Delete the certificate
                 self._iot_client.delete_certificate(certificateId=cert_id,
-                                                   forceDelete=True)
+                                                    forceDelete=True)
 
             # Finally, delete the thing
             self._iot_client.delete_thing(thingName=thing_name)
@@ -213,7 +213,9 @@ class IoTUtils():
             return True
 
         except self._iot_client.exceptions.ResourceNotFoundException:
-            print(f"Thing group '{thing_group_name}' does not exist, nothing to delete")
+            print(
+                f"Thing group '{thing_group_name}' does not exist, nothing to delete"
+            )
             return True
 
         except Exception as e:
@@ -227,7 +229,8 @@ class IoTUtils():
         try:
 
             for thing_group in self._thing_groups:
-                self.remove_thing_from_thing_group(self._thing_name, thing_group)
+                self.remove_thing_from_thing_group(self._thing_name,
+                                                   thing_group)
                 self.delete_thing_group(thing_group)
 
             # Delete the core device
@@ -354,4 +357,4 @@ class IoTUtils():
                 policyDocument=json.dumps(policy_document))
 
         self._iot_client.attach_policy(policyName=iot_policy_name,
-                                      target=cert_arn)
+                                       target=cert_arn)

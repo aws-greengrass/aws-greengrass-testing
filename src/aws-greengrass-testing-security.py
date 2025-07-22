@@ -82,7 +82,8 @@ def test_Security_6_T2_T3_T4_T5_T10(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     security_thing_name = iot_obj.thing_name
     id = iot_obj.generate_random_id()
     security_thing_group_name = iot_obj.generate_thing_group_name(id)
-    security_thing_group_result = iot_obj.add_thing_to_thing_group(security_thing_name, security_thing_group_name)
+    security_thing_group_result = iot_obj.add_thing_to_thing_group(
+        security_thing_name, security_thing_group_name)
     assert security_thing_group_result is True
 
     pubsub_cloud_name = gg_util_obj.upload_component_with_versions(
@@ -136,7 +137,8 @@ def test_Security_6_T2_T3_T4_T5_mqtt(iot_obj: IoTUtils,
     security_thing_name = iot_obj.thing_name
     id = iot_obj.generate_random_id()
     security_thing_group_name = iot_obj.generate_thing_group_name(id)
-    security_thing_group_result = iot_obj.add_thing_to_thing_group(security_thing_name, security_thing_group_name)
+    security_thing_group_result = iot_obj.add_thing_to_thing_group(
+        security_thing_name, security_thing_group_name)
     assert security_thing_group_result is True
 
     mqtt_cloud_name = gg_util_obj.upload_component_with_versions(
@@ -187,7 +189,8 @@ def test_Security_6_T6(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     security_thing_name = iot_obj.thing_name
     id = iot_obj.generate_random_id()
     security_thing_group_name = iot_obj.generate_thing_group_name(id)
-    security_thing_group_result = iot_obj.add_thing_to_thing_group(security_thing_name, security_thing_group_name)
+    security_thing_group_result = iot_obj.add_thing_to_thing_group(
+        security_thing_name, security_thing_group_name)
     assert security_thing_group_result is True
 
     # When I install the component HelloWorldPubSub version 1.0.0 from local store
@@ -226,7 +229,8 @@ def test_Security_6_T7(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     security_thing_name = iot_obj.thing_name
     id = iot_obj.generate_random_id()
     security_thing_group_name = iot_obj.generate_thing_group_name(id)
-    security_thing_group_result = iot_obj.add_thing_to_thing_group(security_thing_name, security_thing_group_name)
+    security_thing_group_result = iot_obj.add_thing_to_thing_group(
+        security_thing_name, security_thing_group_name)
     assert security_thing_group_result is True
 
     # When I install the component HelloWorldPubSub version 1.0.0 from local store
@@ -287,7 +291,8 @@ def test_Security_6_T15(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     security_thing_name = iot_obj.thing_name
     id = iot_obj.generate_random_id()
     security_thing_group_name = iot_obj.generate_thing_group_name(id)
-    security_thing_group_result = iot_obj.add_thing_to_thing_group(security_thing_name, security_thing_group_name)
+    security_thing_group_result = iot_obj.add_thing_to_thing_group(
+        security_thing_name, security_thing_group_name)
     assert security_thing_group_result is True
 
     # When I install the component HelloWorldPubSub version 1.0.0 from local store
@@ -380,7 +385,8 @@ def test_Security_6_T22(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     security_thing_name = iot_obj.thing_name
     id = iot_obj.generate_random_id()
     security_thing_group_name = iot_obj.generate_thing_group_name(id)
-    security_thing_group_result = iot_obj.add_thing_to_thing_group(security_thing_name, security_thing_group_name)
+    security_thing_group_result = iot_obj.add_thing_to_thing_group(
+        security_thing_name, security_thing_group_name)
     assert security_thing_group_result is True
 
     # When I install the component PubsubSubscriber version 0.0.0 from local store

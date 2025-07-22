@@ -55,7 +55,8 @@ def test_FleetStatus_1_T1(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     fss_thing_name = iot_obj.thing_name
     id = iot_obj.generate_random_id()
     fss_thing_group_name = iot_obj.generate_thing_group_name(id)
-    fss_thing_group_result = iot_obj.add_thing_to_thing_group(fss_thing_name, fss_thing_group_name)
+    fss_thing_group_result = iot_obj.add_thing_to_thing_group(
+        fss_thing_name, fss_thing_group_name)
     assert fss_thing_group_result is True
 
     # When I upload component "HelloWorld" version "1.0.0" from the local store
@@ -93,7 +94,8 @@ def test_FleetStatus_1_T3(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     fss_thing_name = iot_obj.thing_name
     id = iot_obj.generate_random_id()
     fss_thing_group_name = iot_obj.generate_thing_group_name(id)
-    fss_thing_group_result = iot_obj.add_thing_to_thing_group(fss_thing_name, fss_thing_group_name)
+    fss_thing_group_result = iot_obj.add_thing_to_thing_group(
+        fss_thing_name, fss_thing_group_name)
     assert fss_thing_group_result is True
 
     # When I upload component BrokenAfterDeployed version 1.0.0 with configuration from the local store

@@ -57,7 +57,8 @@ def test_Runtime_1_T4(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     new_thing_name = iot_obj.thing_name
     id = iot_obj.generate_random_id()
     new_thing_group_name = iot_obj.generate_thing_group_name(id)
-    new_thing_group_result = iot_obj.add_thing_to_thing_group(new_thing_name, new_thing_group_name)
+    new_thing_group_result = iot_obj.add_thing_to_thing_group(
+        new_thing_name, new_thing_group_name)
     assert new_thing_group_result is True
 
     # When I install the component state_transition_timeout version 1.0.0 from local store
@@ -95,7 +96,8 @@ def test_Runtime_1_T5(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     new_thing_name = iot_obj.thing_name
     id = iot_obj.generate_random_id()
     new_thing_group_name = iot_obj.generate_thing_group_name(id)
-    new_thing_group_result = iot_obj.add_thing_to_thing_group(new_thing_name, new_thing_group_name)
+    new_thing_group_result = iot_obj.add_thing_to_thing_group(
+        new_thing_name, new_thing_group_name)
     assert new_thing_group_result is True
 
     #When I install the component foreground_no_ipc_error version 1.0.0 from local store
