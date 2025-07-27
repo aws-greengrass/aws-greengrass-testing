@@ -311,8 +311,9 @@ class SystemInterface:
                     return False
 
                 output = process.stdout.readline()
-                print(f"Journalctl output: {output}")
+
                 if output:
+                    print(f"Journalctl output: {output}")
                     if message in output.strip():
                         print(f"Found log")
                         return True
