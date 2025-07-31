@@ -26,6 +26,7 @@ setup_and_cleanup() {
     {
         sudo apt install python3-venv
         python3 -m venv env
+        # shellcheck source=/dev/null
         . ./env/bin/activate
         pip install .
     } || {
@@ -37,7 +38,7 @@ setup_and_cleanup() {
     # Test execution phase
     echo "Executing test: $test_name"
     if ! pytest -q -s -v \
-        ./src/aws-greengrass-testing-$TEST_CATEGORY.py \
+        ./src/aws-greengrass-testing-"$TEST_CATEGORY".py \
         -k "$test_name" \
         --commit-id="$COMMIT_ID" \
         --aws-account="$AWS_ACCOUNT" \
@@ -85,7 +86,7 @@ print_report() {
 # Get all test functions and run setup_and_cleanup for each
 main() {
     local overall_status=0
-    test_functions=($(get_test_functions))
+    mapfile -t test_functions < <(get_test_functions)
 
     # Run setup_and_cleanup for each test function
     for test_func in "${test_functions[@]}"; do
