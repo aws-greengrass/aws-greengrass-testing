@@ -178,7 +178,7 @@ def _download_source(commit_id: str, max_retries=3) -> bool:
 
         except requests.exceptions.RequestException as e:
             print(f"Error when downloading aws-greengrass-lite, {str(e)}")
-            if attemp == max_retries - 1:
+            if attempt == max_retries - 1:
                 print(
                     f"Failed to download aws-greengrass-lite after {max_retries} attempts"
                 )
