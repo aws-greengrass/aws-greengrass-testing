@@ -1,0 +1,36 @@
+# aws-greengrass-system-log-forwarder - AWS Greengrass component for forwarding
+# logs to CloudWatch.
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+---
+RecipeFormatVersion: "2020-01-25"
+ComponentName: "aws.greengrass.SystemLogForwarderTest"
+ComponentVersion: "0.1.0"
+ComponentDescription: AWS Greengrass System Log Forwarder
+ComponentPublisher: AWS
+ComponentDependencies:
+  aws.greengrass.TokenExchangeService:
+    VersionRequirement: ">=2.0.0"
+    DependencyType: HARD
+ComponentConfiguration:
+  DefaultConfiguration:
+    maxUploadIntervalSec: 300
+    bufferCapacity: 1048576
+    logGroup: "greengrass/systemLogs"
+    logStream: ""
+    filters:
+      services: ["ggl.*"]
+Manifests:
+  - Platform:
+      os: linux
+      runtime: "*"
+    Artifacts:
+      - URI: s3://$bucketName$/$testArtifactsDirectory$/system-log-forwarder
+    Lifecycle:
+      run:
+        RequiresPrivilege: true
+        Script: |
+          {artifacts:path}/system-log-forwarder --maxUploadIntervalSec {configuration:/maxUploadIntervalSec} \
+            --bufferCapacity {configuration:/bufferCapacity} --logGroup {configuration:/logGroup} \
+            --logStream "{configuration:/logStream}" --thingName {iot:thingName} \
+            --filters {configuration:/filters}
