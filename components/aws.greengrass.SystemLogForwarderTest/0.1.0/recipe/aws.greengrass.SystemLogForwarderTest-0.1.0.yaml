@@ -23,9 +23,12 @@ ComponentConfiguration:
 Manifests:
   - Platform:
       os: linux
-      runtime: "*"
+      runtime: "aws_nucleus_lite"
     Artifacts:
       - URI: s3://$bucketName$/$testArtifactsDirectory$/system-log-forwarder
+        Permission:
+          Read: "OWNER"
+          Execute: "OWNER"
     Lifecycle:
       run:
         RequiresPrivilege: true
