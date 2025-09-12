@@ -59,7 +59,7 @@ def cloudwatch_cleanup(request) -> Generator[None, None, None]:
     import time
     test_id = f"{int(time.time())}-{request.node.name}"
     log_group_name = f"greengrass/systemLogs-{test_id}"
-    cleanup_info = {'thing_name': None, 'log_group_name': log_group_name}
+    cleanup_info = {'log_stream_name': None, 'log_group_name': log_group_name}
 
     yield cleanup_info
 
@@ -67,24 +67,25 @@ def cloudwatch_cleanup(request) -> Generator[None, None, None]:
     print(f"Starting CloudWatch cleanup...")
     try:
         log_group_name = cleanup_info.get('log_group_name')
-        thing_name = cleanup_info.get('thing_name')
-        print(f"Thing name for cleanup: {thing_name}")
+        log_stream_name = cleanup_info.get('log_stream_name')
+        print(f"Log stream name for cleanup: {log_stream_name}")
         print(f"Log group for cleanup: {log_group_name}")
 
-        if thing_name:
+        if log_stream_name:
             try:
                 logs_client.delete_log_stream(logGroupName=log_group_name,
-                                              logStreamName=thing_name)
-                print(f"Deleted log stream: {thing_name}")
+                                              logStreamName=log_stream_name)
+                print(f"Deleted log stream: {log_stream_name}")
             except Exception as cleanup_e:
                 if "ResourceNotFoundException" in str(cleanup_e):
                     print(
-                        f"Log stream {thing_name} or log group {log_group_name} does not exist"
+                        f"Log stream {log_stream_name} or log group {log_group_name} does not exist"
                     )
                 else:
                     print(f"Failed to delete log stream: {cleanup_e}")
 
         # Check if log group exists before trying to clean it up
+        # TODO: Only delete log group if it was created during the test--check if the log group exists before deploying SLF.
         try:
             response = logs_client.describe_log_groups(
                 logGroupNamePrefix=log_group_name)
@@ -97,30 +98,6 @@ def cloudwatch_cleanup(request) -> Generator[None, None, None]:
                 return
 
             print(f"Log group {log_group_name} exists, proceeding with cleanup")
-
-            # List remaining streams before trying to delete group
-            try:
-                streams = logs_client.describe_log_streams(
-                    logGroupName=log_group_name)
-                remaining_streams = [
-                    s['logStreamName'] for s in streams.get('logStreams', [])
-                ]
-                print(f"Remaining streams: {remaining_streams}")
-
-                # Delete any remaining streams
-                for stream_name in remaining_streams:
-                    try:
-                        logs_client.delete_log_stream(
-                            logGroupName=log_group_name,
-                            logStreamName=stream_name)
-                        print(f"Deleted remaining stream: {stream_name}")
-                    except Exception as e:
-                        print(f"Failed to delete stream {stream_name}: {e}")
-            except Exception as e:
-                if "ResourceNotFoundException" in str(e):
-                    print(f"Log group {log_group_name} was already deleted")
-                else:
-                    print(f"Failed to list streams: {e}")
 
             try:
                 logs_client.delete_log_group(logGroupName=log_group_name)
@@ -140,8 +117,8 @@ def cloudwatch_cleanup(request) -> Generator[None, None, None]:
 # Scenario: SLF-1-T1: As a device application owner, I can deploy SLF to my device with default configuration values and the component will be healthy and the deployment succeeds.
 def test_SLF_1_T1(iot_obj: IoTUtils, cloudwatch_cleanup,
                   gg_util_obj: GGTestUtils, system_interface: SystemInterface):
-    # Store thing name for cleanup - use default log group name
-    cloudwatch_cleanup['thing_name'] = iot_obj.thing_name
+    # Store log stream name for cleanup - use default log group name
+    cloudwatch_cleanup['log_stream_name'] = iot_obj.thing_name
     cloudwatch_cleanup['log_group_name'] = "greengrass/systemLogs"
 
     # Get an auto generated thing group to which the thing is added.
@@ -197,8 +174,8 @@ def test_SLF_1_T1(iot_obj: IoTUtils, cloudwatch_cleanup,
 # Scenario: SLF-1-T2: As a device application owner, I can deploy SLF to my device with default filter configuration and reduced time-based configuration and observe logs show up in the cloud.
 def test_SLF_1_T2(iot_obj: IoTUtils, cloudwatch_cleanup,
                   gg_util_obj: GGTestUtils, system_interface: SystemInterface):
-    # Store thing name for cleanup
-    cloudwatch_cleanup['thing_name'] = iot_obj.thing_name
+    # Store log stream name for cleanup
+    cloudwatch_cleanup['log_stream_name'] = iot_obj.thing_name
     # Get an auto generated thing group to which the thing is added.
     new_thing_name = iot_obj.thing_name
     random_id = iot_obj.generate_random_id()
@@ -290,8 +267,8 @@ def test_SLF_1_T2(iot_obj: IoTUtils, cloudwatch_cleanup,
 # Scenario: SLF-1-T3: As a device application owner, I can deploy SLF to my device with a configured log group name.
 def test_SLF_1_T3(iot_obj: IoTUtils, cloudwatch_cleanup,
                   gg_util_obj: GGTestUtils, system_interface: SystemInterface):
-    # Store thing name for cleanup
-    cloudwatch_cleanup['thing_name'] = iot_obj.thing_name
+    # Store log stream name for cleanup
+    cloudwatch_cleanup['log_stream_name'] = iot_obj.thing_name
     # Use the log group name from cleanup fixture (which is already unique)
     custom_log_group = cloudwatch_cleanup['log_group_name']
 
@@ -372,9 +349,9 @@ def test_SLF_1_T3(iot_obj: IoTUtils, cloudwatch_cleanup,
 # Scenario: SLF-1-T4: As a device application owner, I can deploy SLF to my device with a configured log stream name.
 def test_SLF_1_T4(iot_obj: IoTUtils, cloudwatch_cleanup,
                   gg_util_obj: GGTestUtils, system_interface: SystemInterface):
-    # Store thing name for cleanup
-    cloudwatch_cleanup['thing_name'] = iot_obj.thing_name
+    # Store custom log stream name for cleanup
     custom_log_stream = f"custom-stream-{int(time.time())}"
+    cloudwatch_cleanup['log_stream_name'] = custom_log_stream
 
     # Get an auto generated thing group to which the thing is added.
     new_thing_name = iot_obj.thing_name
