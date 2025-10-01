@@ -6,34 +6,62 @@
 RecipeFormatVersion: "2020-01-25"
 ComponentName: "aws.greengrass.SystemLogForwarderTest"
 ComponentVersion: "0.1.0"
-ComponentDescription: AWS Greengrass System Log Forwarder
-ComponentPublisher: AWS
-ComponentDependencies:
-  aws.greengrass.TokenExchangeService:
-    VersionRequirement: ">=2.0.0"
-    DependencyType: HARD
+ComponentType: "aws.greengrass.generic"
+ComponentDescription:
+  "A generic component which uploads system logs to CloudWatch."
+ComponentPublisher: "AWS"
 ComponentConfiguration:
   DefaultConfiguration:
-    maxUploadIntervalSec: 300
-    bufferCapacity: 1048576
+    maxUploadIntervalSec: "300"
+    bufferCapacity: "1048576"
     logGroup: "greengrass/systemLogs"
     logStream: ""
     filters:
-      services: ["ggl.*"]
+      services:
+        - "ggl.*"
+ComponentDependencies:
+  aws.greengrass.TokenExchangeService:
+    VersionRequirement: ">=2.0.0"
+    DependencyType: "HARD"
 Manifests:
   - Platform:
-      os: linux
+      os: "linux"
       runtime: "aws_nucleus_lite"
+      architecture: "aarch64"
+    Lifecycle:
+      run:
+        Script: "{artifacts:path}/system-log-forwarder-arm64
+          --maxUploadIntervalSec\
+          \ {configuration:/maxUploadIntervalSec} --bufferCapacity
+          {configuration:/bufferCapacity}\
+          \ --logGroup {configuration:/logGroup} --logStream
+          \"{configuration:/logStream}\"\
+          \ --thingName {iot:thingName} --filters {configuration:/filters}"
+        RequiresPrivilege: "true"
     Artifacts:
-      - URI: s3://$bucketName$/$testArtifactsDirectory$/system-log-forwarder
+      - Uri: s3://$bucketName$/$testArtifactsDirectory$/system-log-forwarder-arm64
+        Unarchive: "NONE"
         Permission:
           Read: "OWNER"
           Execute: "OWNER"
+  - Platform:
+      os: "linux"
+      runtime: "aws_nucleus_lite"
+      architecture: "amd64"
     Lifecycle:
       run:
-        RequiresPrivilege: true
-        Script: |
-          {artifacts:path}/system-log-forwarder --maxUploadIntervalSec {configuration:/maxUploadIntervalSec} \
-            --bufferCapacity {configuration:/bufferCapacity} --logGroup {configuration:/logGroup} \
-            --logStream "{configuration:/logStream}" --thingName {iot:thingName} \
-            --filters {configuration:/filters}
+        Script: "{artifacts:path}/system-log-forwarder-x86_64
+          --maxUploadIntervalSec\
+          \ {configuration:/maxUploadIntervalSec} --bufferCapacity
+          {configuration:/bufferCapacity}\
+          \ --logGroup {configuration:/logGroup} --logStream
+          \"{configuration:/logStream}\"\
+          \ --thingName {iot:thingName} --filters {configuration:/filters}"
+        RequiresPrivilege: "true"
+    Artifacts:
+      - Uri: s3://$bucketName$/$testArtifactsDirectory$/system-log-forwarder-x86_64
+        Unarchive: "NONE"
+        Permission:
+          Read: "OWNER"
+          Execute: "OWNER"
+Lifecycle: {}
