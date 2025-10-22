@@ -88,7 +88,7 @@ def install_greengrass_lite_from_source(commit_id: str, region: str):
 
         move_result1 = _copy_file(src_path, temp_path)
         config_result = _modify_config(iot_client, thing_name, temp_path,
-                                       "ggcore", "ggcore")
+                                       "ggcore", "ggcore", region)
         move_result2 = _copy_file(temp_path, dest_path)
         remove_result = _remove_file(temp_path)
         if not config_result or not move_result1 or not move_result2 or not remove_result:
@@ -342,7 +342,7 @@ def _tes_setup(device_cert: str, private_key: str) -> bool:
 
 
 def _modify_config(iot_client: client, thing_name: str, file_path: str,
-                   group: str, user: str) -> bool:
+                   group: str, user: str, region: str) -> bool:
 
     try:
         iot_data_endpoint = iot_client.describe_endpoint(
@@ -357,6 +357,8 @@ def _modify_config(iot_client: client, thing_name: str, file_path: str,
         data['system']['privateKeyPath'] = PRIVATE_PATH
         data['system']['certificateFilePath'] = DEVICE_PATH
         data['system']['rootCaPath'] = CA_PATH
+        data['services']['aws.greengrass.NucleusLite']['configuration'][
+            'awsRegion'] = region
         data['services']['aws.greengrass.NucleusLite']['configuration'][
             'iotCredEndpoint'] = iot_cred_endpoint
         data['services']['aws.greengrass.NucleusLite']['configuration'][
