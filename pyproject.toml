@@ -4,7 +4,7 @@ version = "0.1.0"
 description = ""
 license = "Apache-2.0"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.10"
 dependencies = [
     "awsiotsdk>=1.22.2",
     "boto3>=1.38.4",
