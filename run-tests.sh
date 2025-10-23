@@ -24,7 +24,7 @@ setup_and_cleanup() {
     # Setup phase
     echo "Setting up python3 venv environment"
     {
-        sudo apt install python3-venv
+        sudo apt install -y python3-venv
         python3 -m venv env
         # shellcheck source=/dev/null
         . ./env/bin/activate
