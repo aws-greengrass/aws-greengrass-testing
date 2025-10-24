@@ -1,3 +1,4 @@
+ASAN
 awsiotsdk
 cbor
 clientv
@@ -22,6 +23,7 @@ javax
 journalctl
 libsystemd
 libyaml
+LSAN
 mqtt
 mqttproxy
 murty

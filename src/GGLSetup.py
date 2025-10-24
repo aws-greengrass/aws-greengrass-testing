@@ -101,12 +101,53 @@ def install_greengrass_lite_from_source(commit_id: str, region: str):
 
         # run nucleus
         os.chmod('misc/run_nucleus', 0o775)
-        process = subprocess.run(['sudo', './misc/run_nucleus'],
-                                 check=True,
-                                 text=True,
-                                 stdout=subprocess.PIPE,
-                                 stderr=subprocess.PIPE)
-        print("Successfully installed the nucleus from source")
+        try:
+            process = subprocess.run(['sudo', './misc/run_nucleus'],
+                                     check=True,
+                                     text=True,
+                                     stdout=subprocess.PIPE,
+                                     stderr=subprocess.PIPE)
+            print("Successfully installed the nucleus from source")
+        except subprocess.CalledProcessError as e:
+            print(f"FATAL: run_nucleus failed with exit code {e.returncode}")
+            print(f"stdout: {e.stdout}")
+            print(f"stderr: {e.stderr}")
+            raise Exception(
+                f"Greengrass setup failed: run_nucleus script failed")
+
+        # Wait for device to register with Greengrass V2
+        import boto3
+        import time
+        import yaml
+
+        # Read thing name from config
+        try:
+            with open('/etc/greengrass/config.yaml', 'r') as f:
+                config = yaml.safe_load(f)
+                thing_name = config['system']['thingName']
+        except Exception as e:
+            raise Exception(
+                f"FATAL: Could not read thing name from config: {e}")
+
+        gg_client = boto3.client('greengrassv2')
+
+        for attempt in range(30):    # Wait up to 5 minutes
+            try:
+                gg_client.get_core_device(coreDeviceThingName=thing_name)
+                print(
+                    f"Device {thing_name} successfully registered with Greengrass V2"
+                )
+                break
+            except gg_client.exceptions.ResourceNotFoundException:
+                time.sleep(10)
+                print(
+                    f"Waiting for device registration... attempt {attempt + 1}/30"
+                )
+        else:
+            raise Exception(
+                f"FATAL: Device {thing_name} failed to register with Greengrass after 5 minutes"
+            )
+        print("Successfully installed and started the nucleus from source")
 
     except Exception as e:
         print(f"Unexpected error: {e}")
@@ -153,8 +194,8 @@ def _download_source(commit_id: str, max_retries=3) -> bool:
     target_folder = "aws-greengrass-lite"
 
     if os.path.isdir(target_folder):
-        print("Please clean up before downloading the aws-greengrass-lite")
-        return False
+        print(f"Removing existing {target_folder} directory")
+        shutil.rmtree(target_folder)
 
     for attempt in range(max_retries):
         try:

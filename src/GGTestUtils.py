@@ -171,12 +171,12 @@ class GGTestUtils:
         if recipe_dir is not None:
             cli_cmd.extend(["--recipe-dir", recipe_dir])
         cli_cmd.append(f"--add-component={component_details}")
-        
+
         # Disable LeakSanitizer entirely - it's causing false failures
         env = os.environ.copy()
         env["ASAN_OPTIONS"] = "detect_leaks=0"
         env["LSAN_OPTIONS"] = "detect_leaks=0"
-        
+
         process = run(cli_cmd, capture_output=True, text=True, env=env)
         if process.returncode == 0:
             print("CLI call to create local deployment succeeded:")
@@ -184,7 +184,8 @@ class GGTestUtils:
             return True
 
         print(
-            f"CLI call to create local deployment failed with error code {process.returncode}:")
+            f"CLI call to create local deployment failed with error code {process.returncode}:"
+        )
         print("STDERR:", process.stderr)
         return False
 
@@ -271,6 +272,36 @@ class GGTestUtils:
     def remove_all_components(
             self,
             thing_group_arn: str) -> Literal['SUCCEEDED', 'FAILED', 'TIMEOUT']:
+
+        # Debug: Check devices in thing group before cleanup
+        try:
+            thing_group_name = thing_group_arn.split('/')[-1]
+            devices_response = self._iotClient.list_things_in_thing_group(
+                thingGroupName=thing_group_name)
+            print(
+                f"DEBUG: Devices in thing group {thing_group_name}: {devices_response.get('things', [])}"
+            )
+
+            # Check each device status
+            for device_name in devices_response.get('things', []):
+                try:
+                    device_status = self._ggClient.get_core_device(
+                        coreDeviceThingName=device_name)
+                    print(
+                        f"DEBUG: Device {device_name} status: {device_status.get('status')}"
+                    )
+
+                    # Check current deployments
+                    deployments = self._ggClient.list_effective_deployments(
+                        coreDeviceThingName=device_name)
+                    print(
+                        f"DEBUG: Device {device_name} effective deployments: {len(deployments.get('effectiveDeployments', []))}"
+                    )
+                except Exception as e:
+                    print(f"DEBUG: Error checking device {device_name}: {e}")
+        except Exception as e:
+            print(f"DEBUG: Error checking thing group devices: {e}")
+
         # Create a new deployment with the empty components
         new_deployment = self.create_deployment(
             thingArn=thing_group_arn,
