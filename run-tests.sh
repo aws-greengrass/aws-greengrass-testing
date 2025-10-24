@@ -86,7 +86,32 @@ print_report() {
 # Get all test functions and run setup_and_cleanup for each
 main() {
     local overall_status=0
-    mapfile -t test_functions < <(get_test_functions)
+    
+    if [ -n "$TEST_NAME" ]; then
+        # Run specific tests - split comma-separated list
+        IFS=',' read -ra test_functions <<< "$TEST_NAME"
+        
+        # Derive category from test names if not provided
+        if [ -z "$TEST_CATEGORY" ]; then
+            local categories=()
+            for test_func in "${test_functions[@]}"; do
+                if [[ "$test_func" == test_Component_* ]]; then
+                    categories+=("component")
+                elif [[ "$test_func" == test_Deployment_* ]]; then
+                    categories+=("deployment")
+                else
+                    echo "Error: Cannot determine test category from test name '$test_func'. Please specify --test-category"
+                    exit 1
+                fi
+            done
+            
+            # Use the first category found (all tests should be from same category for now)
+            TEST_CATEGORY="${categories[0]}"
+        fi
+    else
+        # Run all tests
+        mapfile -t test_functions < <(get_test_functions)
+    fi
 
     # Run setup_and_cleanup for each test function
     for test_func in "${test_functions[@]}"; do
@@ -129,6 +154,9 @@ while [ $# -gt 0 ]; do
         ;;
         --test-category=*)
         TEST_CATEGORY="${1#*=}"
+        ;;
+        --test-name=*)
+        TEST_NAME="${1#*=}"
         ;;
         *)
         echo "Unknown parameter passed: $1"
