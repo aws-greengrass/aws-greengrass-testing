@@ -16,5 +16,5 @@ env
 *ggtest
 build
 venv
-aws-greengrass-lite/
+aws-greengrass-lite*/
 src/aws_greengrass_testing.egg-info
