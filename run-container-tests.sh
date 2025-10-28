@@ -31,11 +31,7 @@ for category in "${CATEGORIES[@]}"; do
         --name "buildtestcontainer-$category" \
         buildtestcontainer:latest
     
-    podman exec -w /aws-greengrass-testing buildtestcontainer-$category bash -c "/aws-greengrass-testing/run-tests.sh --aws-account=$AWS_ACCOUNT \
-                                --s3-bucket=$S3_BUCKET \
-                                --commit-id=$COMMIT_ID \
-                                --aws-region=$AWS_DEFAULT_REGION \
-                                --test-category=$category"
+    podman exec -w /aws-greengrass-testing "buildtestcontainer-$category" bash -c "/aws-greengrass-testing/run-tests.sh --aws-account=$AWS_ACCOUNT --s3-bucket=$S3_BUCKET --commit-id=$COMMIT_ID --aws-region=$AWS_DEFAULT_REGION --test-category=$category"
     
     podman stop buildtestcontainer-$category
     podman rm buildtestcontainer-$category
