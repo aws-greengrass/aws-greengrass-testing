@@ -25,9 +25,22 @@ DEVICE_PATH = "/var/lib/greengrass/device.pem.crt"
 PRIVATE_PATH = "/var/lib/greengrass/private.pem.key"
 CA_PATH = "/var/lib/greengrass/AmazonRootCA1.pem"
 JSON_FILE = "iot_setup_data.json"
+UNIQUE_DIR = f"/tmp/ggl-workspace-{uuid.uuid4()}"
 
 
 def install_greengrass_lite_from_source(commit_id: str, region: str):
+    # Create unique workspace directory
+    os.makedirs(UNIQUE_DIR, exist_ok=True)
+
+    ggl_path = os.path.join(UNIQUE_DIR, "aws-greengrass-lite")
+
+    # Skip download and build if already exists
+    if os.path.exists(ggl_path):
+        print(
+            f"aws-greengrass-lite already exists in {UNIQUE_DIR}, skipping download and build"
+        )
+        return True
+
     # Get config
     with open(JSON_FILE, 'r') as file:
         data = json.load(file)
@@ -37,13 +50,13 @@ def install_greengrass_lite_from_source(commit_id: str, region: str):
     thing_name = data['THING_NAME']
 
     # Download the source repo
-    download_result = _download_source(commit_id)
+    download_result = _download_source(commit_id, UNIQUE_DIR)
     if not download_result:
         return False
 
     # Change the working dir
     original_dir = os.getcwd()
-    os.chdir("aws-greengrass-lite")
+    os.chdir(ggl_path)
 
     # Set up an iot client
     iot_client = client("iot", region_name=region)
@@ -161,11 +174,6 @@ def clean_up() -> bool:
     if not stop_result:
         return False
 
-    # Remove aws-greengrass-lite
-    remove_ggl = _remove_dir("aws-greengrass-lite")
-    if not remove_ggl:
-        return False
-
     # Remove several other directories
     remove_dir1 = _remove_dir("/ggcredentials")
     remove_dir2 = _remove_dir("/var/lib/greengrass")
@@ -187,15 +195,12 @@ def clean_up() -> bool:
 # ===============================================
 # HELPER FUNCTIONS
 # ===============================================
-def _download_source(commit_id: str, max_retries=3) -> bool:
+def _download_source(commit_id: str, target_dir: str, max_retries=3) -> bool:
     url = f"https://github.com/aws-greengrass/aws-greengrass-lite/archive/{commit_id}.zip"
-    src_path = "./aws-greengrass-lite.zip"
-    extracted_folder = f"aws-greengrass-lite-{commit_id}"
-    target_folder = "aws-greengrass-lite"
-
-    if os.path.isdir(target_folder):
-        print(f"Removing existing {target_folder} directory")
-        shutil.rmtree(target_folder)
+    src_path = os.path.join(target_dir, "aws-greengrass-lite.zip")
+    extracted_folder = os.path.join(target_dir,
+                                    f"aws-greengrass-lite-{commit_id}")
+    target_folder = os.path.join(target_dir, "aws-greengrass-lite")
 
     for attempt in range(max_retries):
         try:
@@ -212,7 +217,9 @@ def _download_source(commit_id: str, max_retries=3) -> bool:
             with open(src_path, 'wb') as f:
                 f.write(response.content)
 
-            if _unzip_file(src_path, '.'):
+            if _unzip_file(src_path, target_dir):
+                if os.path.exists(target_folder):
+                    shutil.rmtree(target_folder)
                 os.rename(extracted_folder, target_folder)
                 print("Successfully downloaded aws-greengrass-lite")
                 return True
@@ -249,13 +256,23 @@ def _install_build_dependencies() -> bool:
             "liburiparser-dev", "cgroup-tools"
         ]
 
-        # Update package list
-        update_command = ["sudo", "apt", "update"]
-        subprocess.run(update_command, check=True)
+        # Check which packages are missing
+        check_cmd = ["dpkg", "-l"] + packages
+        result = subprocess.run(check_cmd, capture_output=True, text=True)
 
-        # Install packages
-        install_command = ["sudo", "apt", "install", "-y"] + packages
-        subprocess.run(install_command, check=True)
+        missing_packages = []
+        for pkg in packages:
+            if pkg not in result.stdout or f"ii  {pkg}" not in result.stdout:
+                missing_packages.append(pkg)
+
+        if not missing_packages:
+            print("All dependencies already installed")
+            return True
+
+        # Update and install only missing packages
+        subprocess.run(["sudo", "apt", "update"], check=True)
+        subprocess.run(["sudo", "apt", "install", "-y"] + missing_packages,
+                       check=True)
 
         print("Successfully updated and installed dependencies")
         return True
