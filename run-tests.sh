@@ -1,6 +1,7 @@
 #!/bin/bash
 
 CLI_BIN_PATH="$(pwd)/aws-greengrass-lite/build/bin/ggl-cli"
+VENV_DIR="/tmp/ggl-venv-$$"
 
 # Arrays to track test results
 declare -a PASSED_TESTS=()
@@ -21,13 +22,25 @@ setup_and_cleanup() {
     local test_name=$1
     local test_status=0
 
-    # Setup phase
-    echo "Setting up python3 venv environment"
+    # Setup phase - only if venv doesn't exist
+    if [ ! -d "$VENV_DIR" ]; then
+        echo "Setting up python3 venv environment in $VENV_DIR"
+        {
+            if ! dpkg -l | grep -q python3-venv; then
+                sudo apt install -y python3-venv
+            fi
+            python3 -m venv "$VENV_DIR"
+        } || {
+            echo "Setup failed for test: $test_name"
+            FAILED_TESTS+=("$test_name (Setup Failed)")
+            return 1
+        }
+    fi
+    
+    # Activate venv and install/update dependencies
     {
-        sudo apt install -y python3-venv
-        python3 -m venv env
         # shellcheck source=/dev/null
-        . ./env/bin/activate
+        . "$VENV_DIR/bin/activate"
         pip install .
     } || {
         echo "Setup failed for test: $test_name"
@@ -126,6 +139,9 @@ main() {
 
     # Print the test report
     print_report
+
+    # Cleanup venv
+    rm -rf "$VENV_DIR"
 
     if [ $overall_status -eq 0 ] && [ ${#FAILED_TESTS[@]} -eq 0 ]; then
         echo "All tests completed successfully"
