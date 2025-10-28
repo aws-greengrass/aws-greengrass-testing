@@ -38,6 +38,7 @@ pyproject
 pytest
 remko
 tesd
+tmpfs
 venv
 virtualenv
 xeau
