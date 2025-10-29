@@ -1,4 +1,5 @@
 from typing import Generator
+from GGTestUtils import sleep_with_log
 from pytest import fixture, mark
 from src.IoTUtils import IoTUtils
 from src.GGTestUtils import GGTestUtils
@@ -64,6 +65,9 @@ def test_Runtime_1_T4(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     # When I install the component state_transition_timeout version 1.0.0 from local store
     state_transition_timeout = gg_util_obj.upload_component_with_version(
         "state_transition_timeout", "1.0.0")
+
+    sleep_with_log(5, "waiting for S3 artifact propagation")
+
     deployment_id = gg_util_obj.create_deployment(
         gg_util_obj.get_thing_group_arn(new_thing_group_name),
         [state_transition_timeout], "FirstDeployment")["deploymentId"]
@@ -103,6 +107,9 @@ def test_Runtime_1_T5(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     #When I install the component foreground_no_ipc_error version 1.0.0 from local store
     foreground_no_ipc_error = gg_util_obj.upload_component_with_version(
         "foreground_no_ipc_error", "1.0.0")
+
+    sleep_with_log(5, "waiting for S3 artifact propagation")
+
     deployment_id = gg_util_obj.create_deployment(
         gg_util_obj.get_thing_group_arn(new_thing_group_name),
         [foreground_no_ipc_error], "FirstDeployment")["deploymentId"]
@@ -128,7 +135,7 @@ def test_Runtime_1_T9(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
         if system_interface.check_systemctl_status_for_component(
                 "component_with_soft_dep") == "RUNNING":
             break
-        time.sleep(1)
+        sleep_with_log(1)
         timeout -= 1
 
     # And I can check broken_soft_dep is in state BROKEN within 10 seconds
@@ -137,7 +144,7 @@ def test_Runtime_1_T9(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
         if system_interface.check_systemctl_status_for_component(
                 "broken_soft_dep") == "NOT_RUNNING":
             break
-        time.sleep(1)
+        sleep_with_log(1)
         timeout -= 1
 
 
@@ -158,7 +165,7 @@ def test_Runtime_25_T1(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
         if system_interface.check_systemctl_status_for_component(
                 "SampleComponentWithArtifacts") == "RUNNING":
             break
-        time.sleep(1)
+        sleep_with_log(1)
         timeout -= 1
     # When I kill the kernel
     success_status = system_interface.stop_systemd_nucleus_lite(30)
@@ -186,10 +193,10 @@ def test_Runtime_28_T3(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
         if system_interface.check_systemctl_status_for_component(
                 "process_status_component_privilege") == "FINISHED":
             break
-        time.sleep(1)
+        sleep_with_log(1)
         timeout -= 1
 
     # And I get assertions that the process was running as privileged user
-    time.sleep(5)    #wait for process to finish
+    sleep_with_log(5)    #wait for process to finish
     assert (system_interface.check_systemd_user(
         "process_status_component_privilege", 15) == "User=root\n")

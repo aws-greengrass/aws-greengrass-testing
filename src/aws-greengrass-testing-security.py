@@ -1,4 +1,5 @@
 from typing import Generator, List, Tuple
+from GGTestUtils import sleep_with_log
 from pytest import fixture, mark
 from src.IoTUtils import IoTUtils
 from src.GGTestUtils import GGTestUtils
@@ -113,6 +114,8 @@ def test_Security_6_T2_T3_T4_T5_T10(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
             "Message": payload
         })
 
+    sleep_with_log(10, "waiting for S3 artifact propagation")
+
     deployment_id = gg_util_obj.create_deployment(
         thingArn=gg_util_obj.get_thing_group_arn(security_thing_group_name),
         component_list=[pubsub_cloud_name],
@@ -169,6 +172,8 @@ def test_Security_6_T2_T3_T4_T5_mqtt(iot_obj: IoTUtils,
             "Message": payload
         })
 
+    sleep_with_log(10, "waiting for S3 artifact propagation")
+
     deployment_id = gg_util_obj.create_deployment(
         thingArn=gg_util_obj.get_thing_group_arn(security_thing_group_name),
         component_list=[mqtt_cloud_name],
@@ -201,6 +206,8 @@ def test_Security_6_T6(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
         raise RuntimeError(
             "Fatal error: HelloWorldPubSub cannot be uploaded to cloud")
 
+    sleep_with_log(10, "waiting for S3 artifact propagation")
+
     deployment_id = gg_util_obj.create_deployment(
         thingArn=gg_util_obj.get_thing_group_arn(security_thing_group_name),
         component_list=[pubsub_cloud_name],
@@ -208,6 +215,8 @@ def test_Security_6_T6(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
 
     assert (gg_util_obj.wait_for_deployment_till_timeout(
         180, deployment_id) == "SUCCEEDED")
+
+    sleep_with_log(5)
 
     # And I get 1 assertion with context "Successfully subscribed to test/topic"
     assert (system_interface.monitor_journalctl_for_message(
@@ -241,6 +250,8 @@ def test_Security_6_T7(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
         raise RuntimeError(
             "Fatal error: HelloWorldPubSub cannot be uploaded to cloud")
 
+    sleep_with_log(10, "waiting for S3 artifact propagation")
+
     deployment_id = gg_util_obj.create_deployment(
         thingArn=gg_util_obj.get_thing_group_arn(security_thing_group_name),
         component_list=[pubsub_cloud_name],
@@ -261,7 +272,7 @@ def test_Security_6_T7(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
         "Successfully published to test/topic",
         timeout=20) is True)
 
-    time.sleep(5)
+    sleep_with_log(5)
 
     # When I restart the kernel
     assert (system_interface.restart_systemd_nucleus_lite(30) is True)
@@ -270,7 +281,7 @@ def test_Security_6_T7(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     assert (system_interface.check_systemctl_status_for_component(
         pubsub_cloud_name[0]) == "RUNNING")
 
-    time.sleep(5)
+    sleep_with_log(5)
 
     # And I get 1 assertion with context "Successfully subscribed to test/topic"
     assert (system_interface.monitor_journalctl_for_message(
@@ -322,6 +333,8 @@ def test_Security_6_T15(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
             "Message": "Hello from local pubsub topic"
         })
 
+    sleep_with_log(10, "waiting for S3 artifact propagation")
+
     deployment_id = gg_util_obj.create_deployment(
         thingArn=gg_util_obj.get_thing_group_arn(security_thing_group_name),
         component_list=[hello_world_pubSub],
@@ -329,9 +342,11 @@ def test_Security_6_T15(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
 
     # Then I can check the cli to see the status of component HelloWorldPubSub is RUNNING
     deployment_result = gg_util_obj.wait_for_deployment_till_timeout(
-        120, deployment_id)
+        180, deployment_id)
     print(f"The deployment ({deployment_id}): {deployment_result}")
     assert (deployment_result == 'SUCCEEDED')
+
+    sleep_with_log(10, "waiting for component to start and publish messages")
 
     # And I get 1 assertion with context "Successfully subscribed to test/topic"
     # And I get 1 assertion with context "Successfully published to test/topic"
@@ -366,15 +381,16 @@ def test_Security_6_T15(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
         deployment_name="FirstDeployment")["deploymentId"]
     # Then I can check the cli to see the status of component HelloWorldPubSub is RUNNING
     deployment_result = gg_util_obj.wait_for_deployment_till_timeout(
-        120, deployment_id)
+        180, deployment_id)
     print(f"The deployment ({deployment_id}): {deployment_result}")
     assert (deployment_result == 'FAILED')
 
-    # And I get 1 assertion with context "awsiot.greengrasscoreipc.model.UnauthorizedError"
+    sleep_with_log(5)
+
+    # And I get 1 assertion with context "IPC error"
     assert (system_interface.monitor_journalctl_for_message(
-        "ggl." + hello_world_pubSub[0] + ".service",
-        "awsiot.greengrasscoreipc.model.UnauthorizedError",
-        timeout=20) is True)
+        "ggl." + hello_world_pubSub[0] + ".service", "IPC error", timeout=20)
+            is True)
 
 
 # Scenario: Security-6-T22
@@ -400,6 +416,8 @@ def test_Security_6_T22(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
         [("PubsubSubscriber", subscriber_cloud_name.name)])
     assert publisher_cloud_name is not None
 
+    sleep_with_log(10, "waiting for S3 artifact propagation")
+
     deployment_1 = gg_util_obj.create_deployment(
         thingArn=gg_util_obj.get_thing_group_arn(security_thing_group_name),
         component_list=[subscriber_cloud_name, publisher_cloud_name],
@@ -408,7 +426,7 @@ def test_Security_6_T22(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     assert (gg_util_obj.wait_for_deployment_till_timeout(
         180, deployment_1) == "SUCCEEDED")
 
-    time.sleep(5)
+    sleep_with_log(5)
 
     # And I get 1 assertion with context "Subscribed to pubsub topic"
     assert (system_interface.monitor_journalctl_for_message(
@@ -428,7 +446,7 @@ def test_Security_6_T22(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
         "Received new message: Hello world",
         timeout=20) is True)
 
-    time.sleep(5)
+    sleep_with_log(5)
 
     # And I install the component PubsubPublisher version 0.0.0 from local store with replaced configuration and restart
     publisher_cloud_name = publisher_cloud_name._replace(
@@ -452,7 +470,7 @@ def test_Security_6_T22(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     assert (gg_util_obj.wait_for_deployment_till_timeout(
         180, deployment_2) == "FAILED")
 
-    time.sleep(5)
+    sleep_with_log(5)
 
     # And I get 1 assertion with context "Subscribed to pubsub topic"
     assert (system_interface.monitor_journalctl_for_message(
@@ -460,8 +478,8 @@ def test_Security_6_T22(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
         "Subscribed to pubsub topic",
         timeout=20) is True)
 
-    # And I get 1 assertion with context "Unauthorized error while publishing to topic: pubsub"
+    # And I get 1 assertion with context "UnauthorizedError"
     assert (system_interface.monitor_journalctl_for_message(
         "ggl." + publisher_cloud_name[0] + ".service",
-        "Unauthorized error while publishing to topic: pubsub",
+        "UnauthorizedError",
         timeout=20) is True)

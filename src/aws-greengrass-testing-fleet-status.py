@@ -1,4 +1,5 @@
 from typing import Generator
+from GGTestUtils import sleep_with_log
 from pytest import fixture, mark
 from src.IoTUtils import IoTUtils
 from src.GGTestUtils import GGTestUtils
@@ -64,7 +65,7 @@ def test_FleetStatus_1_T1(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
         "HelloWorld", ["1.0.0"])
 
     # Give 5 sec for cloud to calculate artifact checksum and make it "DEPLOYABLE"
-    time.sleep(5)
+    sleep_with_log(5)
 
     # When I create a deployment configuration for deployment FirstDeployment and thing group FssThingGroup with components
     #        | HelloWorld | 1.0.0 |
@@ -104,7 +105,7 @@ def test_FleetStatus_1_T3(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     # Then I ensure component "BrokenAfterDeployed" version "1.0.0" exists on cloud within 60 seconds
     broken_component_cloud_name = gg_util_obj.upload_component_with_versions(
         "BrokenAfterDeployed", ["1.0.0"])
-    time.sleep(10)
+    sleep_with_log(10)
 
     #    And I create a deployment configuration for deployment FirstDeployment and thing group FssThingGroup with components
     #        | BrokenAfterDeployed | 1.0.0 |

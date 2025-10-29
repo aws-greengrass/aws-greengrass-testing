@@ -1,4 +1,5 @@
 from typing import Generator
+from GGTestUtils import sleep_with_log
 from pytest import fixture, mark
 from src.IoTUtils import IoTUtils
 from src.GGTestUtils import GGTestUtils
@@ -66,6 +67,9 @@ def test_Component_12_T1(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     # And  I create a deployment configuration with components and configuration
     #   | MultiPlatform | 1.0.0 |
     # And   I deploy the deployment configuration
+
+    sleep_with_log(5, "waiting for S3 artifact propagation")
+
     deployment_id = gg_util_obj.create_deployment(
         gg_util_obj.get_thing_group_arn(new_thing_group_name),
         [component_cloud_name],
@@ -74,7 +78,9 @@ def test_Component_12_T1(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
 
     # Then the deployment completes with SUCCEEDED within 180 seconds
     assert (gg_util_obj.wait_for_deployment_till_timeout(
-        60, deployment_id) == "SUCCEEDED")
+        180, deployment_id) == "SUCCEEDED")
+
+    sleep_with_log(5)
 
     # And  I can check the cli to see the status of component MultiPlatform is RUNNING
     """ GG LITE CLI DOES NOT SUPPORT THIS YET. """
@@ -101,8 +107,8 @@ def test_Component_16_T1(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     component_cloud_name = gg_util_obj.upload_component_with_versions(
         "HelloWorld", ["1.0.0"])
 
-    # Give 5 sec for cloud to calculate artifact checksum and make it "DEPLOYABLE"
-    time.sleep(5)
+    # Give 10 sec for cloud to calculate artifact checksum and make it "DEPLOYABLE"
+    sleep_with_log(10, "waiting for S3 artifact propagation")
 
     # When I create a deployment configuration with components
     #        | HelloWorld | 1.0.0 |
@@ -113,9 +119,11 @@ def test_Component_16_T1(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     )["deploymentId"]
     assert deployment_id is not None
 
-    # Then the deployment completes with SUCCEEDED within 120 seconds
+    # Then the deployment completes with SUCCEEDED within 180 seconds
     assert (gg_util_obj.wait_for_deployment_till_timeout(
-        120, deployment_id) == "SUCCEEDED")
+        180, deployment_id) == "SUCCEEDED")
+
+    sleep_with_log(5)
 
     # Then I can check the cli to see the status of component HelloWorld is RUNNING
     """ GG LITE CLI DOES NOT SUPPORT THIS YET. """
@@ -148,7 +156,7 @@ def test_Component_27_T1(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
         "HelloWorld", ["1.0.0"])
 
     # Give 5 sec for cloud to calculate artifact checksum and make it "DEPLOYABLE"
-    time.sleep(5)
+    sleep_with_log(5)
 
     # When I corrupt the contents of the component HelloWorld version 1.0.0 in the S3 bucket
     assert gg_util_obj.upload_corrupt_artifacts_to_s3("HelloWorld",
@@ -194,7 +202,7 @@ def test_Component_29_T0(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
         if system_interface.check_systemctl_status_for_component(
                 "aws.gg.uat.local.ComponentConfigTestService") == "FINISHED":
             break
-        time.sleep(1)
+        sleep_with_log(1)
         timeout -= 1
 
     # I can check the cli to see the status of component aws.gg.uat.local.ComponentConfigTestService is FINISHED
@@ -289,6 +297,9 @@ def test_Component_29_T4(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     # I create a deployment configuration for deployment FirstCloudDeployment with components
     #         | aws.gg.uat.cloud.ComponentConfigTestService | 1.0.0 |
     # I deploy the configuration for deployment FirstCloudDeployment
+
+    sleep_with_log(5, "waiting for S3 artifact propagation")
+
     deployment_id = gg_util_obj.create_deployment(
         gg_util_obj.get_thing_group_arn(new_thing_group_name),
         [component_cloud_name], "FirstCloudDeployment")["deploymentId"]
@@ -396,7 +407,7 @@ def test_Component_34_T4(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
         if system_interface.check_systemctl_status_for_component(
                 "Minimal") == "RUNNING":
             break
-        time.sleep(1)
+        sleep_with_log(1)
         timeout -= 1
 
     # I install the component Minimal version 2.0.0 from local store
@@ -410,12 +421,12 @@ def test_Component_34_T4(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
         if system_interface.check_systemctl_status_for_component(
                 "Minimal") == "RUNNING":
             break
-        time.sleep(1)
+        sleep_with_log(1)
         timeout -= 1
 
     # the local files for component Minimal version 2.0.0 should exist
     # TODO: Replace hacky sleep when we can use CLI to verify a local deployment has finished.
-    time.sleep(30)
+    sleep_with_log(30)
     assert gg_util_obj.recipe_for_component_exists("Minimal", "2.0.0")
 
     # the local files for component Minimal version 1.0.0 should not exist

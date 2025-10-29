@@ -1,4 +1,5 @@
 from typing import Generator
+from GGTestUtils import sleep_with_log
 from pytest import fixture
 from src.IoTUtils import IoTUtils
 from src.GGTestUtils import GGTestUtils
@@ -136,7 +137,7 @@ def test_SLF_1_T1(iot_obj: IoTUtils, cloudwatch_cleanup,
     print(f"Component uploaded: {slf_component_cloud_name}")
 
     # Give time for cloud to process artifacts and make component deployable
-    time.sleep(10)
+    sleep_with_log(10)
     print(f"Waited 10 seconds for artifact processing")
 
     # Check component status
@@ -163,7 +164,7 @@ def test_SLF_1_T1(iot_obj: IoTUtils, cloudwatch_cleanup,
         180, deployment_id) == "SUCCEEDED")
 
     # And I wait for 10 seconds
-    time.sleep(10)
+    sleep_with_log(10)
 
     # And I can check the cli to see the status of component SystemLogForwarderTest is RUNNING
     # GG LITE CLI cannot yet do this, so we rely on systemctl.
@@ -191,7 +192,7 @@ def test_SLF_1_T2(iot_obj: IoTUtils, cloudwatch_cleanup,
     print(f"Component uploaded: {slf_component_cloud_name}")
 
     # Give time for cloud to process artifacts and make component deployable
-    time.sleep(10)
+    sleep_with_log(10)
     print(f"Waited 10 seconds for artifact processing")
 
     # And I apply reduced time configuration with unique log group
@@ -215,7 +216,7 @@ def test_SLF_1_T2(iot_obj: IoTUtils, cloudwatch_cleanup,
         180, deployment_id) == "SUCCEEDED")
 
     # And I wait for 10 seconds
-    time.sleep(10)
+    sleep_with_log(10)
 
     # And I can check the cli to see the status of component SystemLogForwarderTest is RUNNING
     # GG LITE CLI cannot yet do this, so we rely on systemctl.
@@ -232,10 +233,10 @@ def test_SLF_1_T2(iot_obj: IoTUtils, cloudwatch_cleanup,
     # The SystemLogForwarder itself should be generating logs as a ggl.* service
     # which will be captured by its own filter. Let's wait a bit for it to generate logs
     print(f"SystemLogForwarder should be generating its own logs...")
-    time.sleep(5)
+    sleep_with_log(5)
 
     # Wait for logs to be uploaded to CloudWatch (maxUploadIntervalSec is 10)
-    time.sleep(15)
+    sleep_with_log(15)
     print(f"Waiting for logs to appear in CloudWatch...")
 
     # Check CloudWatch logs for system logs
@@ -294,7 +295,7 @@ def test_SLF_1_T3(iot_obj: IoTUtils, cloudwatch_cleanup,
         })
 
     # Give time for cloud to process artifacts and make component deployable
-    time.sleep(10)
+    sleep_with_log(10)
     print(f"Waited 10 seconds for artifact processing")
 
     # Deploy the configuration
@@ -310,7 +311,7 @@ def test_SLF_1_T3(iot_obj: IoTUtils, cloudwatch_cleanup,
         180, deployment_id) == "SUCCEEDED")
 
     # And I wait for 10 seconds
-    time.sleep(10)
+    sleep_with_log(10)
 
     # And I can check the cli to see the status of component SystemLogForwarderTest is RUNNING
     assert (system_interface.check_systemctl_status_for_component(
@@ -319,10 +320,10 @@ def test_SLF_1_T3(iot_obj: IoTUtils, cloudwatch_cleanup,
     # The SystemLogForwarder itself should be generating logs as a ggl.* service
     # which will be captured by its own filter. Let's wait a bit for it to generate logs
     print(f"SystemLogForwarder should be generating its own logs...")
-    time.sleep(5)
+    sleep_with_log(5)
 
     # Wait for logs to be uploaded to CloudWatch (maxUploadIntervalSec is 10)
-    time.sleep(15)
+    sleep_with_log(15)
     print(f"Waiting for logs to appear in CloudWatch...")
 
     # Verify the custom log group was created by SystemLogForwarder
@@ -376,7 +377,7 @@ def test_SLF_1_T4(iot_obj: IoTUtils, cloudwatch_cleanup,
         })
 
     # Give time for cloud to process artifacts and make component deployable
-    time.sleep(10)
+    sleep_with_log(10)
     print(f"Waited 10 seconds for artifact processing")
 
     # Deploy the configuration
@@ -392,7 +393,7 @@ def test_SLF_1_T4(iot_obj: IoTUtils, cloudwatch_cleanup,
         180, deployment_id) == "SUCCEEDED")
 
     # And I wait for 10 seconds
-    time.sleep(10)
+    sleep_with_log(10)
 
     # And I can check the cli to see the status of component SystemLogForwarderTest is RUNNING
     assert (system_interface.check_systemctl_status_for_component(
@@ -401,10 +402,10 @@ def test_SLF_1_T4(iot_obj: IoTUtils, cloudwatch_cleanup,
     # The SystemLogForwarder itself should be generating logs as a ggl.* service
     # which will be captured by its own filter. Let's wait a bit for it to generate logs
     print(f"SystemLogForwarder should be generating its own logs...")
-    time.sleep(5)
+    sleep_with_log(5)
 
     # Wait for logs to be uploaded to CloudWatch (maxUploadIntervalSec is 10)
-    time.sleep(15)
+    sleep_with_log(15)
     print(f"Waiting for logs to appear in CloudWatch...")
 
     # Verify the custom log stream was created by SystemLogForwarder
