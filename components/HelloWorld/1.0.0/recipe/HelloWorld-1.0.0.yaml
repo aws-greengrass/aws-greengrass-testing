@@ -11,19 +11,19 @@ Manifests:
   - Platform:
       os: windows
     Artifacts:
-      - URI: s3://$bucketName$/$testArtifactsDirectory$/hello_world.py
+      - URI: s3://$bucketName$/$testArtifactsDirectory$/hello_world_helloworld.py
     Lifecycle:
       run: >-
         powershell -command "& { while(1) { python
-        {artifacts:path}/hello_world.py \"{configuration:/Message}\"; sleep 5 }
-        }"
+        {artifacts:path}/hello_world_helloworld.py \"{configuration:/Message}\";
+        sleep 5 } }"
   - Platform:
       os: "*"
       runtime: "*"
     Artifacts:
-      - URI: s3://$bucketName$/$testArtifactsDirectory$/hello_world.py
+      - URI: s3://$bucketName$/$testArtifactsDirectory$/hello_world_helloworld.py
     Lifecycle:
       run: |-
         while true; do
-        python3 {artifacts:path}/hello_world.py '{configuration:/Message}'; sleep 5
+        python3 {artifacts:path}/hello_world_helloworld.py '{configuration:/Message}'; sleep 5
         done

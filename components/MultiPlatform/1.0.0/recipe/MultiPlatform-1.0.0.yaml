@@ -11,26 +11,28 @@ Manifests:
   - Platform:
       os: "linux"
       runtime: "*"
-    Selections:
-      - unix
     Artifacts:
-      - URI: s3://$bucketName$/$testArtifactsDirectory$/hello_world.py
+      - URI: s3://$bucketName$/$testArtifactsDirectory$/hello_world_multiplatform.py
     Lifecycle:
       run: |-
         while true; do
-        python3 {artifacts:path}/hello_world.py '{configuration:/Message}'; sleep 5
+        python3 {artifacts:path}/hello_world_multiplatform.py '{configuration:/Message}'; sleep 5
         done
 
   - Platform:
       os: windows
     Artifacts:
-      - URI: s3://$bucketName$/$testArtifactsDirectory$/hello_world.py
-    Selections:
-      - windows
+      - URI: s3://$bucketName$/$testArtifactsDirectory$/hello_world_multiplatform.py
+    Lifecycle:
+      run: >-
+        powershell -command "& { while(1) { python
+        {artifacts:path}/hello_world_multiplatform.py
+        \"{configuration:/Message}\"; sleep 5 } }"
   - Platform:
       os: customOs
-    Selections:
-      - custom
+    Lifecycle:
+      run: |-
+        echo Hello {configuration:/Message} from custom platform!
   - Platform:
       os: manifestOverridingLifecycle
     Lifecycle:
@@ -38,18 +40,7 @@ Manifests:
         echo overriding global lifecycle
   # default platform when no match found
   - Artifacts:
-      - URI: s3://$bucketName$/$testArtifactsDirectory$/hello_world.py
-
-Lifecycle:
-  run:
-    linux: |-
-      while true; do
-      python3 {artifacts:path}/hello_world.py '{configuration:/Message}'; sleep 5
-      done
-    windows: >-
-      powershell -command "& { while(1) { python {artifacts:path}/hello_world.py
-      \"{configuration:/Message}\"; sleep 5 } }"
-    custom: |-
-      echo Hello {configuration:/Message} from custom platform!
-    all: |-
-      echo fallback to default platform
+      - URI: s3://$bucketName$/$testArtifactsDirectory$/hello_world_multiplatform.py
+    Lifecycle:
+      run: |-
+        echo fallback to default platform
