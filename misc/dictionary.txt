@@ -4,6 +4,7 @@ cbor
 clientv
 coreutils
 dggl
+dpkg
 getgrnam
 getpwnam
 ggconfigd
