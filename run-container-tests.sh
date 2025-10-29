@@ -40,5 +40,4 @@ for category in "${CATEGORIES[@]}"; do
     echo ""
 done
 
-rm -rf "$DOWNLOAD_DIR"
 echo "All test categories completed!"
