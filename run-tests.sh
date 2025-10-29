@@ -1,7 +1,12 @@
 #!/bin/bash
 
 CLI_BIN_PATH="$(pwd)/aws-greengrass-lite/build/bin/ggl-cli"
-VENV_DIR="/tmp/ggl-venv-$$"
+VENV_DIR="/tmp/aws-greengrass-testing-workspace/venv"
+WORKSPACE_DIR="/tmp/aws-greengrass-testing-workspace"
+
+# Create workspace directory
+rm -rf "$WORKSPACE_DIR"
+mkdir -p "$WORKSPACE_DIR"
 
 # Arrays to track test results
 declare -a PASSED_TESTS=()
@@ -41,7 +46,11 @@ setup_and_cleanup() {
     {
         # shellcheck source=/dev/null
         . "$VENV_DIR/bin/activate"
-        pip install .
+        if ! pip show aws-greengrass-testing &>/dev/null; then
+            pip install wheel setuptools
+            cp -r /aws-greengrass-testing /tmp/aws-greengrass-testing-workspace/src
+            pip install /tmp/aws-greengrass-testing-workspace/src
+        fi
     } || {
         echo "Setup failed for test: $test_name"
         FAILED_TESTS+=("$test_name (Setup Failed)")
@@ -50,9 +59,11 @@ setup_and_cleanup() {
 
     # Test execution phase
     echo "Executing test: $test_name"
-    if ! pytest -q -s -v \
+    # Convert comma-separated to pytest 'or' syntax
+    local pytest_filter="${test_name//,/ or }"
+    if ! PYTEST_CACHE_DIR="$WORKSPACE_DIR/.pytest_cache" pytest -q -s -v \
         ./src/aws-greengrass-testing-"$TEST_CATEGORY".py \
-        -k "$test_name" \
+        -k "$pytest_filter" \
         --commit-id="$COMMIT_ID" \
         --aws-account="$AWS_ACCOUNT" \
         --s3-bucket="$S3_BUCKET" \
@@ -140,8 +151,8 @@ main() {
     # Print the test report
     print_report
 
-    # Cleanup venv
-    rm -rf "$VENV_DIR"
+    # Cleanup workspace
+    rm -rf "$WORKSPACE_DIR"
 
     if [ $overall_status -eq 0 ] && [ ${#FAILED_TESTS[@]} -eq 0 ]; then
         echo "All tests completed successfully"

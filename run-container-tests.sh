@@ -43,6 +43,8 @@ for category in "${CATEGORIES[@]}"; do
             --name "$CONTAINER_NAME" \
             buildtestcontainer:latest
         
+        sleep 3
+        
         podman exec -w /aws-greengrass-testing "$CONTAINER_NAME" bash -c "/aws-greengrass-testing/run-tests.sh --aws-account=$AWS_ACCOUNT --s3-bucket=$S3_BUCKET --commit-id=$COMMIT_ID --aws-region=$AWS_DEFAULT_REGION --test-category=$category ${TEST_NAME:+--test-name=$TEST_NAME}" || echo "Tests failed for category: $category"
         
         podman stop "$CONTAINER_NAME" || true

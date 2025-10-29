@@ -18,3 +18,4 @@ build
 venv
 aws-greengrass-lite*/
 src/aws_greengrass_testing.egg-info
+test-*.log

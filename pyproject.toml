@@ -28,6 +28,7 @@ dev = [
 testpaths = [
     "./src/*",
 ]
+cache_dir = "/tmp/aws-greengrass-testing-workspace/.pytest_cache"
 
 [tool.yapf]
 based_on_style = "pep8"
