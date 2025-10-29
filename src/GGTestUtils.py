@@ -20,6 +20,15 @@ S3_ARTIFACT_DIR = "artifacts"
 RECIPE_DIR = "/var/lib/greengrass/packages/recipes"
 
 
+def sleep_with_log(seconds: int, reason: str = ""):
+    """Sleep with logging message before sleeping."""
+    msg = f"Sleeping for {seconds}s"
+    if reason:
+        msg += f" ({reason})"
+    print(msg)
+    time.sleep(seconds)
+
+
 class ComponentDeploymentInfo(NamedTuple):
     name: str
     versions: List[str]
@@ -102,6 +111,7 @@ class GGTestUtils:
         :param deployment_id: The ID of the deployment to check
         :return: A dictionary containing the deployment status and details
         """
+        start_time = time.time()
         try:
             # Get the deployment status
             response = self._ggClient.get_deployment(deploymentId=deployment_id)
@@ -147,7 +157,10 @@ class GGTestUtils:
                             statistics_list.append({thing: statistic})
 
                 except Exception as e:
-                    print(f"Waiting to get statistics for {thing}: {str(e)}...")
+                    elapsed = int(time.time() - start_time)
+                    print(
+                        f"Waiting to get statistics for {thing}: {str(e)}... (elapsed: {elapsed}s)"
+                    )
 
             return {
                 "status": deployment_status,
@@ -336,6 +349,86 @@ class GGTestUtils:
                                     elif (str(deployment[
                                             "coreDeviceExecutionStatus"]) ==
                                           "FAILED"):
+                                        print(f"\n{'='*60}")
+                                        print(
+                                            f"DEPLOYMENT FAILED: {deployment_id}"
+                                        )
+                                        print(f"Thing: {thing}")
+                                        print(
+                                            f"Status Reason: {deployment.get('statusReason', 'N/A')}"
+                                        )
+                                        print(
+                                            f"Full deployment details: {deployment}"
+                                        )
+
+                                        # Get full deployment details from AWS
+                                        try:
+                                            aws_deployment = self._ggClient.get_deployment(
+                                                deploymentId=deployment_id)
+                                            print(
+                                                f"\nAWS Deployment Status: {aws_deployment.get('deploymentStatus', 'N/A')}"
+                                            )
+                                            print(
+                                                f"AWS Deployment Policies: {aws_deployment.get('deploymentPolicies', {})}"
+                                            )
+                                            if 'components' in aws_deployment:
+                                                print(
+                                                    f"Components in deployment: {list(aws_deployment['components'].keys())}"
+                                                )
+                                        except Exception as e:
+                                            print(
+                                                f"Could not get AWS deployment details: {e}"
+                                            )
+
+                                        print(
+                                            f"\nChecking all Greengrass logs for errors..."
+                                        )
+                                        try:
+                                            import subprocess
+                                            # Check all greengrass services
+                                            services = [
+                                                "ggdeploymentd", "iotcored",
+                                                "ggconfigd", "tesd",
+                                                "gghealthd", "ggipcd"
+                                            ]
+                                            for svc in services:
+                                                log_output = subprocess.run(
+                                                    [
+                                                        "journalctl", "-u", svc,
+                                                        "--no-pager", "-n",
+                                                        "50", "--since",
+                                                        "5 minutes ago"
+                                                    ],
+                                                    capture_output=True,
+                                                    text=True,
+                                                    timeout=3)
+                                                if log_output.stdout.strip(
+                                                ) and "-- No entries --" not in log_output.stdout:
+                                                    print(
+                                                        f"\n--- {svc} logs ---")
+                                                    print(log_output.
+                                                          stdout[-1500:])
+
+                                            # Check for any errors in all logs
+                                            error_log = subprocess.run(
+                                                [
+                                                    "journalctl", "--no-pager",
+                                                    "-p", "err", "--since",
+                                                    "5 minutes ago"
+                                                ],
+                                                capture_output=True,
+                                                text=True,
+                                                timeout=3)
+                                            if error_log.stdout.strip(
+                                            ) and "-- No entries --" not in error_log.stdout:
+                                                print(
+                                                    f"\n--- System errors (priority: err) ---"
+                                                )
+                                                print(error_log.stdout[-2000:])
+                                        except Exception as e:
+                                            print(
+                                                f"Could not retrieve logs: {e}")
+                                        print(f"{'='*60}\n")
                                         return "FAILED"
                                     else:
                                         pass
@@ -480,7 +573,9 @@ class GGTestUtils:
                         dependency[1]] = stored_val
 
                 # Ensure the output directory exists
-                output_dir = os.path.join(".", "ggtest", "modified_recipes")
+                output_dir = os.path.join(
+                    "/tmp/aws-greengrass-testing-workspace", "ggtest",
+                    "modified_recipes")
                 os.makedirs(output_dir, exist_ok=True)
 
                 new_file_path = os.path.join(
@@ -572,7 +667,8 @@ class GGTestUtils:
     def _create_corrupt_file(self, file_path: str | os.PathLike):
         try:
             # Ensure the output directory exists
-            output_dir = os.path.join(".", "ggtest", "corruptFiles")
+            output_dir = os.path.join("/tmp/aws-greengrass-testing-workspace",
+                                      "ggtest", "corruptFiles")
             os.makedirs(output_dir, exist_ok=True)
 
             # Construct the new file path
