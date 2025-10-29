@@ -4,7 +4,7 @@
 if [ -n "$1" ]; then
     IFS=',' read -ra CATEGORIES <<< "$1"
 else
-    CATEGORIES=("security runtime component deployment fleet-status")
+    CATEGORIES=("security" "runtime" "component" "deployment" "fleet-status")
 fi
 
 # Run tests for each category
