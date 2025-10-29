@@ -7,7 +7,7 @@ import json
 import subprocess
 import uuid
 
-JSON_FILE = "iot_setup_data.json"
+JSON_FILE = "/tmp/aws-greengrass-testing-workspace/iot_setup_data.json"
 
 
 class IoTUtils():

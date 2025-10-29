@@ -24,22 +24,27 @@ S3_ARTIFACT_DIR = "artifacts"
 DEVICE_PATH = "/var/lib/greengrass/device.pem.crt"
 PRIVATE_PATH = "/var/lib/greengrass/private.pem.key"
 CA_PATH = "/var/lib/greengrass/AmazonRootCA1.pem"
-JSON_FILE = "iot_setup_data.json"
-UNIQUE_DIR = f"/tmp/ggl-workspace-{uuid.uuid4()}"
+JSON_FILE = "/tmp/aws-greengrass-testing-workspace/iot_setup_data.json"
+WORKSPACE_DIR = "/tmp/aws-greengrass-testing-workspace"
 
 
 def install_greengrass_lite_from_source(commit_id: str, region: str):
     # Create unique workspace directory
-    os.makedirs(UNIQUE_DIR, exist_ok=True)
+    os.makedirs(WORKSPACE_DIR, exist_ok=True)
 
-    ggl_path = os.path.join(UNIQUE_DIR, "aws-greengrass-lite")
+    ggl_path = os.path.join(WORKSPACE_DIR, "aws-greengrass-lite")
+    build_path = os.path.join(ggl_path, 'build')
 
-    # Skip download and build if already exists
+    # Skip download if already exists
     if os.path.exists(ggl_path):
         print(
-            f"aws-greengrass-lite already exists in {UNIQUE_DIR}, skipping download and build"
+            f"aws-greengrass-lite already exists in {WORKSPACE_DIR}, skipping download"
         )
-        return True
+    else:
+        # Download the source repo
+        download_result = _download_source(commit_id, WORKSPACE_DIR)
+        if not download_result:
+            return False
 
     # Get config
     with open(JSON_FILE, 'r') as file:
@@ -48,11 +53,6 @@ def install_greengrass_lite_from_source(commit_id: str, region: str):
     device_cert = data['DEVICE_CERT']
     private_key = data['PRIVATE_KEY']
     thing_name = data['THING_NAME']
-
-    # Download the source repo
-    download_result = _download_source(commit_id, UNIQUE_DIR)
-    if not download_result:
-        return False
 
     # Change the working dir
     original_dir = os.getcwd()
@@ -108,18 +108,25 @@ def install_greengrass_lite_from_source(commit_id: str, region: str):
             return False
 
         # Build
-        build_result = _build_with_cmake()
-        if not build_result:
+        if not os.path.exists(build_path):
+            build_result = _build_with_cmake()
+            if not build_result:
+                return False
+        else:
+            print("Build directory exists, skipping build")
+
+        # Install
+        install_result = _install_with_cmake()
+        if not install_result:
             return False
 
         # run nucleus
         os.chmod('misc/run_nucleus', 0o775)
+        print("Starting nucleus with run_nucleus script...")
         try:
             process = subprocess.run(['sudo', './misc/run_nucleus'],
                                      check=True,
-                                     text=True,
-                                     stdout=subprocess.PIPE,
-                                     stderr=subprocess.PIPE)
+                                     text=True)
             print("Successfully installed the nucleus from source")
         except subprocess.CalledProcessError as e:
             print(f"FATAL: run_nucleus failed with exit code {e.returncode}")
@@ -132,6 +139,7 @@ def install_greengrass_lite_from_source(commit_id: str, region: str):
         import boto3
         import time
         import yaml
+        from GGTestUtils import sleep_with_log
 
         # Read thing name from config
         try:
@@ -152,9 +160,9 @@ def install_greengrass_lite_from_source(commit_id: str, region: str):
                 )
                 break
             except gg_client.exceptions.ResourceNotFoundException:
-                time.sleep(10)
-                print(
-                    f"Waiting for device registration... attempt {attempt + 1}/30"
+                sleep_with_log(
+                    10,
+                    f"waiting for device registration, attempt {attempt + 1}/30"
                 )
         else:
             raise Exception(
@@ -341,38 +349,39 @@ def _check_user_exists(user: str) -> bool:
 
 
 def _build_with_cmake() -> bool:
-    original_dir = os.getcwd()
     try:
-        # CMake configure command
         cmake_cmd = [
             'cmake', '-B', 'build', '-D', 'CMAKE_INSTALL_PREFIX=/usr/local',
             '-D', 'CMAKE_BUILD_TYPE=MinSizeRel', '-D', 'CMAKE_BUILD_TYPE=Debug',
             '-DGGL_LOG_LEVEL=DEBUG'
         ]
-
         subprocess.run(cmake_cmd, check=True)
 
-        # Change the directory to build
-        os.chdir("build")
-        build_cmd = ['make', '-C', 'build', '-j$(nproc)']
-        subprocess.run(build_cmd, shell=True, check=True)
-        os.chdir(original_dir)
-
-        # Install command
-        install_cmd = ['sudo', 'make', '-C', 'build', 'install']
-        subprocess.run(install_cmd, check=True)
+        build_cmd = ['make', '-C', 'build', f'-j{os.cpu_count()}']
+        subprocess.run(build_cmd, check=True)
 
         print("Successfully completed the build process")
         return True
-
     except subprocess.CalledProcessError as e:
         print(f"Error during build process: {e}")
         return False
     except Exception as e:
         print(f"Unexpected error: {e}")
         return False
-    finally:
-        os.chdir(original_dir)
+
+
+def _install_with_cmake() -> bool:
+    try:
+        install_cmd = ['sudo', 'make', '-C', 'build', 'install']
+        subprocess.run(install_cmd, check=True)
+        print("Successfully completed the install process")
+        return True
+    except subprocess.CalledProcessError as e:
+        print(f"Error during install process: {e}")
+        return False
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+        return False
 
 
 def _tes_setup(device_cert: str, private_key: str) -> bool:
@@ -507,10 +516,9 @@ def _remove_dir(dir: str) -> bool:
         if os.path.exists(dir):
             subprocess.run(['sudo', 'rm', '-rf', dir], check=True)
             print(f"Successfully removed {dir}")
-            return True
         else:
-            print(f"Error when removing directory: {dir} does not exist")
-            return False
+            print(f"Directory {dir} does not exist, skipping removal")
+        return True
     except subprocess.CalledProcessError as e:
         print(f"Error when removing directory: {str(e)}")
         return False

@@ -8,7 +8,7 @@ import uuid
 import json
 from boto3 import client
 
-JSON_FILE = "iot_setup_data.json"
+JSON_FILE = "/tmp/aws-greengrass-testing-workspace/iot_setup_data.json"
 
 
 def set_up_core_device(region: str):
