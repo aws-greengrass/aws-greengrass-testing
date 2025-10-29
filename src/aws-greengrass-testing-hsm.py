@@ -100,6 +100,7 @@ def test_HSM_1_T1(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
         timeout=60) is True)
 
     # Cleanup TPM key after successful test
-    cleanup_result = subprocess.run(['bash', 'generate_tpm_key.sh', 'cleanup_tpm'],
-                                    cwd='../aws-greengrass-testing')
+    cleanup_result = subprocess.run(
+        ['bash', 'generate_tpm_key.sh', 'cleanup_tpm'],
+        cwd='../aws-greengrass-testing')
     print(f"TPM cleanup completed")
