@@ -47,7 +47,7 @@ def install_greengrass_lite_from_source(commit_id: str, region: str):
             potential_ggl = os.path.join(check_dir, "aws-greengrass-lite")
             if os.path.exists(potential_ggl) and os.path.exists(os.path.join(potential_ggl, "CMakeLists.txt")):
                 print(f"Found aws-greengrass-lite in {check_dir}, copying to workspace")
-                shutil.copytree(potential_ggl, ggl_path)
+                shutil.copytree(potential_ggl, ggl_path, ignore=shutil.ignore_patterns('build'))
                 break
         else:
             # Download the source repo if not found locally
@@ -116,14 +116,13 @@ def install_greengrass_lite_from_source(commit_id: str, region: str):
         if not config_result or not move_result1 or not move_result2 or not remove_result:
             return False
 
-        # Build - clean if stale, then rebuild
-        if os.path.exists(build_path):
-            print("Build directory exists, cleaning to avoid stale paths")
-            shutil.rmtree(build_path)
-        
-        build_result = _build_with_cmake()
-        if not build_result:
-            return False
+        # Build
+        if not os.path.exists(build_path):
+            build_result = _build_with_cmake()
+            if not build_result:
+                return False
+        else:
+            print("Build directory exists, skipping build")
 
         # Install
         install_result = _install_with_cmake()

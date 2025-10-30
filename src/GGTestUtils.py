@@ -470,7 +470,7 @@ class GGTestUtils:
             )
         
         # Wait for S3 artifact propagation
-        time.sleep(10)
+        time.sleep(15)
         return True
 
     def _upload_component_to_gg(self,
