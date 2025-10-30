@@ -1,8 +1,17 @@
 #!/bin/bash
 
-CLI_BIN_PATH="$(pwd)/aws-greengrass-lite/build/bin/ggl-cli"
+# Get the directory where this script is located
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 VENV_DIR="/tmp/aws-greengrass-testing-workspace/venv"
 WORKSPACE_DIR="/tmp/aws-greengrass-testing-workspace"
+
+# Use ggl-cli from PATH if available, otherwise use workspace build
+if command -v ggl-cli &> /dev/null; then
+    CLI_BIN_PATH="ggl-cli"
+else
+    CLI_BIN_PATH="$WORKSPACE_DIR/aws-greengrass-lite/build/bin/ggl-cli"
+fi
 
 # Create workspace directory
 rm -rf "$WORKSPACE_DIR"
