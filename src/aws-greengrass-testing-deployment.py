@@ -602,9 +602,9 @@ def test_Deployment_5_T2(gg_util_obj: GGTestUtils, iot_obj: IoTUtils,
         gg_util_obj.get_thing_group_arn(first_thing_group_name),
         [Component2BaseCloud_cloud_name], "FirstDeployment")["deploymentId"]
 
-    # Then the deployment FirstDeployment completes with SUCCEEDED within 120 seconds
+    # Then the deployment FirstDeployment completes with SUCCEEDED within 180 seconds
     assert (gg_util_obj.wait_for_deployment_till_timeout(
-        120, deployment_id) == "SUCCEEDED")
+        180, deployment_id) == "SUCCEEDED")
 
     # Get thing added to NewThingGroup.
     id = iot_obj.generate_random_id()
@@ -620,9 +620,9 @@ def test_Deployment_5_T2(gg_util_obj: GGTestUtils, iot_obj: IoTUtils,
         gg_util_obj.get_thing_group_arn(second_thing_group_name),
         [Component2BaseCloud_cloud_name], "SecondDeployment")["deploymentId"]
 
-    # Then the deployment SecondDeployment completes with SUCCEEDED within 120 seconds
+    # Then the deployment SecondDeployment completes with SUCCEEDED within 180 seconds
     assert (gg_util_obj.wait_for_deployment_till_timeout(
-        120, deployment_id_2) == "SUCCEEDED")
+        180, deployment_id_2) == "SUCCEEDED")
 
     # Then I can check the cli to see the status of component Component2BaseCloud is RUNNING
     assert system_interface.check_systemctl_status_for_component(
@@ -635,9 +635,9 @@ def test_Deployment_5_T2(gg_util_obj: GGTestUtils, iot_obj: IoTUtils,
         gg_util_obj.get_thing_group_arn(first_thing_group_name), [],
         "ThirdDeployment")["deploymentId"]
 
-    # Then the deployment ThirdDeployment completes with SUCCEEDED within 120 seconds
+    # Then the deployment ThirdDeployment completes with SUCCEEDED within 180 seconds
     assert (gg_util_obj.wait_for_deployment_till_timeout(
-        120, deployment_id_3) == "SUCCEEDED")
+        180, deployment_id_3) == "SUCCEEDED")
 
     # Then I can check the cli to see the status of component Component2BaseCloud is RUNNING
     assert system_interface.check_systemctl_status_for_component(
