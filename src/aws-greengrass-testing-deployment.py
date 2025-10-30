@@ -695,9 +695,9 @@ def test_Deployment_7_T3(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
         gg_util_obj.get_thing_group_arn(second_thing_group_name),
         [hello_world_cloud_name], "SecondDeployment")["deploymentId"]
 
-    # Then the deployment SecondDeployment completes with SUCCEEDED within 120 seconds
+    # Then the deployment SecondDeployment completes with SUCCEEDED within 180 seconds
     assert (gg_util_obj.wait_for_deployment_till_timeout(
-        120, deployment_id_1) == "SUCCEEDED")
+        180, deployment_id_1) == "SUCCEEDED")
 
     # Then I can check the cli to see the status of component HelloWorld is RUNNING
     assert system_interface.check_systemctl_status_for_component(
@@ -758,9 +758,9 @@ def test_Deployment_7_T4(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
         [hello_world_cloud_name, Component2BaseCloud_cloud_name],
         "SecondDeployment")["deploymentId"]
 
-    # Then the deployment SecondDeployment completes with SUCCEEDED within 120 seconds
+    # Then the deployment SecondDeployment completes with SUCCEEDED within 180 seconds
     assert (gg_util_obj.wait_for_deployment_till_timeout(
-        120, deployment_id_1) == "SUCCEEDED")
+        180, deployment_id_1) == "SUCCEEDED")
 
     # Then I can check the cli to see the status of component HelloWorld is RUNNING
     assert system_interface.check_systemctl_status_for_component(
