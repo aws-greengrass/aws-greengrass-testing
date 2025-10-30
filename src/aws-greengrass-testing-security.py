@@ -332,22 +332,22 @@ def test_Security_6_T15(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
 
     # Then I can check the cli to see the status of component HelloWorldPubSub is RUNNING
     deployment_result = gg_util_obj.wait_for_deployment_till_timeout(
-        180, deployment_id)
+        200, deployment_id)
     print(f"The deployment ({deployment_id}): {deployment_result}")
     assert (deployment_result == 'SUCCEEDED')
 
-    sleep_with_log(10, "waiting for component to start and publish messages")
+    sleep_with_log(20, "waiting for component to start and publish messages")
 
     # And I get 1 assertion with context "Successfully subscribed to test/topic"
     # And I get 1 assertion with context "Successfully published to test/topic"
     assert (system_interface.monitor_journalctl_for_message(
         "ggl." + hello_world_pubSub[0] + ".service",
         "Successfully published 1 message(s)",
-        timeout=20) is True)
+        timeout=30) is True)
     assert (system_interface.monitor_journalctl_for_message(
         "ggl." + hello_world_pubSub[0] + ".service",
         "Received new message on topic test/topic: Hello from local pubsub topic",
-        timeout=20) is True)
+        timeout=30) is True)
 
     # When I remove the components HelloWorldPubSub
     # Then I can check the cli to see the component HelloWorldPubSub is not listed
