@@ -59,6 +59,7 @@ class GGTestUtils:
         self._iotClient = boto3.client("iot", region_name=self._region)
         self._s3Client = boto3.client("s3", region_name=self._region)
         self._ggComponentToDeleteArn = []
+        self._component_random_ids = {}  # Track random_id per component-version
         self._ggServiceList = []
         self._ggDeploymentToThingNameList = []
 
@@ -439,18 +440,23 @@ class GGTestUtils:
         return "TIMEOUT"
 
     def _upload_files_to_s3(self, files: Sequence[os.PathLike | str],
-                            bucket_name: str) -> bool:
+                            bucket_name: str, random_id: str = None) -> bool:
         """
         Upload a file to an S3 bucket
 
         :param file_path: File to upload
         :param bucket_name: Bucket to upload to
+        :param random_id: Optional random ID to use as subdirectory
         :return: True if file was uploaded, else False
         """
 
         for file_path in files:
-            object_name = os.path.join(S3_ARTIFACT_DIR,
-                                       os.path.basename(file_path))
+            if random_id:
+                object_name = os.path.join(S3_ARTIFACT_DIR, random_id,
+                                           os.path.basename(file_path))
+            else:
+                object_name = os.path.join(S3_ARTIFACT_DIR,
+                                           os.path.basename(file_path))
 
             try:
                 # Upload the file
@@ -462,10 +468,14 @@ class GGTestUtils:
             print(
                 f"File {file_path} successfully uploaded to {bucket_name}/{object_name}"
             )
+        
+        # Wait for S3 artifact propagation
+        time.sleep(10)
         return True
 
     def _upload_component_to_gg(self,
-                                recipe_files: List[os.PathLike | str]) -> str:
+                                recipe_files: List[os.PathLike | str],
+                                random_id: str = None) -> str:
         recipe_name = ""
         recipe_content = ""
         cloud_addition = str(uuid1())
@@ -487,6 +497,11 @@ class GGTestUtils:
                     "$bucketName$", self.s3_artifact_bucket)
                 modified_content = modified_content.replace(
                     "$testArtifactsDirectory$", S3_ARTIFACT_DIR)
+                
+                # Replace $randomId$ with actual random ID if provided
+                if random_id:
+                    modified_content = modified_content.replace(
+                        "$randomId$", random_id)
 
                 modified_content = modified_content.replace(
                     recipe_name, cloud_recipe_name)
@@ -517,6 +532,13 @@ class GGTestUtils:
         self, component_name: str, version: str,
         dependencies: List[Tuple[str,
                                  str]]) -> Optional[ComponentDeploymentInfo]:
+        
+        # Generate a random ID for artifact uploads
+        random_id = str(uuid1())
+        
+        # Store random_id for this component version
+        self._component_random_ids[f"{component_name}-{version}"] = random_id
+        
         try:
             component_artifact_dir = os.path.join('components', component_name,
                                                   version, 'artifacts')
@@ -527,7 +549,7 @@ class GGTestUtils:
                 for file in artifact_files
             ]
             self._upload_files_to_s3(artifact_files_full_paths,
-                                     self.s3_artifact_bucket)
+                                     self.s3_artifact_bucket, random_id)
         except FileNotFoundError:
             print(
                 f"No artifact directory found for {component_name}-{version}.")
@@ -588,7 +610,7 @@ class GGTestUtils:
                     f_out.write(yaml.safe_dump(recipe_obj))
                     f_out.close()
 
-                cloud_name = self._upload_component_to_gg([new_file_path])
+                cloud_name = self._upload_component_to_gg([new_file_path], random_id)
 
                 recipe.close()
 
@@ -608,6 +630,13 @@ class GGTestUtils:
             self, component_name: str,
             versions: List[str]) -> Optional[ComponentDeploymentInfo]:
 
+        # Generate a random ID for artifact uploads
+        random_id = str(uuid1())
+        
+        # Store random_id for each version
+        for version in versions:
+            self._component_random_ids[f"{component_name}-{version}"] = random_id
+
         for version in versions:
             try:
                 component_artifact_dir = os.path.join('components',
@@ -620,7 +649,7 @@ class GGTestUtils:
                     for file in artifact_files
                 ]
                 self._upload_files_to_s3(artifact_files_full_paths,
-                                         self.s3_artifact_bucket)
+                                         self.s3_artifact_bucket, random_id)
             except FileNotFoundError:
                 print(
                     f"No artifact directory found for {component_name}-{version}."
@@ -651,7 +680,7 @@ class GGTestUtils:
                 recipes_file_list.append(recipes_full_paths[0])
 
             print(recipes_file_list)
-            cloud_name = self._upload_component_to_gg(recipes_file_list)
+            cloud_name = self._upload_component_to_gg(recipes_file_list, random_id)
             return ComponentDeploymentInfo(name=cloud_name,
                                            versions=versions,
                                            merge_config=None)
@@ -705,8 +734,11 @@ class GGTestUtils:
             assert corrupt_file_list is not None
             corrupt_file_list.append(corrupt_file_path)
 
+        # Get the random_id used for this component version
+        random_id = self._component_random_ids.get(f"{component_name}-{version}")
+        
         return self._upload_files_to_s3(corrupt_file_list,
-                                        self.s3_artifact_bucket)
+                                        self.s3_artifact_bucket, random_id)
 
     def cleanup(self) -> None:
         for componentArn in self._ggComponentToDeleteArn:
