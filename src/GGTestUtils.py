@@ -492,7 +492,8 @@ class GGTestUtils:
             # Verify ETag/digest is available for Greengrass validation
             for attempt in range(10):
                 try:
-                    response = self._s3Client.head_object(Bucket=bucket_name, Key=last_object)
+                    response = self._s3Client.head_object(Bucket=bucket_name,
+                                                          Key=last_object)
                     if 'ETag' in response and response['ETag']:
                         print(f"S3 artifact ETag verified after {attempt + 1}s")
                         break
@@ -501,7 +502,7 @@ class GGTestUtils:
                 time.sleep(1)
             else:
                 raise Exception(f"S3 artifact ETag not available after 10s")
-            
+
             # Additional wait for S3 endpoint propagation
             time.sleep(3)
 
