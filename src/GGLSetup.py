@@ -35,16 +35,25 @@ def install_greengrass_lite_from_source(commit_id: str, region: str):
     ggl_path = os.path.join(WORKSPACE_DIR, "aws-greengrass-lite")
     build_path = os.path.join(ggl_path, 'build')
 
-    # Skip download if already exists
+    # Skip download if already exists in workspace
     if os.path.exists(ggl_path):
         print(
             f"aws-greengrass-lite already exists in {WORKSPACE_DIR}, skipping download"
         )
     else:
-        # Download the source repo
-        download_result = _download_source(commit_id, WORKSPACE_DIR)
-        if not download_result:
-            return False
+        # Check if greengrass-lite exists in current directory or parent
+        current_dir = os.getcwd()
+        for check_dir in [current_dir, os.path.dirname(current_dir), os.path.dirname(os.path.dirname(current_dir))]:
+            potential_ggl = os.path.join(check_dir, "aws-greengrass-lite")
+            if os.path.exists(potential_ggl) and os.path.exists(os.path.join(potential_ggl, "CMakeLists.txt")):
+                print(f"Found aws-greengrass-lite in {check_dir}, copying to workspace")
+                shutil.copytree(potential_ggl, ggl_path)
+                break
+        else:
+            # Download the source repo if not found locally
+            download_result = _download_source(commit_id, WORKSPACE_DIR)
+            if not download_result:
+                return False
 
     # Get config
     with open(JSON_FILE, 'r') as file:
