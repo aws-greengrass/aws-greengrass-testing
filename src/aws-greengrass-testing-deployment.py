@@ -351,7 +351,6 @@ def test_Deployment_3_T2(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     #    | SampleComponent | 1.0.0 |
     # And I deploy the configuration for deployment Deployment1
 
-    sleep_with_log(5, "waiting for S3 artifact propagation")
 
     deployment_id_1 = gg_util_obj.create_deployment(
         gg_util_obj.get_thing_group_arn(new_thing_group_name),
@@ -382,7 +381,6 @@ def test_Deployment_3_T2(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     #    | HelloWorld | 1.0.1 |
     # And I deploy the configuration for deployment Deployment2
 
-    sleep_with_log(5, "waiting for S3 artifact propagation")
 
     deployment_id_2 = gg_util_obj.create_deployment(
         gg_util_obj.get_thing_group_arn(new_thing_group_name),
@@ -424,7 +422,6 @@ def test_Deployment_3_T3(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     #     | BrokenComponent | 1.0.0 |
     # And I deploy the configuration for deployment FirstDeployment
 
-    sleep_with_log(5, "waiting for S3 artifact propagation")
 
     deployment_id = gg_util_obj.create_deployment(
         gg_util_obj.get_thing_group_arn(new_thing_group_name),
@@ -453,7 +450,6 @@ def test_Deployment_3_T3(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     #     | BrokenComponent | 1.0.2 |
     # And I deploy the configuration for deployment SecondDeployment
 
-    sleep_with_log(5, "waiting for S3 artifact propagation")
 
     deployment_id_2 = gg_util_obj.create_deployment(
         gg_util_obj.get_thing_group_arn(new_thing_group_name),
@@ -489,7 +485,6 @@ def test_Deployment_3_T4(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     #     | BrokenComponent | 1.0.0 |
     # And I deploy the configuration for deployment FirstDeployment
 
-    sleep_with_log(5, "waiting for S3 artifact propagation")
 
     deployment_id = gg_util_obj.create_deployment(
         gg_util_obj.get_thing_group_arn(new_thing_group_name),
@@ -518,7 +513,6 @@ def test_Deployment_3_T4(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     #     | BrokenComponent | 1.0.1 |
     # And I deploy the configuration for deployment SecondDeployment
 
-    sleep_with_log(5, "waiting for S3 artifact propagation")
 
     deployment_id_v1 = gg_util_obj.create_deployment(
         gg_util_obj.get_thing_group_arn(new_thing_group_name),
@@ -551,7 +545,6 @@ def test_Deployment_3_T5(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     #     | BrokenComponent | 1.0.0 |
     # And I deploy the configuration for deployment FirstDeployment
 
-    sleep_with_log(5, "waiting for S3 artifact propagation")
 
     deployment_id = gg_util_obj.create_deployment(
         gg_util_obj.get_thing_group_arn(new_thing_group_name),
@@ -612,7 +605,6 @@ def test_Deployment_5_T2(gg_util_obj: GGTestUtils, iot_obj: IoTUtils,
     #     | Component2BaseCloud | 1.0.0 |
     # And I deploy the configuration for deployment FirstDeployment
 
-    sleep_with_log(5, "waiting for S3 artifact propagation")
 
     deployment_id = gg_util_obj.create_deployment(
         gg_util_obj.get_thing_group_arn(first_thing_group_name),
@@ -707,7 +699,6 @@ def test_Deployment_7_T3(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     #     | HelloWorld | 1.0.0 |
     # And I deploy the configuration for deployment SecondDeployment
 
-    sleep_with_log(5, "waiting for S3 artifact propagation")
 
     deployment_id_1 = gg_util_obj.create_deployment(
         gg_util_obj.get_thing_group_arn(second_thing_group_name),
@@ -746,7 +737,6 @@ def test_Deployment_7_T4(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     #     | Component2BaseCloud | 1.0.0 |
     # And I deploy the configuration for deployment FirstDeployment
 
-    sleep_with_log(5, "waiting for S3 artifact propagation")
 
     deployment_id = gg_util_obj.create_deployment(
         gg_util_obj.get_thing_group_arn(first_thing_group_name),
@@ -773,16 +763,15 @@ def test_Deployment_7_T4(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     #     | Component2BaseCloud | 1.0.0 |
     # And I deploy the configuration for deployment SecondDeployment
 
-    sleep_with_log(5, "waiting for S3 artifact propagation")
 
     deployment_id_1 = gg_util_obj.create_deployment(
         gg_util_obj.get_thing_group_arn(second_thing_group_name),
         [hello_world_cloud_name, Component2BaseCloud_cloud_name],
         "SecondDeployment")["deploymentId"]
 
-    # Then the deployment SecondDeployment completes with SUCCEEDED within 120 seconds
+    # Then the deployment SecondDeployment completes with SUCCEEDED within 180 seconds
     assert (gg_util_obj.wait_for_deployment_till_timeout(
-        120, deployment_id_1) == "SUCCEEDED")
+        180, deployment_id_1) == "SUCCEEDED")
 
     # Then I can check the cli to see the status of component HelloWorld is RUNNING
     assert system_interface.check_systemctl_status_for_component(
@@ -926,7 +915,6 @@ def test_Deployment_8_T3(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     #     | HelloWorld | 1.0.0 |
     # And I deploy the configuration for deployment deployment1
 
-    sleep_with_log(5, "waiting for S3 artifact propagation")
 
     deployment_1 = gg_util_obj.create_deployment(
         gg_util_obj.get_thing_group_arn(a_thing_group_name),
@@ -1002,7 +990,6 @@ def test_Deployment_8_T4(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     #     | HelloWorld | 1.0.0 |
     # And I deploy the configuration for deployment deployment1
 
-    sleep_with_log(5, "waiting for S3 artifact propagation")
 
     deployment_1 = gg_util_obj.create_deployment(
         gg_util_obj.get_thing_group_arn(a_thing_group_name),

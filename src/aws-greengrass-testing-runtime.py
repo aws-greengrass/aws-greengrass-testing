@@ -66,7 +66,6 @@ def test_Runtime_1_T4(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     state_transition_timeout = gg_util_obj.upload_component_with_version(
         "state_transition_timeout", "1.0.0")
 
-    sleep_with_log(5, "waiting for S3 artifact propagation")
 
     deployment_id = gg_util_obj.create_deployment(
         gg_util_obj.get_thing_group_arn(new_thing_group_name),
@@ -108,7 +107,6 @@ def test_Runtime_1_T5(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     foreground_no_ipc_error = gg_util_obj.upload_component_with_version(
         "foreground_no_ipc_error", "1.0.0")
 
-    sleep_with_log(5, "waiting for S3 artifact propagation")
 
     deployment_id = gg_util_obj.create_deployment(
         gg_util_obj.get_thing_group_arn(new_thing_group_name),

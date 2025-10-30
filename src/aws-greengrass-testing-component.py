@@ -68,7 +68,6 @@ def test_Component_12_T1(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     #   | MultiPlatform | 1.0.0 |
     # And   I deploy the deployment configuration
 
-    sleep_with_log(5, "waiting for S3 artifact propagation")
 
     deployment_id = gg_util_obj.create_deployment(
         gg_util_obj.get_thing_group_arn(new_thing_group_name),
@@ -108,7 +107,6 @@ def test_Component_16_T1(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
         "HelloWorld", ["1.0.0"])
 
     # Give 10 sec for cloud to calculate artifact checksum and make it "DEPLOYABLE"
-    sleep_with_log(10, "waiting for S3 artifact propagation")
 
     # When I create a deployment configuration with components
     #        | HelloWorld | 1.0.0 |
@@ -298,7 +296,6 @@ def test_Component_29_T4(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     #         | aws.gg.uat.cloud.ComponentConfigTestService | 1.0.0 |
     # I deploy the configuration for deployment FirstCloudDeployment
 
-    sleep_with_log(5, "waiting for S3 artifact propagation")
 
     deployment_id = gg_util_obj.create_deployment(
         gg_util_obj.get_thing_group_arn(new_thing_group_name),
