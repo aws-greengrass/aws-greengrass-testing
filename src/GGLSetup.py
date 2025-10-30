@@ -116,13 +116,14 @@ def install_greengrass_lite_from_source(commit_id: str, region: str):
         if not config_result or not move_result1 or not move_result2 or not remove_result:
             return False
 
-        # Build
-        if not os.path.exists(build_path):
-            build_result = _build_with_cmake()
-            if not build_result:
-                return False
-        else:
-            print("Build directory exists, skipping build")
+        # Build - clean if stale, then rebuild
+        if os.path.exists(build_path):
+            print("Build directory exists, cleaning to avoid stale paths")
+            shutil.rmtree(build_path)
+        
+        build_result = _build_with_cmake()
+        if not build_result:
+            return False
 
         # Install
         install_result = _install_with_cmake()
