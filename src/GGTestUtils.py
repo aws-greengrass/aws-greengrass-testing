@@ -63,6 +63,8 @@ class GGTestUtils:
         }    # Track random_id per component-version
         self._ggServiceList = []
         self._ggDeploymentToThingNameList = []
+        # Use unique folder per test instance to avoid cleanup conflicts
+        self._test_artifact_dir = f"{S3_ARTIFACT_DIR}/{str(uuid1())}"
 
     @property
     def aws_account(self) -> str:
@@ -455,10 +457,10 @@ class GGTestUtils:
 
         for file_path in files:
             if random_id:
-                object_name = os.path.join(S3_ARTIFACT_DIR, random_id,
+                object_name = os.path.join(self._test_artifact_dir, random_id,
                                            os.path.basename(file_path))
             else:
-                object_name = os.path.join(S3_ARTIFACT_DIR,
+                object_name = os.path.join(self._test_artifact_dir,
                                            os.path.basename(file_path))
 
             try:
@@ -501,7 +503,7 @@ class GGTestUtils:
                 modified_content = recipe_content.replace(
                     "$bucketName$", self.s3_artifact_bucket)
                 modified_content = modified_content.replace(
-                    "$testArtifactsDirectory$", S3_ARTIFACT_DIR)
+                    "$testArtifactsDirectory$", self._test_artifact_dir)
 
                 # Replace $randomId$ with actual random ID if provided
                 if random_id:
@@ -787,7 +789,7 @@ class GGTestUtils:
                     f'Failed to delete component {componentArn} from configured test account.'
                 )
 
-        folder_path = S3_ARTIFACT_DIR + "/"
+        folder_path = self._test_artifact_dir + "/"
         # List all objects within the folder
         paginator = self._s3Client.get_paginator('list_objects_v2')
         objects_to_delete = []
