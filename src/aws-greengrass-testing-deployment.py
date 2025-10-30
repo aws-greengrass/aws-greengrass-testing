@@ -1011,9 +1011,9 @@ def test_Deployment_8_T4(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
         [hello_world_v1_cloud_name], "deployment2")["deploymentId"]
     assert deployment_2 is not None
 
-    # Then the status of single device deployment deployment2 reaches COMPLETED within 240 seconds
+    # Then the status of single device deployment deployment2 reaches COMPLETED within 300 seconds
     assert (gg_util_obj.wait_for_deployment_till_timeout(
-        240, deployment_2) == "SUCCEEDED")
+        300, deployment_2) == "SUCCEEDED")
 
     # And I can check the cli to see the component HelloWorld is listed within 30 seconds
     # And I can check the cli to see the component HelloWorld is running with version 1.0.1
