@@ -30,5 +30,5 @@ Manifests:
       run: |-
         .venv/bin/python -u {artifacts:path}/hello_world_pub_sub.py "{configuration:/Topic}" "{configuration:/Message}"
     Artifacts:
-      - Uri: "s3://$bucketName$/$testArtifactsDirectory$/hello_world_pub_sub.py"
+      - Uri: "s3://$bucketName$/$testArtifactsDirectory$/$randomId$/hello_world_pub_sub.py"
 Lifecycle: {}

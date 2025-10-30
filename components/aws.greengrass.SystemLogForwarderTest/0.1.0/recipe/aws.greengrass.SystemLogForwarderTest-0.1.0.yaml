@@ -39,7 +39,7 @@ Manifests:
           \ --thingName {iot:thingName} --filters {configuration:/filters}"
         RequiresPrivilege: "true"
     Artifacts:
-      - Uri: s3://$bucketName$/$testArtifactsDirectory$/system-log-forwarder-arm64
+      - Uri: s3://$bucketName$/$testArtifactsDirectory$/$randomId$/system-log-forwarder-arm64
         Unarchive: "NONE"
         Permission:
           Read: "OWNER"
@@ -59,7 +59,7 @@ Manifests:
           \ --thingName {iot:thingName} --filters {configuration:/filters}"
         RequiresPrivilege: "true"
     Artifacts:
-      - Uri: s3://$bucketName$/$testArtifactsDirectory$/system-log-forwarder-x86_64
+      - Uri: s3://$bucketName$/$testArtifactsDirectory$/$randomId$/system-log-forwarder-x86_64
         Unarchive: "NONE"
         Permission:
           Read: "OWNER"

@@ -11,7 +11,7 @@ Manifests:
   - Platform:
       os: windows
     Artifacts:
-      - URI: s3://$bucketName$/$testArtifactsDirectory$/hello_world_helloworld.py
+      - URI: s3://$bucketName$/$testArtifactsDirectory$/$randomId$/hello_world_helloworld.py
     Lifecycle:
       run: >-
         powershell -command "& { while(1) { python
@@ -21,7 +21,7 @@ Manifests:
       os: "*"
       runtime: "*"
     Artifacts:
-      - URI: s3://$bucketName$/$testArtifactsDirectory$/hello_world_helloworld.py
+      - URI: s3://$bucketName$/$testArtifactsDirectory$/$randomId$/hello_world_helloworld.py
     Lifecycle:
       run: |-
         while true; do

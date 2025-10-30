@@ -28,5 +28,5 @@ Manifests:
       run: |-
         .venv/bin/python3 -u {artifacts:path}/subscriber.py "{configuration:/Topic}" "{configuration:/Message}"
     Artifacts:
-      - Uri: "s3://$bucketName$/$testArtifactsDirectory$/subscriber.py"
+      - Uri: "s3://$bucketName$/$testArtifactsDirectory$/$randomId$/subscriber.py"
 Lifecycle: {}

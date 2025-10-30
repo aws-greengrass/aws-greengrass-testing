@@ -13,7 +13,7 @@ Manifests:
   - Platform:
       os: windows
     Artifacts:
-      - URI: s3://$bucketName$/$testArtifactsDirectory$/broken_after_deployed.py
+      - URI: s3://$bucketName$/$testArtifactsDirectory$/$randomId$/broken_after_deployed.py
     Lifecycle:
       run:
         python {artifacts:path}/broken_after_deployed.py
@@ -22,7 +22,7 @@ Manifests:
       os: "*"
       runtime: "*"
     Artifacts:
-      - URI: s3://$bucketName$/$testArtifactsDirectory$/broken_after_deployed.py
+      - URI: s3://$bucketName$/$testArtifactsDirectory$/$randomId$/broken_after_deployed.py
     Lifecycle:
       run: |-
         python3 {artifacts:path}/broken_after_deployed.py {configuration:/SleepTime};

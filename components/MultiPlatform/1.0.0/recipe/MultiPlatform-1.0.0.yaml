@@ -11,28 +11,26 @@ Manifests:
   - Platform:
       os: "linux"
       runtime: "*"
+    Selections:
+      - unix
     Artifacts:
-      - URI: s3://$bucketName$/$testArtifactsDirectory$/hello_world_multiplatform.py
+      - URI: s3://$bucketName$/$testArtifactsDirectory$/$randomId$/hello_world.py
     Lifecycle:
       run: |-
         while true; do
-        python3 {artifacts:path}/hello_world_multiplatform.py '{configuration:/Message}'; sleep 5
+        python3 {artifacts:path}/hello_world.py '{configuration:/Message}'; sleep 5
         done
 
   - Platform:
       os: windows
     Artifacts:
-      - URI: s3://$bucketName$/$testArtifactsDirectory$/hello_world_multiplatform.py
-    Lifecycle:
-      run: >-
-        powershell -command "& { while(1) { python
-        {artifacts:path}/hello_world_multiplatform.py
-        \"{configuration:/Message}\"; sleep 5 } }"
+      - URI: s3://$bucketName$/$testArtifactsDirectory$/$randomId$/hello_world.py
+    Selections:
+      - windows
   - Platform:
       os: customOs
-    Lifecycle:
-      run: |-
-        echo Hello {configuration:/Message} from custom platform!
+    Selections:
+      - custom
   - Platform:
       os: manifestOverridingLifecycle
     Lifecycle:
@@ -40,7 +38,21 @@ Manifests:
         echo overriding global lifecycle
   # default platform when no match found
   - Artifacts:
-      - URI: s3://$bucketName$/$testArtifactsDirectory$/hello_world_multiplatform.py
-    Lifecycle:
-      run: |-
-        echo fallback to default platform
+      - URI: s3://$bucketName$/$testArtifactsDirectory$/$randomId$/hello_world.py
+
+Lifecycle:
+  linux:
+    run: |-
+      while true; do
+      python3 {artifacts:path}/hello_world.py '{configuration:/Message}'; sleep 5
+      done
+  windows:
+    run:>-
+      powershell -command "& { while(1) { python {artifacts:path}/hello_world.py
+      \"{configuration:/Message}\"; sleep 5 } }"
+  custom:
+    run:|-
+      echo Hello {configuration:/Message} from custom platform!
+  all:
+    run:|-
+      echo fallback to default platform
