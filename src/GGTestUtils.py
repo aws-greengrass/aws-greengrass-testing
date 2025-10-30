@@ -548,7 +548,7 @@ class GGTestUtils:
                 recipe_json = json.dumps(recipe_yaml)
 
                 # Retry CreateComponentVersion if artifact not accessible yet
-                for retry in range(5):
+                for retry in range(10):
                     try:
                         # Create component version using the recipe
                         response = self._ggClient.create_component_version(
@@ -556,11 +556,11 @@ class GGTestUtils:
                         break
                     except self._ggClient.exceptions.ValidationException as e:
                         if "artifact resource cannot be accessed" in str(
-                                e) and retry < 4:
+                                e) and retry < 9:
                             print(
-                                f"Artifact not accessible yet, retrying in 2s (attempt {retry + 1}/5)"
+                                f"Artifact not accessible yet, retrying in 3s (attempt {retry + 1}/10)"
                             )
-                            time.sleep(2)
+                            time.sleep(3)
                         else:
                             raise
                     except self._ggClient.exceptions.ConflictException:
