@@ -506,7 +506,7 @@ class GGTestUtils:
                     time.sleep(1)
 
             # Wait for full S3 propagation across all endpoints
-            time.sleep(45)
+            time.sleep(60)
 
         return True
 
@@ -558,9 +558,9 @@ class GGTestUtils:
                         if "artifact resource cannot be accessed" in str(
                                 e) and retry < 9:
                             print(
-                                f"Artifact not accessible yet, retrying in 3s (attempt {retry + 1}/10)"
+                                f"Artifact not accessible yet, retrying in 10s (attempt {retry + 1}/10)"
                             )
-                            time.sleep(3)
+                            time.sleep(10)
                         else:
                             raise
                     except self._ggClient.exceptions.ConflictException:
