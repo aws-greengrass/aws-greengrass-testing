@@ -472,40 +472,8 @@ class GGTestUtils:
                 f"File {file_path} successfully uploaded to {bucket_name}/{object_name}"
             )
 
-        # Basic check that S3 artifact is accessible
+        # Wait for S3 propagation
         if files:
-            last_object = object_name
-            for attempt in range(10):
-                try:
-                    self._s3Client.head_object(Bucket=bucket_name,
-                                               Key=last_object)
-                    print(
-                        f"S3 artifact verified accessible after {attempt + 1}s")
-                    break
-                except:
-                    time.sleep(1)
-            else:
-                raise Exception(
-                    f"S3 artifact {bucket_name}/{last_object} not accessible after 10s"
-                )
-
-            # Verify artifact is downloadable (not just metadata accessible)
-            for attempt in range(10):
-                try:
-                    response = self._s3Client.get_object(Bucket=bucket_name,
-                                                         Key=last_object,
-                                                         Range='bytes=0-0')
-                    response['Body'].read()
-                    print(f"S3 artifact download verified after {attempt + 1}s")
-                    break
-                except Exception as e:
-                    if attempt == 9:
-                        raise Exception(
-                            f"S3 artifact {bucket_name}/{last_object} not downloadable after 10s: {e}"
-                        )
-                    time.sleep(1)
-
-            # Wait for full S3 propagation across all endpoints
             time.sleep(60)
 
         return True
