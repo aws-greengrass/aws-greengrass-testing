@@ -472,10 +472,10 @@ class GGTestUtils:
                 f"File {file_path} successfully uploaded to {bucket_name}/{object_name}"
             )
 
-        # Wait for S3 artifact propagation by checking availability
+        # Basic check that S3 artifact is accessible
         if files:
-            last_object = object_name    # Use the last uploaded file for checking
-            for attempt in range(20):    # Max 20 seconds
+            last_object = object_name
+            for attempt in range(10):
                 try:
                     self._s3Client.head_object(Bucket=bucket_name,
                                                Key=last_object)
@@ -486,25 +486,27 @@ class GGTestUtils:
                     time.sleep(1)
             else:
                 raise Exception(
-                    f"S3 artifact {bucket_name}/{last_object} not accessible after 20s"
+                    f"S3 artifact {bucket_name}/{last_object} not accessible after 10s"
                 )
 
-            # Verify ETag/digest is available for Greengrass validation
+            # Verify artifact is downloadable (not just metadata accessible)
             for attempt in range(10):
                 try:
-                    response = self._s3Client.head_object(Bucket=bucket_name,
-                                                          Key=last_object)
-                    if 'ETag' in response and response['ETag']:
-                        print(f"S3 artifact ETag verified after {attempt + 1}s")
-                        break
-                except:
-                    pass
-                time.sleep(1)
-            else:
-                raise Exception(f"S3 artifact ETag not available after 10s")
+                    response = self._s3Client.get_object(Bucket=bucket_name,
+                                                         Key=last_object,
+                                                         Range='bytes=0-0')
+                    response['Body'].read()
+                    print(f"S3 artifact download verified after {attempt + 1}s")
+                    break
+                except Exception as e:
+                    if attempt == 9:
+                        raise Exception(
+                            f"S3 artifact {bucket_name}/{last_object} not downloadable after 10s: {e}"
+                        )
+                    time.sleep(1)
 
-            # Additional wait for S3 endpoint propagation
-            time.sleep(3)
+            # Wait for full S3 propagation across all endpoints
+            time.sleep(30)
 
         return True
 
@@ -545,41 +547,51 @@ class GGTestUtils:
                 recipe_yaml = yaml.safe_load(modified_content)
                 recipe_json = json.dumps(recipe_yaml)
 
-                try:
-                    # Create component version using the recipe
-                    response = self._ggClient.create_component_version(
-                        inlineRecipe=recipe_json)
-
-                    print(
-                        f"Successfully uploaded component with ARN: {response['arn']}"
-                    )
-                    self._ggComponentToDeleteArn.append(response["arn"])
-
-                    # Wait for component to be DEPLOYABLE
-                    component_name = response['componentName']
-                    component_version = response['componentVersion']
-                    for attempt in range(10):
-                        status_response = self._ggClient.describe_component(
-                            arn=response['arn'])
-                        status = status_response.get('status',
-                                                     {}).get('componentState')
-                        if status == 'DEPLOYABLE':
+                # Retry CreateComponentVersion if artifact not accessible yet
+                for retry in range(5):
+                    try:
+                        # Create component version using the recipe
+                        response = self._ggClient.create_component_version(
+                            inlineRecipe=recipe_json)
+                        break
+                    except self._ggClient.exceptions.ValidationException as e:
+                        if "artifact resource cannot be accessed" in str(
+                                e) and retry < 4:
                             print(
-                                f"Component {component_name} is DEPLOYABLE after {attempt + 1}s"
+                                f"Artifact not accessible yet, retrying in 2s (attempt {retry + 1}/5)"
                             )
-                            break
-                        time.sleep(1)
-                    else:
-                        print(
-                            f"Warning: Component {component_name} status is {status}, not DEPLOYABLE after 10s"
-                        )
+                            time.sleep(2)
+                        else:
+                            raise
+                    except self._ggClient.exceptions.ConflictException:
+                        raise
+                    except Exception:
+                        raise
 
-                except self._ggClient.exceptions.ConflictException as e:
-                    print(f"Component version already exists: {e}")
-                    raise
-                except Exception as e:
-                    print(f"Error uploading component: {e}")
-                    raise
+                print(
+                    f"Successfully uploaded component with ARN: {response['arn']}"
+                )
+                self._ggComponentToDeleteArn.append(response["arn"])
+
+                # Wait for component to be DEPLOYABLE
+                component_name = response['componentName']
+                component_version = response['componentVersion']
+                for attempt in range(10):
+                    status_response = self._ggClient.describe_component(
+                        arn=response['arn'])
+                    status = status_response.get('status',
+                                                 {}).get('componentState')
+                    if status == 'DEPLOYABLE':
+                        print(
+                            f"Component {component_name} is DEPLOYABLE after {attempt + 1}s"
+                        )
+                        break
+                    time.sleep(1)
+                else:
+                    print(
+                        f"Warning: Component {component_name} status is {status}, not DEPLOYABLE after 10s"
+                    )
+
         return cloud_recipe_name
 
     def upload_component_with_version_and_deps(
