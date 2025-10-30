@@ -15,8 +15,8 @@ Manifests:
     Lifecycle:
       run: >-
         powershell -command "& { while(1) { python
-        {artifacts:path}/hello_world.py \"{configuration:/Message}\";
-        sleep 5 } }"
+        {artifacts:path}/hello_world.py \"{configuration:/Message}\"; sleep 5 }
+        }"
   - Platform:
       os: "*"
       runtime: "*"

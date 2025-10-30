@@ -13,6 +13,7 @@ import zipfile
 from typing import Any, Dict, List, Literal, Optional, Sequence, Tuple
 from uuid import uuid1
 from boto3 import client
+import boto3
 import time
 import logging
 import yaml
@@ -154,9 +155,6 @@ def install_greengrass_lite_from_source(commit_id: str, region: str):
                 f"Greengrass setup failed: run_nucleus script failed")
 
         # Wait for device to register with Greengrass V2
-        import boto3
-        import time
-        import yaml
         from GGTestUtils import sleep_with_log
 
         # Read thing name from config

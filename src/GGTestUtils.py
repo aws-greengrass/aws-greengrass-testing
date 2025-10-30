@@ -565,13 +565,17 @@ class GGTestUtils:
 
     def upload_component_with_version_and_deps(
         self, component_name: str, version: str,
-        dependencies: List[Tuple[str, str]]) -> Optional[ComponentDeploymentInfo]:
-        return self.upload_component_with_versions(component_name, [version], dependencies)
+        dependencies: List[Tuple[str,
+                                 str]]) -> Optional[ComponentDeploymentInfo]:
+        return self.upload_component_with_versions(component_name, [version],
+                                                   dependencies)
 
     def upload_component_with_versions(
-            self, component_name: str,
-            versions: List[str],
-            dependencies: List[Tuple[str, str]] = None) -> Optional[ComponentDeploymentInfo]:
+        self,
+        component_name: str,
+        versions: List[str],
+        dependencies: List[Tuple[str, str]] = None
+    ) -> Optional[ComponentDeploymentInfo]:
 
         # Generate a random ID for artifact uploads
         random_id = str(uuid1())
@@ -626,30 +630,44 @@ class GGTestUtils:
                     with open(recipes_full_paths[0]) as recipe:
                         recipe_obj = yaml.safe_load(recipe)
                         if "ComponentDependencies" not in recipe_obj:
-                            print("ComponentDependencies section not found in the original recipe.")
+                            print(
+                                "ComponentDependencies section not found in the original recipe."
+                            )
                             return None
 
                         for dependency in dependencies:
-                            if dependency[0] not in recipe_obj["ComponentDependencies"]:
-                                print(f"The dependency {dependency[0]} not found in original recipe.")
+                            if dependency[0] not in recipe_obj[
+                                    "ComponentDependencies"]:
+                                print(
+                                    f"The dependency {dependency[0]} not found in original recipe."
+                                )
                                 return None
-                            stored_val = recipe_obj["ComponentDependencies"][dependency[0]]
-                            del recipe_obj["ComponentDependencies"][dependency[0]]
-                            recipe_obj["ComponentDependencies"][dependency[1]] = stored_val
+                            stored_val = recipe_obj["ComponentDependencies"][
+                                dependency[0]]
+                            del recipe_obj["ComponentDependencies"][
+                                dependency[0]]
+                            recipe_obj["ComponentDependencies"][
+                                dependency[1]] = stored_val
 
-                        output_dir = os.path.join("/tmp/aws-greengrass-testing-workspace", "ggtest", "modified_recipes")
+                        output_dir = os.path.join(
+                            "/tmp/aws-greengrass-testing-workspace", "ggtest",
+                            "modified_recipes")
                         os.makedirs(output_dir, exist_ok=True)
-                        new_file_path = os.path.join(output_dir, os.path.basename(recipes_full_paths[0]))
-                        
+                        new_file_path = os.path.join(
+                            output_dir, os.path.basename(recipes_full_paths[0]))
+
                         with open(new_file_path, "w") as f_out:
                             f_out.write(yaml.safe_dump(recipe_obj))
-                        
+
                         recipes_file_list.append(new_file_path)
                 else:
                     recipes_file_list.append(recipes_full_paths[0])
 
-            cloud_name = self._upload_component_to_gg(recipes_file_list, random_id)
-            return ComponentDeploymentInfo(name=cloud_name, versions=versions, merge_config=None)
+            cloud_name = self._upload_component_to_gg(recipes_file_list,
+                                                      random_id)
+            return ComponentDeploymentInfo(name=cloud_name,
+                                           versions=versions,
+                                           merge_config=None)
         except FileNotFoundError:
             print(f"No recipe directory found for {component_name}-{version}.")
             return None
@@ -731,11 +749,12 @@ class GGTestUtils:
             if objects_to_delete:
                 for i in range(0, len(objects_to_delete), 1000):
                     batch = objects_to_delete[i:i + 1000]
-                    self._s3Client.delete_objects(Bucket=self.s3_artifact_bucket,
-                                                  Delete={
-                                                      'Objects': batch,
-                                                      'Quiet': True
-                                                  })
+                    self._s3Client.delete_objects(
+                        Bucket=self.s3_artifact_bucket,
+                        Delete={
+                            'Objects': batch,
+                            'Quiet': True
+                        })
 
         # Extract unique thing_group_arns
         unique_thing_groups = {
