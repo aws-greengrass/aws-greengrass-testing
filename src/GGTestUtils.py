@@ -63,8 +63,7 @@ class GGTestUtils:
         }    # Track random_id per component-version
         self._ggServiceList = []
         self._ggDeploymentToThingNameList = []
-        # Use unique folder per test instance to avoid cleanup conflicts
-        self._test_artifact_dir = f"{S3_ARTIFACT_DIR}/{str(uuid1())}"
+        self._component_random_ids = {}
 
     @property
     def aws_account(self) -> str:
@@ -457,10 +456,10 @@ class GGTestUtils:
 
         for file_path in files:
             if random_id:
-                object_name = os.path.join(self._test_artifact_dir, random_id,
+                object_name = os.path.join(S3_ARTIFACT_DIR, random_id,
                                            os.path.basename(file_path))
             else:
-                object_name = os.path.join(self._test_artifact_dir,
+                object_name = os.path.join(S3_ARTIFACT_DIR,
                                            os.path.basename(file_path))
 
             try:
@@ -476,7 +475,7 @@ class GGTestUtils:
 
         # Wait for S3 propagation
         if files:
-            time.sleep(60)
+            time.sleep(5)
 
         return True
 
@@ -503,7 +502,7 @@ class GGTestUtils:
                 modified_content = recipe_content.replace(
                     "$bucketName$", self.s3_artifact_bucket)
                 modified_content = modified_content.replace(
-                    "$testArtifactsDirectory$", self._test_artifact_dir)
+                    "$testArtifactsDirectory$", S3_ARTIFACT_DIR)
 
                 # Replace $randomId$ with actual random ID if provided
                 if random_id:
@@ -518,7 +517,7 @@ class GGTestUtils:
                 recipe_json = json.dumps(recipe_yaml)
 
                 # Retry CreateComponentVersion if artifact not accessible yet
-                for retry in range(10):
+                for retry in range(20):
                     try:
                         # Create component version using the recipe
                         response = self._ggClient.create_component_version(
@@ -526,9 +525,9 @@ class GGTestUtils:
                         break
                     except self._ggClient.exceptions.ValidationException as e:
                         if "artifact resource cannot be accessed" in str(
-                                e) and retry < 9:
+                                e).lower() and retry < 19:
                             print(
-                                f"Artifact not accessible yet, retrying in 10s (attempt {retry + 1}/10)"
+                                f"Artifact not accessible yet, retrying in 10s (attempt {retry + 1}/20)"
                             )
                             time.sleep(10)
                         else:
@@ -566,106 +565,13 @@ class GGTestUtils:
 
     def upload_component_with_version_and_deps(
         self, component_name: str, version: str,
-        dependencies: List[Tuple[str,
-                                 str]]) -> Optional[ComponentDeploymentInfo]:
-
-        # Generate a random ID for artifact uploads
-        random_id = str(uuid1())
-
-        # Store random_id for this component version
-        self._component_random_ids[f"{component_name}-{version}"] = random_id
-
-        try:
-            component_artifact_dir = os.path.join('components', component_name,
-                                                  version, 'artifacts')
-
-            artifact_files = os.listdir(component_artifact_dir)
-            artifact_files_full_paths = [
-                os.path.abspath(os.path.join(component_artifact_dir, file))
-                for file in artifact_files
-            ]
-            self._upload_files_to_s3(artifact_files_full_paths,
-                                     self.s3_artifact_bucket, random_id)
-        except FileNotFoundError:
-            print(
-                f"No artifact directory found for {component_name}-{version}.")
-        except PermissionError:
-            print(
-                f"Cannot access the directory with artifacts for {component_name}-{version}."
-            )
-            return None
-
-        try:
-            component_recipe_dir = os.path.join('components', component_name,
-                                                version, 'recipe')
-
-            recipes = os.listdir(component_recipe_dir)
-            recipes_full_paths = [
-                os.path.abspath(os.path.join(component_recipe_dir, file))
-                for file in recipes
-            ]
-
-            if len(recipes_full_paths) != 1:
-                print("More than one recipe files found.")
-                return None
-
-            with open(recipes_full_paths[0]) as recipe:
-                recipe_obj = yaml.safe_load(recipe)
-                if "ComponentDependencies" not in recipe_obj:
-                    print(
-                        "ComponentDependencies section not found in the original recipe."
-                    )
-                    return None
-
-                for dependency in dependencies:
-                    if dependency[0] not in recipe_obj["ComponentDependencies"]:
-                        print(
-                            f"The dependency {dependency[0]} not found in original recipe."
-                        )
-                        return None
-                    print(recipe_obj["ComponentDependencies"])
-                    stored_val = recipe_obj["ComponentDependencies"][
-                        dependency[0]]
-                    del recipe_obj["ComponentDependencies"][dependency[0]]
-                    recipe_obj["ComponentDependencies"][
-                        dependency[1]] = stored_val
-
-                # Ensure the output directory exists
-                output_dir = os.path.join(
-                    "/tmp/aws-greengrass-testing-workspace", "ggtest",
-                    "modified_recipes")
-                os.makedirs(output_dir, exist_ok=True)
-
-                new_file_path = os.path.join(
-                    output_dir, os.path.basename(recipes_full_paths[0]))
-
-                print(yaml.safe_dump(recipe_obj))
-
-                # Read the original file and write the corrupted version
-                with open(new_file_path, "w") as f_out:
-                    f_out.write(yaml.safe_dump(recipe_obj))
-                    f_out.close()
-
-                cloud_name = self._upload_component_to_gg([new_file_path],
-                                                          random_id)
-
-                recipe.close()
-
-                return ComponentDeploymentInfo(name=cloud_name,
-                                               versions=[version],
-                                               merge_config=None)
-        except FileNotFoundError:
-            print(f"No recipe directory found for {component_name}-{version}.")
-            return None
-        except PermissionError:
-            print(
-                f"Cannot access the directory with recipe for {component_name}-{version}."
-            )
-            return None
+        dependencies: List[Tuple[str, str]]) -> Optional[ComponentDeploymentInfo]:
+        return self.upload_component_with_versions(component_name, [version], dependencies)
 
     def upload_component_with_versions(
             self, component_name: str,
-            versions: List[str]) -> Optional[ComponentDeploymentInfo]:
+            versions: List[str],
+            dependencies: List[Tuple[str, str]] = None) -> Optional[ComponentDeploymentInfo]:
 
         # Generate a random ID for artifact uploads
         random_id = str(uuid1())
@@ -715,14 +621,35 @@ class GGTestUtils:
                     print("More than one recipe files found.")
                     return None
 
-                recipes_file_list.append(recipes_full_paths[0])
+                # If dependencies provided, modify recipe
+                if dependencies:
+                    with open(recipes_full_paths[0]) as recipe:
+                        recipe_obj = yaml.safe_load(recipe)
+                        if "ComponentDependencies" not in recipe_obj:
+                            print("ComponentDependencies section not found in the original recipe.")
+                            return None
 
-            print(recipes_file_list)
-            cloud_name = self._upload_component_to_gg(recipes_file_list,
-                                                      random_id)
-            return ComponentDeploymentInfo(name=cloud_name,
-                                           versions=versions,
-                                           merge_config=None)
+                        for dependency in dependencies:
+                            if dependency[0] not in recipe_obj["ComponentDependencies"]:
+                                print(f"The dependency {dependency[0]} not found in original recipe.")
+                                return None
+                            stored_val = recipe_obj["ComponentDependencies"][dependency[0]]
+                            del recipe_obj["ComponentDependencies"][dependency[0]]
+                            recipe_obj["ComponentDependencies"][dependency[1]] = stored_val
+
+                        output_dir = os.path.join("/tmp/aws-greengrass-testing-workspace", "ggtest", "modified_recipes")
+                        os.makedirs(output_dir, exist_ok=True)
+                        new_file_path = os.path.join(output_dir, os.path.basename(recipes_full_paths[0]))
+                        
+                        with open(new_file_path, "w") as f_out:
+                            f_out.write(yaml.safe_dump(recipe_obj))
+                        
+                        recipes_file_list.append(new_file_path)
+                else:
+                    recipes_file_list.append(recipes_full_paths[0])
+
+            cloud_name = self._upload_component_to_gg(recipes_file_list, random_id)
+            return ComponentDeploymentInfo(name=cloud_name, versions=versions, merge_config=None)
         except FileNotFoundError:
             print(f"No recipe directory found for {component_name}-{version}.")
             return None
@@ -789,26 +716,26 @@ class GGTestUtils:
                     f'Failed to delete component {componentArn} from configured test account.'
                 )
 
-        folder_path = self._test_artifact_dir + "/"
-        # List all objects within the folder
-        paginator = self._s3Client.get_paginator('list_objects_v2')
-        objects_to_delete = []
+        # Delete S3 artifacts for each component random_id
+        for random_id in set(self._component_random_ids.values()):
+            folder_path = f"{S3_ARTIFACT_DIR}/{random_id}/"
+            paginator = self._s3Client.get_paginator('list_objects_v2')
+            objects_to_delete = []
 
-        for page in paginator.paginate(Bucket=self.s3_artifact_bucket,
-                                       Prefix=folder_path):
-            if 'Contents' in page:
-                for obj in page['Contents']:
-                    objects_to_delete.append({'Key': obj['Key']})
+            for page in paginator.paginate(Bucket=self.s3_artifact_bucket,
+                                           Prefix=folder_path):
+                if 'Contents' in page:
+                    for obj in page['Contents']:
+                        objects_to_delete.append({'Key': obj['Key']})
 
-        if objects_to_delete:
-            # Delete objects in batches of 1000 (S3 limit)
-            for i in range(0, len(objects_to_delete), 1000):
-                batch = objects_to_delete[i:i + 1000]
-                self._s3Client.delete_objects(Bucket=self.s3_artifact_bucket,
-                                              Delete={
-                                                  'Objects': batch,
-                                                  'Quiet': True
-                                              })
+            if objects_to_delete:
+                for i in range(0, len(objects_to_delete), 1000):
+                    batch = objects_to_delete[i:i + 1000]
+                    self._s3Client.delete_objects(Bucket=self.s3_artifact_bucket,
+                                                  Delete={
+                                                      'Objects': batch,
+                                                      'Quiet': True
+                                                  })
 
         # Extract unique thing_group_arns
         unique_thing_groups = {

@@ -854,7 +854,7 @@ def test_Deployment_8_T1(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
 
     # Then the deployment deploymentForGroupB completes with SUCCEEDED within 180 seconds
     assert (gg_util_obj.wait_for_deployment_till_timeout(
-        300, deployment_b) == "SUCCEEDED")
+        180, deployment_b) == "SUCCEEDED")
 
     # Then the deployment deploymentForGroupC completes with SUCCEEDED within 180 seconds
     assert (gg_util_obj.wait_for_deployment_till_timeout(
