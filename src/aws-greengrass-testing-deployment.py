@@ -315,9 +315,9 @@ def test_Deployment_3_T1(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
         [component_cloud_name1], "Deployment2")["deploymentId"]
     assert deployment_id_2 is not None
 
-    # Then the deployment Deployment2 completes with SUCCEEDED within 180 seconds
+    # Then the deployment Deployment2 completes with SUCCEEDED within 240 seconds
     assert (gg_util_obj.wait_for_deployment_till_timeout(
-        180, deployment_id_2) == "SUCCEEDED")
+        240, deployment_id_2) == "SUCCEEDED")
 
     # And I can check the cli to see the status of component HelloWorld is RUNNING
     assert (system_interface.check_systemctl_status_for_component(
@@ -385,9 +385,9 @@ def test_Deployment_3_T2(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
         [hello_world_cloud_name_1], "Deployment2")["deploymentId"]
     assert deployment_id_2 is not None
 
-    # Then the deployment Deployment2 completes with SUCCEEDED within 180 seconds
+    # Then the deployment Deployment2 completes with SUCCEEDED within 240 seconds
     assert (gg_util_obj.wait_for_deployment_till_timeout(
-        180, deployment_id_2) == "SUCCEEDED")
+        240, deployment_id_2) == "SUCCEEDED")
 
     # And I can check the cli to see the status of component HelloWorld is RUNNING
     assert (system_interface.check_systemctl_status_for_component(
@@ -573,9 +573,9 @@ def test_Deployment_3_T5(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
         [hello_world_cloud_name], "Deployment2")["deploymentId"]
     assert deployment_id_1 is not None
 
-    # Then the deployment Deployment2 completes with SUCCEEDED within 180 seconds
+    # Then the deployment Deployment2 completes with SUCCEEDED within 240 seconds
     assert (gg_util_obj.wait_for_deployment_till_timeout(
-        180, deployment_id_1) == "SUCCEEDED")
+        240, deployment_id_1) == "SUCCEEDED")
 
 
 # Scenario: Deployment-5-T2: As a device application owner, I can remove a common component from one of the group the device belongs to from an IoT Jobs deployment

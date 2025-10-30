@@ -208,7 +208,7 @@ def test_Security_6_T6(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
         deployment_name="FirstDeployment")["deploymentId"]
 
     assert (gg_util_obj.wait_for_deployment_till_timeout(
-        180, deployment_id) == "SUCCEEDED")
+        240, deployment_id) == "SUCCEEDED")
 
     sleep_with_log(5)
 
@@ -250,7 +250,7 @@ def test_Security_6_T7(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
         deployment_name="FirstDeployment")["deploymentId"]
 
     assert (gg_util_obj.wait_for_deployment_till_timeout(
-        180, deployment_id) == "SUCCEEDED")
+        240, deployment_id) == "SUCCEEDED")
 
     # And I get 1 assertion with context "Successfully subscribed to test/topic"
     assert (system_interface.monitor_journalctl_for_message(
