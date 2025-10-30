@@ -48,7 +48,7 @@ setup_and_cleanup() {
         . "$VENV_DIR/bin/activate"
         if ! pip show aws-greengrass-testing &>/dev/null; then
             pip install wheel setuptools
-            cp -r /aws-greengrass-testing /tmp/aws-greengrass-testing-workspace/src
+            cp -r "$(pwd)" /tmp/aws-greengrass-testing-workspace/src
             pip install /tmp/aws-greengrass-testing-workspace/src
         fi
     } || {
