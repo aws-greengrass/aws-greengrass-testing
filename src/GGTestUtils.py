@@ -469,8 +469,22 @@ class GGTestUtils:
                 f"File {file_path} successfully uploaded to {bucket_name}/{object_name}"
             )
         
-        # Wait for S3 artifact propagation
-        time.sleep(15)
+        # Wait for S3 artifact propagation by checking availability
+        if files:
+            last_object = object_name  # Use the last uploaded file for checking
+            for attempt in range(20):  # Max 20 seconds
+                try:
+                    self._s3Client.head_object(Bucket=bucket_name, Key=last_object)
+                    print(f"S3 artifact verified accessible after {attempt + 1}s")
+                    break
+                except:
+                    time.sleep(1)
+            else:
+                raise Exception(f"S3 artifact {bucket_name}/{last_object} not accessible after 20s")
+            
+            # Additional wait for cross-endpoint propagation
+            time.sleep(3)
+        
         return True
 
     def _upload_component_to_gg(self,
@@ -519,6 +533,21 @@ class GGTestUtils:
                         f"Successfully uploaded component with ARN: {response['arn']}"
                     )
                     self._ggComponentToDeleteArn.append(response["arn"])
+                    
+                    # Wait for component to be DEPLOYABLE
+                    component_name = response['componentName']
+                    component_version = response['componentVersion']
+                    for attempt in range(10):
+                        status_response = self._ggClient.describe_component(
+                            arn=response['arn']
+                        )
+                        status = status_response.get('status', {}).get('componentState')
+                        if status == 'DEPLOYABLE':
+                            print(f"Component {component_name} is DEPLOYABLE after {attempt + 1}s")
+                            break
+                        time.sleep(1)
+                    else:
+                        print(f"Warning: Component {component_name} status is {status}, not DEPLOYABLE after 10s")
 
                 except self._ggClient.exceptions.ConflictException as e:
                     print(f"Component version already exists: {e}")
