@@ -6,6 +6,7 @@ import boto3
 from botocore.exceptions import ClientError
 import time
 import logging
+import subprocess
 from types_boto3_greengrassv2 import GreengrassV2Client
 from types_boto3_greengrassv2.type_defs import CreateDeploymentResponseTypeDef, ComponentDeploymentSpecificationTypeDef
 from types_boto3_greengrassv2.literals import CoreDeviceStatusType
@@ -386,8 +387,7 @@ class GGTestUtils:
                                         print(
                                             f"\nChecking all Greengrass logs for errors..."
                                         )
-                                        try:
-                                            import subprocess
+                                        try:                                            
                                             # Check all greengrass services
                                             services = [
                                                 "ggdeploymentd", "iotcored",

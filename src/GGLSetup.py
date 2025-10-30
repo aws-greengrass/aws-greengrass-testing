@@ -424,7 +424,7 @@ def _tes_setup(device_cert: str, private_key: str) -> bool:
         return False
 
 
-def _modify_config(iot_client: client, thing_name: str, file_path: str,
+def _modify_config(iot_client: "client", thing_name: str, file_path: str,
                    group: str, user: str, region: str) -> bool:
 
     try:
