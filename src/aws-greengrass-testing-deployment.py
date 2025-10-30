@@ -428,7 +428,7 @@ def test_Deployment_3_T3(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
 
     # Then the deployment FirstDeployment completes with FAILED within 180 seconds
     assert (gg_util_obj.wait_for_deployment_till_timeout(
-        300, deployment_id) == "FAILED")
+        180, deployment_id) == "FAILED")
 
     # And I wait for 10 seconds
     sleep_with_log(10)
@@ -489,7 +489,7 @@ def test_Deployment_3_T4(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
 
     # Then the deployment FirstDeployment completes with FAILED within 180 seconds
     assert (gg_util_obj.wait_for_deployment_till_timeout(
-        300, deployment_id) == "FAILED")
+        180, deployment_id) == "FAILED")
 
     # And I wait for 10 seconds
     sleep_with_log(10)
@@ -516,7 +516,7 @@ def test_Deployment_3_T4(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     # Then the deployment SecondDeployment completes with FAILED within 60 seconds
     # And I can check the cli to see the status of component BrokenComponent is BROKEN
     assert (gg_util_obj.wait_for_deployment_till_timeout(
-        300, deployment_id_v1) == "FAILED")
+        60, deployment_id_v1) == "FAILED")
 
 
 # Scenario: Deployment-3-T5: As a device application owner, if a component is broken and I deploy a different component it should proceed as usual
@@ -547,7 +547,7 @@ def test_Deployment_3_T5(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
 
     # Then the deployment FirstDeployment completes with FAILED within 180 seconds
     assert (gg_util_obj.wait_for_deployment_till_timeout(
-        300, deployment_id) == "FAILED")
+        180, deployment_id) == "FAILED")
 
     # And I wait for 10 seconds
     sleep_with_log(10)
@@ -575,7 +575,7 @@ def test_Deployment_3_T5(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
 
     # Then the deployment Deployment2 completes with SUCCEEDED within 180 seconds
     assert (gg_util_obj.wait_for_deployment_till_timeout(
-        300, deployment_id_1) == "SUCCEEDED")
+        180, deployment_id_1) == "SUCCEEDED")
 
 
 # Scenario: Deployment-5-T2: As a device application owner, I can remove a common component from one of the group the device belongs to from an IoT Jobs deployment
@@ -602,9 +602,9 @@ def test_Deployment_5_T2(gg_util_obj: GGTestUtils, iot_obj: IoTUtils,
         gg_util_obj.get_thing_group_arn(first_thing_group_name),
         [Component2BaseCloud_cloud_name], "FirstDeployment")["deploymentId"]
 
-    # Then the deployment FirstDeployment completes with SUCCEEDED within 180 seconds
+    # Then the deployment FirstDeployment completes with SUCCEEDED within 120 seconds
     assert (gg_util_obj.wait_for_deployment_till_timeout(
-        180, deployment_id) == "SUCCEEDED")
+        120, deployment_id) == "SUCCEEDED")
 
     # Get thing added to NewThingGroup.
     id = iot_obj.generate_random_id()
@@ -620,9 +620,9 @@ def test_Deployment_5_T2(gg_util_obj: GGTestUtils, iot_obj: IoTUtils,
         gg_util_obj.get_thing_group_arn(second_thing_group_name),
         [Component2BaseCloud_cloud_name], "SecondDeployment")["deploymentId"]
 
-    # Then the deployment SecondDeployment completes with SUCCEEDED within 180 seconds
+    # Then the deployment SecondDeployment completes with SUCCEEDED within 120 seconds
     assert (gg_util_obj.wait_for_deployment_till_timeout(
-        180, deployment_id_2) == "SUCCEEDED")
+        120, deployment_id_2) == "SUCCEEDED")
 
     # Then I can check the cli to see the status of component Component2BaseCloud is RUNNING
     assert system_interface.check_systemctl_status_for_component(
@@ -635,9 +635,9 @@ def test_Deployment_5_T2(gg_util_obj: GGTestUtils, iot_obj: IoTUtils,
         gg_util_obj.get_thing_group_arn(first_thing_group_name), [],
         "ThirdDeployment")["deploymentId"]
 
-    # Then the deployment ThirdDeployment completes with SUCCEEDED within 180 seconds
+    # Then the deployment ThirdDeployment completes with SUCCEEDED within 120 seconds
     assert (gg_util_obj.wait_for_deployment_till_timeout(
-        300, deployment_id_3) == "SUCCEEDED")
+        120, deployment_id_3) == "SUCCEEDED")
 
     # Then I can check the cli to see the status of component Component2BaseCloud is RUNNING
     assert system_interface.check_systemctl_status_for_component(
@@ -697,7 +697,7 @@ def test_Deployment_7_T3(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
 
     # Then the deployment SecondDeployment completes with SUCCEEDED within 120 seconds
     assert (gg_util_obj.wait_for_deployment_till_timeout(
-        300, deployment_id_1) == "SUCCEEDED")
+        120, deployment_id_1) == "SUCCEEDED")
 
     # Then I can check the cli to see the status of component HelloWorld is RUNNING
     assert system_interface.check_systemctl_status_for_component(
@@ -758,9 +758,9 @@ def test_Deployment_7_T4(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
         [hello_world_cloud_name, Component2BaseCloud_cloud_name],
         "SecondDeployment")["deploymentId"]
 
-    # Then the deployment SecondDeployment completes with SUCCEEDED within 180 seconds
+    # Then the deployment SecondDeployment completes with SUCCEEDED within 120 seconds
     assert (gg_util_obj.wait_for_deployment_till_timeout(
-        180, deployment_id_1) == "SUCCEEDED")
+        120, deployment_id_1) == "SUCCEEDED")
 
     # Then I can check the cli to see the status of component HelloWorld is RUNNING
     assert system_interface.check_systemctl_status_for_component(
@@ -850,7 +850,7 @@ def test_Deployment_8_T1(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
 
     # Then the deployment deploymentForGroupA completes with SUCCEEDED within 120 seconds
     assert (gg_util_obj.wait_for_deployment_till_timeout(
-        300, deployment_a) == "SUCCEEDED")
+        120, deployment_a) == "SUCCEEDED")
 
     # Then the deployment deploymentForGroupB completes with SUCCEEDED within 120 seconds
     assert (gg_util_obj.wait_for_deployment_till_timeout(

@@ -105,8 +105,6 @@ def test_Component_16_T1(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     component_cloud_name = gg_util_obj.upload_component_with_versions(
         "HelloWorld", ["1.0.0"])
 
-    # Give 10 sec for cloud to calculate artifact checksum and make it "DEPLOYABLE"
-
     # When I create a deployment configuration with components
     #        | HelloWorld | 1.0.0 |
     # And I deploy the deployment configuration
@@ -116,9 +114,9 @@ def test_Component_16_T1(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     )["deploymentId"]
     assert deployment_id is not None
 
-    # Then the deployment completes with SUCCEEDED within 180 seconds
+    # Then the deployment completes with SUCCEEDED within 120 seconds
     assert (gg_util_obj.wait_for_deployment_till_timeout(
-        180, deployment_id) == "SUCCEEDED")
+        120, deployment_id) == "SUCCEEDED")
 
     sleep_with_log(5)
 

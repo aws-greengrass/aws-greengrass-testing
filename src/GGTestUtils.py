@@ -387,7 +387,7 @@ class GGTestUtils:
                                         print(
                                             f"\nChecking all Greengrass logs for errors..."
                                         )
-                                        try:                                            
+                                        try:
                                             # Check all greengrass services
                                             services = [
                                                 "ggdeploymentd", "iotcored",
