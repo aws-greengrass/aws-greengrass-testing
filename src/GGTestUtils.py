@@ -59,7 +59,8 @@ class GGTestUtils:
         self._iotClient = boto3.client("iot", region_name=self._region)
         self._s3Client = boto3.client("s3", region_name=self._region)
         self._ggComponentToDeleteArn = []
-        self._component_random_ids = {}  # Track random_id per component-version
+        self._component_random_ids = {
+        }    # Track random_id per component-version
         self._ggServiceList = []
         self._ggDeploymentToThingNameList = []
 
@@ -439,8 +440,10 @@ class GGTestUtils:
 
         return "TIMEOUT"
 
-    def _upload_files_to_s3(self, files: Sequence[os.PathLike | str],
-                            bucket_name: str, random_id: str = None) -> bool:
+    def _upload_files_to_s3(self,
+                            files: Sequence[os.PathLike | str],
+                            bucket_name: str,
+                            random_id: str = None) -> bool:
         """
         Upload a file to an S3 bucket
 
@@ -468,23 +471,27 @@ class GGTestUtils:
             print(
                 f"File {file_path} successfully uploaded to {bucket_name}/{object_name}"
             )
-        
+
         # Wait for S3 artifact propagation by checking availability
         if files:
-            last_object = object_name  # Use the last uploaded file for checking
-            for attempt in range(20):  # Max 20 seconds
+            last_object = object_name    # Use the last uploaded file for checking
+            for attempt in range(20):    # Max 20 seconds
                 try:
-                    self._s3Client.head_object(Bucket=bucket_name, Key=last_object)
-                    print(f"S3 artifact verified accessible after {attempt + 1}s")
+                    self._s3Client.head_object(Bucket=bucket_name,
+                                               Key=last_object)
+                    print(
+                        f"S3 artifact verified accessible after {attempt + 1}s")
                     break
                 except:
                     time.sleep(1)
             else:
-                raise Exception(f"S3 artifact {bucket_name}/{last_object} not accessible after 20s")
-            
+                raise Exception(
+                    f"S3 artifact {bucket_name}/{last_object} not accessible after 20s"
+                )
+
             # Additional wait for cross-endpoint propagation
             time.sleep(3)
-        
+
         return True
 
     def _upload_component_to_gg(self,
@@ -511,7 +518,7 @@ class GGTestUtils:
                     "$bucketName$", self.s3_artifact_bucket)
                 modified_content = modified_content.replace(
                     "$testArtifactsDirectory$", S3_ARTIFACT_DIR)
-                
+
                 # Replace $randomId$ with actual random ID if provided
                 if random_id:
                     modified_content = modified_content.replace(
@@ -533,21 +540,25 @@ class GGTestUtils:
                         f"Successfully uploaded component with ARN: {response['arn']}"
                     )
                     self._ggComponentToDeleteArn.append(response["arn"])
-                    
+
                     # Wait for component to be DEPLOYABLE
                     component_name = response['componentName']
                     component_version = response['componentVersion']
                     for attempt in range(10):
                         status_response = self._ggClient.describe_component(
-                            arn=response['arn']
-                        )
-                        status = status_response.get('status', {}).get('componentState')
+                            arn=response['arn'])
+                        status = status_response.get('status',
+                                                     {}).get('componentState')
                         if status == 'DEPLOYABLE':
-                            print(f"Component {component_name} is DEPLOYABLE after {attempt + 1}s")
+                            print(
+                                f"Component {component_name} is DEPLOYABLE after {attempt + 1}s"
+                            )
                             break
                         time.sleep(1)
                     else:
-                        print(f"Warning: Component {component_name} status is {status}, not DEPLOYABLE after 10s")
+                        print(
+                            f"Warning: Component {component_name} status is {status}, not DEPLOYABLE after 10s"
+                        )
 
                 except self._ggClient.exceptions.ConflictException as e:
                     print(f"Component version already exists: {e}")
@@ -561,13 +572,13 @@ class GGTestUtils:
         self, component_name: str, version: str,
         dependencies: List[Tuple[str,
                                  str]]) -> Optional[ComponentDeploymentInfo]:
-        
+
         # Generate a random ID for artifact uploads
         random_id = str(uuid1())
-        
+
         # Store random_id for this component version
         self._component_random_ids[f"{component_name}-{version}"] = random_id
-        
+
         try:
             component_artifact_dir = os.path.join('components', component_name,
                                                   version, 'artifacts')
@@ -639,7 +650,8 @@ class GGTestUtils:
                     f_out.write(yaml.safe_dump(recipe_obj))
                     f_out.close()
 
-                cloud_name = self._upload_component_to_gg([new_file_path], random_id)
+                cloud_name = self._upload_component_to_gg([new_file_path],
+                                                          random_id)
 
                 recipe.close()
 
@@ -661,10 +673,11 @@ class GGTestUtils:
 
         # Generate a random ID for artifact uploads
         random_id = str(uuid1())
-        
+
         # Store random_id for each version
         for version in versions:
-            self._component_random_ids[f"{component_name}-{version}"] = random_id
+            self._component_random_ids[
+                f"{component_name}-{version}"] = random_id
 
         for version in versions:
             try:
@@ -709,7 +722,8 @@ class GGTestUtils:
                 recipes_file_list.append(recipes_full_paths[0])
 
             print(recipes_file_list)
-            cloud_name = self._upload_component_to_gg(recipes_file_list, random_id)
+            cloud_name = self._upload_component_to_gg(recipes_file_list,
+                                                      random_id)
             return ComponentDeploymentInfo(name=cloud_name,
                                            versions=versions,
                                            merge_config=None)
@@ -764,8 +778,9 @@ class GGTestUtils:
             corrupt_file_list.append(corrupt_file_path)
 
         # Get the random_id used for this component version
-        random_id = self._component_random_ids.get(f"{component_name}-{version}")
-        
+        random_id = self._component_random_ids.get(
+            f"{component_name}-{version}")
+
         return self._upload_files_to_s3(corrupt_file_list,
                                         self.s3_artifact_bucket, random_id)
 

@@ -47,12 +47,7 @@ Lifecycle:
       python3 {artifacts:path}/hello_world.py '{configuration:/Message}'; sleep 5
       done
   windows:
-    run:>-
-      powershell -command "& { while(1) { python {artifacts:path}/hello_world.py
-      \"{configuration:/Message}\"; sleep 5 } }"
-  custom:
-    run:|-
-      echo Hello {configuration:/Message} from custom platform!
-  all:
-    run:|-
-      echo fallback to default platform
+    run:>- powershell -command "& { while(1) { python
+    {artifacts:path}/hello_world.py \"{configuration:/Message}\"; sleep 5 } }"
+  custom: run:|- echo Hello {configuration:/Message} from custom platform!
+  all: run:|- echo fallback to default platform

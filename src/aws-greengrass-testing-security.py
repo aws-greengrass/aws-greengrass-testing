@@ -114,7 +114,6 @@ def test_Security_6_T2_T3_T4_T5_T10(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
             "Message": payload
         })
 
-
     deployment_id = gg_util_obj.create_deployment(
         thingArn=gg_util_obj.get_thing_group_arn(security_thing_group_name),
         component_list=[pubsub_cloud_name],
@@ -171,7 +170,6 @@ def test_Security_6_T2_T3_T4_T5_mqtt(iot_obj: IoTUtils,
             "Message": payload
         })
 
-
     deployment_id = gg_util_obj.create_deployment(
         thingArn=gg_util_obj.get_thing_group_arn(security_thing_group_name),
         component_list=[mqtt_cloud_name],
@@ -203,7 +201,6 @@ def test_Security_6_T6(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     if pubsub_cloud_name is None:
         raise RuntimeError(
             "Fatal error: HelloWorldPubSub cannot be uploaded to cloud")
-
 
     deployment_id = gg_util_obj.create_deployment(
         thingArn=gg_util_obj.get_thing_group_arn(security_thing_group_name),
@@ -246,7 +243,6 @@ def test_Security_6_T7(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     if pubsub_cloud_name is None:
         raise RuntimeError(
             "Fatal error: HelloWorldPubSub cannot be uploaded to cloud")
-
 
     deployment_id = gg_util_obj.create_deployment(
         thingArn=gg_util_obj.get_thing_group_arn(security_thing_group_name),
@@ -329,7 +325,6 @@ def test_Security_6_T15(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
             "Message": "Hello from local pubsub topic"
         })
 
-
     deployment_id = gg_util_obj.create_deployment(
         thingArn=gg_util_obj.get_thing_group_arn(security_thing_group_name),
         component_list=[hello_world_pubSub],
@@ -410,7 +405,6 @@ def test_Security_6_T22(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
         "PubsubPublisher", "0.0.0",
         [("PubsubSubscriber", subscriber_cloud_name.name)])
     assert publisher_cloud_name is not None
-
 
     deployment_1 = gg_util_obj.create_deployment(
         thingArn=gg_util_obj.get_thing_group_arn(security_thing_group_name),

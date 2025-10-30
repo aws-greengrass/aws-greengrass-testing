@@ -351,7 +351,6 @@ def test_Deployment_3_T2(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     #    | SampleComponent | 1.0.0 |
     # And I deploy the configuration for deployment Deployment1
 
-
     deployment_id_1 = gg_util_obj.create_deployment(
         gg_util_obj.get_thing_group_arn(new_thing_group_name),
         [hello_world_cloud_name, sample_component_cloud_name],
@@ -380,7 +379,6 @@ def test_Deployment_3_T2(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     # When I create a deployment configuration for deployment Deployment2 with components
     #    | HelloWorld | 1.0.1 |
     # And I deploy the configuration for deployment Deployment2
-
 
     deployment_id_2 = gg_util_obj.create_deployment(
         gg_util_obj.get_thing_group_arn(new_thing_group_name),
@@ -422,7 +420,6 @@ def test_Deployment_3_T3(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     #     | BrokenComponent | 1.0.0 |
     # And I deploy the configuration for deployment FirstDeployment
 
-
     deployment_id = gg_util_obj.create_deployment(
         gg_util_obj.get_thing_group_arn(new_thing_group_name),
         [broken_component_cloud_name], "FirstDeployment")["deploymentId"]
@@ -449,7 +446,6 @@ def test_Deployment_3_T3(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     # And I create a deployment configuration for deployment SecondDeployment with components
     #     | BrokenComponent | 1.0.2 |
     # And I deploy the configuration for deployment SecondDeployment
-
 
     deployment_id_2 = gg_util_obj.create_deployment(
         gg_util_obj.get_thing_group_arn(new_thing_group_name),
@@ -485,7 +481,6 @@ def test_Deployment_3_T4(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     #     | BrokenComponent | 1.0.0 |
     # And I deploy the configuration for deployment FirstDeployment
 
-
     deployment_id = gg_util_obj.create_deployment(
         gg_util_obj.get_thing_group_arn(new_thing_group_name),
         [broken_component_cloud_name], "FirstDeployment")["deploymentId"]
@@ -512,7 +507,6 @@ def test_Deployment_3_T4(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     # And I create a deployment configuration for deployment SecondDeployment with components
     #     | BrokenComponent | 1.0.1 |
     # And I deploy the configuration for deployment SecondDeployment
-
 
     deployment_id_v1 = gg_util_obj.create_deployment(
         gg_util_obj.get_thing_group_arn(new_thing_group_name),
@@ -544,7 +538,6 @@ def test_Deployment_3_T5(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     # And I create a deployment configuration for deployment FirstDeployment with components
     #     | BrokenComponent | 1.0.0 |
     # And I deploy the configuration for deployment FirstDeployment
-
 
     deployment_id = gg_util_obj.create_deployment(
         gg_util_obj.get_thing_group_arn(new_thing_group_name),
@@ -604,7 +597,6 @@ def test_Deployment_5_T2(gg_util_obj: GGTestUtils, iot_obj: IoTUtils,
     # When I create a deployment configuration for deployment FirstDeployment and thing group FirstThingGroup with components
     #     | Component2BaseCloud | 1.0.0 |
     # And I deploy the configuration for deployment FirstDeployment
-
 
     deployment_id = gg_util_obj.create_deployment(
         gg_util_obj.get_thing_group_arn(first_thing_group_name),
@@ -699,7 +691,6 @@ def test_Deployment_7_T3(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     #     | HelloWorld | 1.0.0 |
     # And I deploy the configuration for deployment SecondDeployment
 
-
     deployment_id_1 = gg_util_obj.create_deployment(
         gg_util_obj.get_thing_group_arn(second_thing_group_name),
         [hello_world_cloud_name], "SecondDeployment")["deploymentId"]
@@ -737,7 +728,6 @@ def test_Deployment_7_T4(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     #     | Component2BaseCloud | 1.0.0 |
     # And I deploy the configuration for deployment FirstDeployment
 
-
     deployment_id = gg_util_obj.create_deployment(
         gg_util_obj.get_thing_group_arn(first_thing_group_name),
         [Component2BaseCloud_cloud_name], "FirstDeployment")["deploymentId"]
@@ -762,7 +752,6 @@ def test_Deployment_7_T4(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     #     | HelloWorld | 1.0.0 |
     #     | Component2BaseCloud | 1.0.0 |
     # And I deploy the configuration for deployment SecondDeployment
-
 
     deployment_id_1 = gg_util_obj.create_deployment(
         gg_util_obj.get_thing_group_arn(second_thing_group_name),
@@ -915,7 +904,6 @@ def test_Deployment_8_T3(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     #     | HelloWorld | 1.0.0 |
     # And I deploy the configuration for deployment deployment1
 
-
     deployment_1 = gg_util_obj.create_deployment(
         gg_util_obj.get_thing_group_arn(a_thing_group_name),
         [hello_world_v0_cloud_name], "deployment1")["deploymentId"]
@@ -989,7 +977,6 @@ def test_Deployment_8_T4(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     # When I create a deployment configuration for deployment deployment1 and thing group GroupA with components
     #     | HelloWorld | 1.0.0 |
     # And I deploy the configuration for deployment deployment1
-
 
     deployment_1 = gg_util_obj.create_deployment(
         gg_util_obj.get_thing_group_arn(a_thing_group_name),

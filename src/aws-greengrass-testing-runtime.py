@@ -66,7 +66,6 @@ def test_Runtime_1_T4(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     state_transition_timeout = gg_util_obj.upload_component_with_version(
         "state_transition_timeout", "1.0.0")
 
-
     deployment_id = gg_util_obj.create_deployment(
         gg_util_obj.get_thing_group_arn(new_thing_group_name),
         [state_transition_timeout], "FirstDeployment")["deploymentId"]
@@ -106,7 +105,6 @@ def test_Runtime_1_T5(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     #When I install the component foreground_no_ipc_error version 1.0.0 from local store
     foreground_no_ipc_error = gg_util_obj.upload_component_with_version(
         "foreground_no_ipc_error", "1.0.0")
-
 
     deployment_id = gg_util_obj.create_deployment(
         gg_util_obj.get_thing_group_arn(new_thing_group_name),

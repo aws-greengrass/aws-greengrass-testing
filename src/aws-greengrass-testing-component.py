@@ -68,7 +68,6 @@ def test_Component_12_T1(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     #   | MultiPlatform | 1.0.0 |
     # And   I deploy the deployment configuration
 
-
     deployment_id = gg_util_obj.create_deployment(
         gg_util_obj.get_thing_group_arn(new_thing_group_name),
         [component_cloud_name],
@@ -295,7 +294,6 @@ def test_Component_29_T4(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     # I create a deployment configuration for deployment FirstCloudDeployment with components
     #         | aws.gg.uat.cloud.ComponentConfigTestService | 1.0.0 |
     # I deploy the configuration for deployment FirstCloudDeployment
-
 
     deployment_id = gg_util_obj.create_deployment(
         gg_util_obj.get_thing_group_arn(new_thing_group_name),
