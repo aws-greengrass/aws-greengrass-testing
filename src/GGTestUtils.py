@@ -506,7 +506,7 @@ class GGTestUtils:
                     time.sleep(1)
 
             # Wait for full S3 propagation across all endpoints
-            time.sleep(30)
+            time.sleep(45)
 
         return True
 
