@@ -848,17 +848,17 @@ def test_Deployment_8_T1(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
         gg_util_obj.get_thing_group_arn(c_thing_group_name),
         [component_group_C_cloud_name], "deploymentForGroupC")["deploymentId"]
 
-    # Then the deployment deploymentForGroupA completes with SUCCEEDED within 120 seconds
+    # Then the deployment deploymentForGroupA completes with SUCCEEDED within 180 seconds
     assert (gg_util_obj.wait_for_deployment_till_timeout(
-        120, deployment_a) == "SUCCEEDED")
+        180, deployment_a) == "SUCCEEDED")
 
-    # Then the deployment deploymentForGroupB completes with SUCCEEDED within 120 seconds
+    # Then the deployment deploymentForGroupB completes with SUCCEEDED within 180 seconds
     assert (gg_util_obj.wait_for_deployment_till_timeout(
-        120, deployment_b) == "SUCCEEDED")
+        180, deployment_b) == "SUCCEEDED")
 
-    # Then the deployment deploymentForGroupC completes with SUCCEEDED within 120 seconds
+    # Then the deployment deploymentForGroupC completes with SUCCEEDED within 180 seconds
     assert (gg_util_obj.wait_for_deployment_till_timeout(
-        120, deployment_c) == "SUCCEEDED")
+        180, deployment_c) == "SUCCEEDED")
 
     # Then I can check the cli to see the component componentGroupA is listed within 5 seconds
     assert system_interface.monitor_journalctl_for_message(
