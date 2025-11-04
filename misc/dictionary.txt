@@ -1,3 +1,4 @@
+armv7
 ASAN
 awsiotsdk
 cbor
