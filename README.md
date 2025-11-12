@@ -1,23 +1,29 @@
 # AWS Greengrass Lite Testing Framework
 
-This Greengrass Lite testing framework is a collection of building blocks that supports end-to-end automation using pytest. It provides automated testing of component deployment, security, runtime behavior, etc.
+This Greengrass Lite testing framework is a collection of building blocks that
+supports end-to-end automation using pytest. It provides automated testing of
+component deployment, security, runtime behavior, etc.
 
 ## Overview
 
-This testing framework validates AWS Greengrass Lite functionality across multiple scenarios. These tests are automatically executed on every pull request merge to the [aws-greengrass-lite](https://github.com/aws-greengrass/aws-greengrass-lite) repository via the [UAT GitHub workflow](https://github.com/aws-greengrass/aws-greengrass-lite/blob/main/.github/workflows/uat.yml).
+This testing framework validates AWS Greengrass Lite functionality across
+multiple scenarios. These tests are automatically executed on every pull request
+merge to the
+[aws-greengrass-lite](https://github.com/aws-greengrass/aws-greengrass-lite)
+repository via the
+[UAT GitHub workflow](https://github.com/aws-greengrass/aws-greengrass-lite/blob/main/.github/workflows/uat.yml).
 
 **Test coverage includes:**
 
-| Feature                             | Category                        |
-| :-----------------------------------|---------------------------------|
-| Component                           |component                        |
-| Deployment (Local/Cloud)            |deployment                       |
-| Fleet status                        |fleet-status                     |
-| Hardware Security Module (HSM/TPM)  |hsm                              |
-| Security                            |security                         |
-| System log forwarder                |system-log-forwarder             |
-| Runtime                             |runtime                          |
-
+| Feature                            | Category             |
+| :--------------------------------- | -------------------- |
+| Component                          | component            |
+| Deployment (Local/Cloud)           | deployment           |
+| Fleet status                       | fleet-status         |
+| Hardware Security Module (HSM/TPM) | hsm                  |
+| Security                           | security             |
+| System log forwarder               | system-log-forwarder |
+| Runtime                            | runtime              |
 
 ## Prerequisites
 
@@ -64,14 +70,14 @@ aws configure
 
 ## Command Line Options
 
-| Option | Description | Required |
-|--------|-------------|----------|
-| `--aws-account` | AWS Account ID (12 digits) | Yes |
-| `--s3-bucket` | S3 bucket for test artifacts | Yes |
-| `--commit-id` | Greengrass Lite commit id to test | Yes |
-| `--aws-region` | AWS region for testing | Yes |
-| `--test-category` | Test category to run | Yes |
-| `--test-name` | Specific test(s) to run (comma-separated) | No |
+| Option            | Description                               | Required |
+| ----------------- | ----------------------------------------- | -------- |
+| `--aws-account`   | AWS Account ID (12 digits)                | Yes      |
+| `--s3-bucket`     | S3 bucket for test artifacts              | Yes      |
+| `--commit-id`     | Greengrass Lite commit id to test         | Yes      |
+| `--aws-region`    | AWS region for testing                    | Yes      |
+| `--test-category` | Test category to run                      | Yes      |
+| `--test-name`     | Specific test(s) to run (comma-separated) | No       |
 
 ## Container Testing
 
@@ -108,6 +114,7 @@ export S3_BUCKET="your-test-bucket"
 ### Test Structure
 
 Each test follows this pattern:
+
 1. **Setup** - Create IoT devices, install Greengrass Lite
 2. **Execute** - Deploy components, run test scenarios
 3. **Verify** - Check deployment status, component behavior, logs
@@ -116,18 +123,19 @@ Each test follows this pattern:
 ### Automatic Cleanup
 
 The framework automatically cleans up:
+
 - Greengrass deployments and components
 - IoT devices, certificates, and policies
 - S3 artifacts and test files
 - Local system state and processes
-
 
 ## Development
 
 ### Adding New Tests
 
 1. Create test components in `components/YourComponent/`
-2. Add test functions to appropriate test category file e.g. `aws-greengrass-testing-<category>.py`
+2. Add test functions to appropriate test category file e.g.
+   `aws-greengrass-testing-<category>.py`
 3. Follow the existing fixture pattern for setup/cleanup
 4. Use the GGTestUtils and IoTUtils classes for AWS operations
 
