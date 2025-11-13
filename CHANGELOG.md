@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.2.1
+### Bug fixes and improvements
+* Minor test improvements
+
 ## v1.2.0
 ### New features
 * Added network related steps to configure MQTT and internet network connectivity during tests.
