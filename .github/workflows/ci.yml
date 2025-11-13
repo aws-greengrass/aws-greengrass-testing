@@ -40,25 +40,25 @@ jobs:
       - name: Build with Maven
         run: mvn -U -ntp clean verify
       - name: Upload Failed Test Report for aws-greengrass-testing-features-api
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v5
         if: failure()
         with:
           name: Failed Test Report ${{ matrix.os }}
           path: aws-greengrass-testing-features/aws-greengrass-testing-features-api/target/surefire-reports
       - name: Upload Failed Test Report for aws-greengrass-testing-launcher
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v5
         if: failure()
         with:
           name: Failed Test Report ${{ matrix.os }}
           path: aws-greengrass-testing-launcher/target/surefire-reports
       - name: Upload Failed Test Report for aws-greengrass-testing-platform-api
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v5
         if: failure()
         with:
           name: Failed Test Report ${{ matrix.os }}
           path: aws-greengrass-testing-platform/aws-greengrass-testing-platform-api/target/surefire-reports
       - name: Upload Failed Test Report for aws-greengrass-testing-platform-pillbox
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v5
         if: failure()
         with:
           name: Failed Test Report ${{ matrix.os }}
@@ -76,28 +76,28 @@ jobs:
         run: python3 .github/scripts/cover2cover.py aws-greengrass-testing-platform/aws-greengrass-testing-platform-pillbox/target/jacoco-report/jacoco.xml src/main/java > aws-greengrass-testing-platform/aws-greengrass-testing-platform-pillbox/target/jacoco-report/cobertura.xml
         if: matrix.os == 'ubuntu-latest'
       - name: Upload Coverage for aws-greengrass-testing-features-api
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v5
         if: matrix.os == 'ubuntu-latest'
         with:
-          name: Coverage Report
+          name: Coverage Report - features-api
           path: aws-greengrass-testing-features/aws-greengrass-testing-features-api/target/jacoco-report
       - name: Upload Coverage for aws-greengrass-testing-launcher
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v5
         if: matrix.os == 'ubuntu-latest'
         with:
-          name: Coverage Report
+          name: Coverage Report - launcher
           path: aws-greengrass-testing-launcher/target/jacoco-report
       - name: Upload Coverage for aws-greengrass-testing-platform-api
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v5
         if: matrix.os == 'ubuntu-latest'
         with:
-          name: Coverage Report
+          name: Coverage Report - platform-api
           path: aws-greengrass-testing-platform/aws-greengrass-testing-platform-api/target/jacoco-report
       - name: Upload Coverage for aws-greengrass-testing-platform-pillbox
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v5
         if: matrix.os == 'ubuntu-latest'
         with:
-          name: Coverage Report
+          name: Coverage Report - platform-pillbox
           path: aws-greengrass-testing-platform/aws-greengrass-testing-platform-pillbox/target/jacoco-report
       - name: cobertura-report-unit-test for aws-greengrass-testing-features
         uses: 5monkeys/cobertura-action@v14
@@ -228,7 +228,7 @@ jobs:
           python3 .github/scripts/binaryCompatibility.py --input aws-greengrass-testing-standalone/target/japicmp/default-cli.xml --token "${{ github.token }}"
         if: github.event_name == 'pull_request'
       - name: Upload Compatibility Report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v5
         with:
           name: Binary Compatibility Report
           path: aws-greengrass-testing-standalone/target/japicmp/default-cli.html
