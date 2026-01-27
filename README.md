@@ -2,8 +2,8 @@
 
 This framework is a collection of building blocks
 that supports end to end automation from the customer
-perspective using Cucumber as the feature driver. AWS Greengrass uses the same building
-blocks to qualify software changes on various devices.
+perspective using Cucumber as the feature driver. AWS Greengrass uses the same 
+building blocks to qualify software changes on various devices.
 
 ## What's inside?
 
