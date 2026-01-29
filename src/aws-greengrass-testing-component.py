@@ -30,7 +30,7 @@ def iot_obj(request) -> Generator[IoTUtils, None, None]:
     iot_obj = IoTUtils(region)
 
     iot_obj.set_up_core_device()
-    ggl_setup.install_greengrass_lite_from_source(commit_id, region)
+    ggl_setup.setup_greengrass_lite(commit_id, region)
 
     yield iot_obj
 

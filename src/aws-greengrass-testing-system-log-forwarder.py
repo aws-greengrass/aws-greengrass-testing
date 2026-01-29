@@ -36,7 +36,7 @@ def iot_obj(request) -> Generator[IoTUtils, None, None]:
     print(f"Setting up IoT core device...")
     iot_obj.set_up_core_device()
     print(f"Installing GGL from source with commit {commit_id}...")
-    ggl_setup.install_greengrass_lite_from_source(commit_id, region)
+    ggl_setup.setup_greengrass_lite(commit_id, region)
     print(f"GGL setup complete")
 
     yield iot_obj
