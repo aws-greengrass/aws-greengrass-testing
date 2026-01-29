@@ -18,7 +18,7 @@ fi
 for category in "${CATEGORIES[@]}"; do
     LOG_FILE="test-${category}-$(date +%Y%m%d-%H%M%S).log"
     CONTAINER_NAME="buildtestcontainer-${category}-$(date +%s)"
-    
+
     echo "=========================================="
     echo "Starting tests for category: $category"
     if [ -n "$TEST_NAME" ]; then
@@ -42,15 +42,15 @@ for category in "${CATEGORIES[@]}"; do
             -v "$PWD:/aws-greengrass-testing:ro" \
             --name "$CONTAINER_NAME" \
             buildtestcontainer:latest
-        
+
         sleep 3
-        
+
         podman exec -w /aws-greengrass-testing "$CONTAINER_NAME" bash -c "/aws-greengrass-testing/run-tests.sh --aws-account=$AWS_ACCOUNT --s3-bucket=$S3_BUCKET --commit-id=$COMMIT_ID --aws-region=$AWS_DEFAULT_REGION --test-category=$category ${TEST_NAME:+--test-name=$TEST_NAME}" || echo "Tests failed for category: $category"
-        
+
         podman stop "$CONTAINER_NAME" || true
         podman rm "$CONTAINER_NAME" || true
     } 2>&1 | tee "$LOG_FILE"
-    
+
     echo "Completed tests for category: $category"
     echo ""
 done

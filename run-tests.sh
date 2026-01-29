@@ -1,8 +1,4 @@
 #!/bin/bash
-
-# Get the directory where this script is located
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
 VENV_DIR="/tmp/aws-greengrass-testing-workspace/venv"
 WORKSPACE_DIR="/tmp/aws-greengrass-testing-workspace"
 
@@ -50,7 +46,7 @@ setup_and_cleanup() {
             return 1
         }
     fi
-    
+
     # Activate venv and install/update dependencies
     {
         # shellcheck source=/dev/null
@@ -119,11 +115,11 @@ print_report() {
 # Get all test functions and run setup_and_cleanup for each
 main() {
     local overall_status=0
-    
+
     if [ -n "$TEST_NAME" ]; then
         # Run specific tests - split comma-separated list
         IFS=',' read -ra test_functions <<< "$TEST_NAME"
-        
+
         # Derive category from test names if not provided
         if [ -z "$TEST_CATEGORY" ]; then
             local categories=()
@@ -137,7 +133,7 @@ main() {
                     exit 1
                 fi
             done
-            
+
             # Use the first category found (all tests should be from same category for now)
             TEST_CATEGORY="${categories[0]}"
         fi

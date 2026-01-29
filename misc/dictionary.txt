@@ -20,9 +20,11 @@ ggtest
 greengrasscoreipc
 greengrassv
 guice
+iface
 iotcored
 javax
 journalctl
+keyid
 libsystemd
 libyaml
 LSAN

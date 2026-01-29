@@ -36,7 +36,7 @@ set_up_tpm() {
     tpm2_load -C "${TEMP_DIR}/primary.ctx" -r "${TEMP_DIR}/device.priv" -u "${TEMP_DIR}/device.pub" -c "${TEMP_DIR}/device.ctx"
 
     echo "Making the key persistent..."
-    tpm2_evictcontrol -C o -c "${TEMP_DIR}/device.ctx" ${TPM_KEY_HANDLE}
+    tpm2_evictcontrol -C o -c "${TEMP_DIR}/device.ctx" "${TPM_KEY_HANDLE}"
 
     echo "Generating CSR with TPM key..."
     openssl req -new -provider tpm2 -key "handle:${TPM_KEY_HANDLE}" \
@@ -84,10 +84,10 @@ set_up_tpm() {
 cleanup_tpm() {
     echo "Cleaning up TPM key handle ${TPM_KEY_HANDLE}..."
     if tpm2_getcap handles-persistent | grep -q "${TPM_KEY_HANDLE}"; then
-        tpm2_evictcontrol -C o -c ${TPM_KEY_HANDLE}
+        tpm2_evictcontrol -C o -c "${TPM_KEY_HANDLE}"
         echo "Removed TPM key handle ${TPM_KEY_HANDLE}"
     fi
-    
+
     echo "Cleaning up TPM certificates directory..."
     rm -rf "${TEMP_DIR}" 2>/dev/null || echo "TPMCerts directory not found or already removed"
 }

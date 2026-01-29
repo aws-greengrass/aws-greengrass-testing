@@ -31,7 +31,8 @@ def iot_obj(request) -> Generator[IoTUtils, None, None]:
     iot_obj = IoTUtils(region)
 
     # Check if the test is requesting to use the fleet provisioning
-    fleet_provisioning = getattr(request, 'param', {}).get('fleet_provisioning', False)
+    fleet_provisioning = getattr(request, 'param',
+                                 {}).get('fleet_provisioning', False)
 
     if fleet_provisioning:
         # Only download source for fleet provisioning tests
@@ -114,7 +115,8 @@ def test_HSM_1_T1(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
         cwd='../aws-greengrass-testing')
     print(f"TPM cleanup completed")
 
-# Scenario: test_HSM_2_T1: As a customer, I want nucleus lite to use a TPM-stored claim key 
+
+# Scenario: test_HSM_2_T1: As a customer, I want nucleus lite to use a TPM-stored claim key
 # during fleet provisioning and continue to use that same TPM key after reboot,
 # so that my device identity and MQTT connectivity persist securely without exporting keys.
 @mark.skip(
@@ -125,33 +127,34 @@ def test_HSM_1_T1(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
 def test_HSM_2_T1(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
                   system_interface: SystemInterface):
     # Setup fleet provisioning with TPM
-    result = subprocess.run(['bash', 'fleet_provisioning_tpm.sh', 'setup_fleet_provisioning'],
-                            cwd='../aws-greengrass-testing')
+    result = subprocess.run(
+        ['bash', 'fleet_provisioning_tpm.sh', 'setup_fleet_provisioning'],
+        cwd='../aws-greengrass-testing')
     assert result.returncode == 0, f"Fleet provisioning setup failed with return code: {result.returncode}"
 
     # Get the provisioned thing name from the database
     db_path = '/var/lib/greengrass/config.db'
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
-    
+
     # Get keyid for 'thingName' from keyTable
     cursor.execute("SELECT keyid FROM keyTable WHERE keyvalue='thingName'")
     key_result = cursor.fetchone()
-    
+
     if not key_result:
         conn.close()
         raise AssertionError("thingName key not found in keyTable")
-    
+
     keyid = key_result[0]
-    
+
     # Get the actual thing name value from valueTable using keyid
-    cursor.execute("SELECT value FROM valueTable WHERE keyid=?", (keyid,))
+    cursor.execute("SELECT value FROM valueTable WHERE keyid=?", (keyid, ))
     value_result = cursor.fetchone()
     conn.close()
-    
+
     provisioned_thing_name = value_result[0] if value_result else None
     assert provisioned_thing_name, "Thing name not found in valueTable after fleet provisioning"
-    
+
     # Strip quotes if present
     hsm_thing_name = provisioned_thing_name.strip('"')
     print(f"Provisioned thing name: {hsm_thing_name}")
@@ -161,7 +164,7 @@ def test_HSM_2_T1(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     # Deploy HelloWorldPubSub component
     pubsub_cloud_name = gg_util_obj.upload_component_with_versions(
         "HelloWorldPubSub", ["1.0.0"])
-    
+
     if pubsub_cloud_name is None:
         raise RuntimeError(
             "Fatal error: HelloWorldPubSub cannot be uploaded to cloud")

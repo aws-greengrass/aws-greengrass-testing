@@ -23,7 +23,7 @@ class IoTUtils():
     @property
     def thing_name(self):
         return self._thing_name
-    
+
     def generate_random_id(self):
         return str(uuid.uuid4().hex)
 

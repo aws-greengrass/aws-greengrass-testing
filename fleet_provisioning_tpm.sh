@@ -31,10 +31,16 @@ setup_fleet_provisioning() {
     # Get MAC address - try multiple methods for compatibility
     MAC_ADDRESS=$(ip link show | awk '/link\/ether/ {print $2; exit}' | tr ':' '_')
     if [ -z "$MAC_ADDRESS" ]; then
-        MAC_ADDRESS=$(cat /sys/class/net/$(ls /sys/class/net | grep -v lo | head -1)/address 2>/dev/null | tr ':' '_')
+        for iface in /sys/class/net/*; do
+            iface_name=$(basename "$iface")
+            if [ "$iface_name" != "lo" ] && [ -f "$iface/address" ]; then
+                MAC_ADDRESS=$(tr ':' '_' < "$iface/address")
+                break
+            fi
+        done
     fi
     echo "Using SerialNumber: $MAC_ADDRESS"
-    
+
     sudo mkdir -p /etc/greengrass
     sudo tee "${CONFIG_FILE}" > /dev/null << EOF
 ---
@@ -70,7 +76,7 @@ EOF
 
     echo "Initial config.yaml:"
     sudo cat "${CONFIG_FILE}"
-    
+
     # Copy config to aws-greengrass-testing directory
     sudo cp "${CONFIG_FILE}" "/home/ubuntu/repos/aws-greengrass-testing/config.yaml"
 
@@ -92,20 +98,20 @@ EOF
     sudo chown -R ggcore:ggcore /var/lib/greengrass
     sudo chmod 755 /var/lib/greengrass/credentials
     sudo rm -rf /var/lib/greengrass/config.db
-    
+
     # Build and install Greengrass Lite
     echo -e "\n=== Building and installing Greengrass Lite ==="
     cd "${GGL_WORKSPACE}"
-    
+
     # Build if not already built
     if [ ! -d "build" ]; then
         cmake -B build -D CMAKE_INSTALL_PREFIX=/usr/local -D CMAKE_BUILD_TYPE=MinSizeRel -DGGL_LOG_LEVEL=DEBUG
-        make -C build -j$(nproc)
+        make -C build -j"$(nproc)"
     fi
-    
+
     # Install
     sudo make -C build install
-    
+
     # Run nucleus to set up systemd services
     sudo ./misc/run_nucleus
     echo "Greengrass services installed"
@@ -125,10 +131,10 @@ EOF
 
 cleanup_fleet_provisioning() {
     echo "Cleaning up fleet provisioning resources..."
-    
+
     # Remove TPM key handle
     if tpm2_getcap handles-persistent | grep -q "${TPM_KEY_HANDLE}"; then
-        tpm2_evictcontrol -C o -c ${TPM_KEY_HANDLE}
+        tpm2_evictcontrol -C o -c "${TPM_KEY_HANDLE}"
         echo "Removed TPM key handle ${TPM_KEY_HANDLE}"
     fi
 
@@ -137,7 +143,7 @@ cleanup_fleet_provisioning() {
     CERT_ARNS=$(aws iot list-targets-for-policy --policy-name "$POLICY_NAME" --query 'targets[]' --output text)
 
     for CERT_ARN in $CERT_ARNS; do
-        CERT_ID=$(echo $CERT_ARN | cut -d'/' -f2)
+        CERT_ID=$(echo "$CERT_ARN" | cut -d'/' -f2)
         echo "Processing certificate: $CERT_ID"
         # Detach policy
         aws iot detach-policy --policy-name "$POLICY_NAME" --target "$CERT_ARN"
@@ -147,10 +153,10 @@ cleanup_fleet_provisioning() {
         aws iot delete-certificate --certificate-id "$CERT_ID" --force-delete
     done
     echo "Certs cleanup complete. You can now delete the CloudFormation stack."
-    
+
     # Delete CloudFormation stack
     aws cloudformation delete-stack --stack-name ${STACK_NAME} --region "${REGION}" 2>/dev/null || true
-    
+
     echo "Cloudformation cleanup completed"
 }
 
