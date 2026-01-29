@@ -24,6 +24,9 @@ class IoTUtils():
     def thing_name(self):
         return self._thing_name
 
+    def set_thing_name(self, thing_name: str):
+        self._thing_name = thing_name
+    
     def generate_random_id(self):
         return str(uuid.uuid4().hex)
 

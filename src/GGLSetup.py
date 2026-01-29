@@ -29,41 +29,50 @@ JSON_FILE = "/tmp/aws-greengrass-testing-workspace/iot_setup_data.json"
 WORKSPACE_DIR = "/tmp/aws-greengrass-testing-workspace"
 
 
-def install_greengrass_lite_from_source(commit_id: str, region: str):
+def download_greengrass_lite(commit_id: str) -> bool:
+    """Download greengrass-lite source code only"""
     # Create unique workspace directory
     os.makedirs(WORKSPACE_DIR, exist_ok=True)
 
     ggl_path = os.path.join(WORKSPACE_DIR, "aws-greengrass-lite")
-    build_path = os.path.join(ggl_path, 'build')
 
     # Skip download if already exists in workspace
     if os.path.exists(ggl_path):
         print(
             f"aws-greengrass-lite already exists in {WORKSPACE_DIR}, skipping download"
         )
-    else:
-        # Check if greengrass-lite exists in current directory or parent
-        current_dir = os.getcwd()
-        for check_dir in [
-                current_dir,
-                os.path.dirname(current_dir),
-                os.path.dirname(os.path.dirname(current_dir))
-        ]:
-            potential_ggl = os.path.join(check_dir, "aws-greengrass-lite")
-            if os.path.exists(potential_ggl) and os.path.exists(
-                    os.path.join(potential_ggl, "CMakeLists.txt")):
-                print(
-                    f"Found aws-greengrass-lite in {check_dir}, copying to workspace"
-                )
-                shutil.copytree(potential_ggl,
-                                ggl_path,
-                                ignore=shutil.ignore_patterns('build'))
-                break
-        else:
-            # Download the source repo if not found locally
-            download_result = _download_source(commit_id, WORKSPACE_DIR)
-            if not download_result:
-                return False
+        return True
+
+    # Check if greengrass-lite exists in current directory or parent
+    current_dir = os.getcwd()
+    for check_dir in [
+            current_dir,
+            os.path.dirname(current_dir),
+            os.path.dirname(os.path.dirname(current_dir))
+    ]:
+        potential_ggl = os.path.join(check_dir, "aws-greengrass-lite")
+        if os.path.exists(potential_ggl) and os.path.exists(
+                os.path.join(potential_ggl, "CMakeLists.txt")):
+            print(
+                f"Found aws-greengrass-lite in {check_dir}, copying to workspace"
+            )
+            shutil.copytree(potential_ggl,
+                            ggl_path,
+                            ignore=shutil.ignore_patterns('build'))
+            return True
+
+    # Download the source repo if not found locally
+    download_result = _download_source(commit_id, WORKSPACE_DIR)
+    return download_result
+
+
+def setup_greengrass_lite(commit_id: str, region: str):
+    # Download source
+    if not download_greengrass_lite(commit_id):
+        return False
+
+    ggl_path = os.path.join(WORKSPACE_DIR, "aws-greengrass-lite")
+    build_path = os.path.join(ggl_path, 'build')
 
     # Get config
     with open(JSON_FILE, 'r') as file:
@@ -589,8 +598,8 @@ if __name__ == "__main__":
     subparsers = parser.add_subparsers(dest='function',
                                        help='Function to help install')
 
-    # Parser for install_greengrass_lite_from_source
-    source_parser = subparsers.add_parser('install_greengrass_lite_from_source')
+    # Parser for setup_greengrass_lite
+    source_parser = subparsers.add_parser('setup_greengrass_lite')
     source_parser.add_argument('--id', required=True, help='Commit id')
     source_parser.add_argument('--region', required=True, help='AWS region')
 
@@ -600,7 +609,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Call the selected function with appropriate arguments
-    if args.function == 'install_greengrass_lite_from_source':
-        install_greengrass_lite_from_source(args.id, args.region)
+    if args.function == 'setup_greengrass_lite':
+        setup_greengrass_lite(args.id, args.region)
     elif args.function == 'clean_up':
         clean_up()
