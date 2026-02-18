@@ -180,14 +180,27 @@ class GGTestUtils:
                 print(f"An error occurred: {e}")
             return None
 
-    def create_local_deployment(self, artifacts_dir, recipe_dir,
-                                component_details) -> bool:
+    def create_local_deployment(self,
+                                artifacts_dir,
+                                recipe_dir,
+                                component_details,
+                                group_name=None,
+                                remove_components=None) -> bool:
         cli_cmd = ["sudo", "-E", self.cli_bin_path, "deploy"]
         if artifacts_dir is not None:
             cli_cmd.extend(["--artifacts-dir", artifacts_dir])
         if recipe_dir is not None:
             cli_cmd.extend(["--recipe-dir", recipe_dir])
-        cli_cmd.append(f"--add-component={component_details}")
+        if component_details is not None:
+            for comp in (component_details if isinstance(
+                    component_details, list) else [component_details]):
+                cli_cmd.append(f"--add-component={comp}")
+        if group_name is not None:
+            cli_cmd.extend(["--group-name", group_name])
+        if remove_components is not None:
+            for comp in (remove_components if isinstance(
+                    remove_components, list) else [remove_components]):
+                cli_cmd.extend(["--remove-component", comp])
 
         # Disable LeakSanitizer entirely - it's causing false failures
         env = os.environ.copy()

@@ -1,0 +1,13 @@
+---
+RecipeFormatVersion: "2020-01-25"
+ComponentName: Component2Dependency
+ComponentVersion: "1.0.0"
+ComponentDescription: Component2Dependency
+ComponentPublisher: Amazon
+Manifests:
+  - Platform:
+      os: "*"
+      runtime: "*"
+    Lifecycle:
+      run: |-
+        echo "Hello with Dependency"

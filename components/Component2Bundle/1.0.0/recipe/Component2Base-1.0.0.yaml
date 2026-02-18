@@ -1,0 +1,22 @@
+---
+RecipeFormatVersion: "2020-01-25"
+ComponentName: Component2Base
+ComponentVersion: "1.0.0"
+ComponentDescription: Component2Base with a soft dependency
+ComponentPublisher: Amazon
+ComponentDependencies:
+  Component2Dependency:
+    VersionRequirement: ">=1.0.0"
+    DependencyType: SOFT
+Manifests:
+  - Platform:
+      os: "*"
+      runtime: "*"
+    Lifecycle:
+      run: |-
+        INTERVAL=5
+        DEFAULT_MESSAGE="Hello Base Component"
+        while true; do
+          echo $DEFAULT_MESSAGE
+          sleep $INTERVAL
+        done

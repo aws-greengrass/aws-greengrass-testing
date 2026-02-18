@@ -578,6 +578,77 @@ def test_Deployment_3_T5(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
         240, deployment_id_1) == "SUCCEEDED")
 
 
+# Scenario: Deployment-5-T1: As a device application owner, I can remove a common component
+# from one of the groups the device belongs to from a local deployment.
+# Based on LiteCanary deployment-5.feature Deployment-5-T1.
+def test_Deployment_5_T1(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
+                         system_interface: SystemInterface):
+    thing_name = iot_obj.thing_name
+
+    # Create two thing groups and add the device to both
+    first_group = iot_obj.generate_thing_group_name(
+        iot_obj.generate_random_id())
+    assert iot_obj.add_thing_to_thing_group(thing_name, first_group) is True
+
+    second_group = iot_obj.generate_thing_group_name(
+        iot_obj.generate_random_id())
+    assert iot_obj.add_thing_to_thing_group(thing_name, second_group) is True
+
+    component_recipe_dir = "./components/Component2Bundle/1.0.0/recipe/"
+
+    # Install Component2Base (which depends on Component2Dependency) into FirstThingGroup
+    assert gg_util_obj.create_local_deployment(None,
+                                               component_recipe_dir,
+                                               "Component2Base=1.0.0",
+                                               group_name=first_group)
+
+    timeout = 180
+    while timeout > 0:
+        if system_interface.check_systemctl_status_for_component(
+                "Component2Base") == "RUNNING":
+            break
+        sleep_with_log(1)
+        timeout -= 1
+    assert system_interface.check_systemctl_status_for_component(
+        "Component2Base") == "RUNNING"
+    assert system_interface.check_systemctl_status_for_component(
+        "Component2Dependency") == "FINISHED"
+
+    # Install Component2Base into SecondThingGroup as well
+    assert gg_util_obj.create_local_deployment(None,
+                                               component_recipe_dir,
+                                               "Component2Base=1.0.0",
+                                               group_name=second_group)
+
+    timeout = 180
+    while timeout > 0:
+        if system_interface.check_systemctl_status_for_component(
+                "Component2Base") == "RUNNING":
+            break
+        sleep_with_log(1)
+        timeout -= 1
+    assert system_interface.check_systemctl_status_for_component(
+        "Component2Base") == "RUNNING"
+
+    # Remove Component2Base from FirstThingGroup only
+    assert gg_util_obj.create_local_deployment(
+        None,
+        None,
+        None,
+        group_name=first_group,
+        remove_components=["Component2Base"])
+
+    # Wait for the remove deployment to settle
+    for _ in range(30):
+        sleep_with_log(1)
+
+    # Component2Base should still be RUNNING because it's still in SecondThingGroup
+    assert system_interface.check_systemctl_status_for_component(
+        "Component2Base") == "RUNNING"
+    assert system_interface.check_systemctl_status_for_component(
+        "Component2Dependency") == "FINISHED"
+
+
 # Scenario: Deployment-5-T2: As a device application owner, I can remove a common component from one of the group the device belongs to from an IoT Jobs deployment
 def test_Deployment_5_T2(gg_util_obj: GGTestUtils, iot_obj: IoTUtils,
                          system_interface: SystemInterface):
@@ -1255,3 +1326,120 @@ def test_Deployment_12_T5():
     # And I deploy the configuration for deployment ChangeEndpoint
     # And the deployment ChangeEndpoint completes with FAILED within 200 seconds
     pass
+
+
+# ==============================================================================
+# Deployment-19: --group-name and --remove-component for local deployments
+# ==============================================================================
+
+
+# Scenario: Deployment-19-T1: As a device application owner, I can remove a locally deployed
+# component from the default LOCAL_DEPLOYMENTS group.
+def test_Deployment_19_T1(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
+                          system_interface: SystemInterface):
+    component_recipe_dir = "./components/SampleComponentWithConfiguration/1.0.0/recipe/"
+
+    # Deploy SampleComponentWithConfiguration locally (default group)
+    assert gg_util_obj.create_local_deployment(
+        None, component_recipe_dir, "SampleComponentWithConfiguration=1.0.0")
+
+    timeout = 180
+    while timeout > 0:
+        if system_interface.check_systemctl_status_for_component(
+                "SampleComponentWithConfiguration") == "RUNNING":
+            break
+        sleep_with_log(1)
+        timeout -= 1
+    assert system_interface.check_systemctl_status_for_component(
+        "SampleComponentWithConfiguration") == "RUNNING"
+
+    # Remove SampleComponentWithConfiguration from default group
+    assert gg_util_obj.create_local_deployment(
+        None,
+        None,
+        None,
+        remove_components=["SampleComponentWithConfiguration"])
+
+    timeout = 180
+    while timeout > 0:
+        if system_interface.check_systemctl_status_for_component(
+                "SampleComponentWithConfiguration") == "NOT_RUNNING":
+            break
+        sleep_with_log(1)
+        timeout -= 1
+    assert system_interface.check_systemctl_status_for_component(
+        "SampleComponentWithConfiguration") == "NOT_RUNNING"
+
+
+# Scenario: Deployment-19-T2: As a device application owner, I can deploy a component to a
+# named group via local deployment.
+def test_Deployment_19_T2(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
+                          system_interface: SystemInterface):
+    thing_name = iot_obj.thing_name
+    group_name = iot_obj.generate_thing_group_name(iot_obj.generate_random_id())
+    assert iot_obj.add_thing_to_thing_group(thing_name, group_name) is True
+
+    component_recipe_dir = "./components/SampleComponentWithConfiguration/1.0.0/recipe/"
+
+    # Deploy SampleComponentWithConfiguration to a named group
+    assert gg_util_obj.create_local_deployment(
+        None,
+        component_recipe_dir,
+        "SampleComponentWithConfiguration=1.0.0",
+        group_name=group_name)
+
+    timeout = 180
+    while timeout > 0:
+        if system_interface.check_systemctl_status_for_component(
+                "SampleComponentWithConfiguration") == "RUNNING":
+            break
+        sleep_with_log(1)
+        timeout -= 1
+    assert system_interface.check_systemctl_status_for_component(
+        "SampleComponentWithConfiguration") == "RUNNING"
+
+
+# Scenario: Deployment-19-T3: As a device application owner, I can remove a component from a
+# named group and it gets removed when no other group has it.
+def test_Deployment_19_T3(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
+                          system_interface: SystemInterface):
+    thing_name = iot_obj.thing_name
+    group_name = iot_obj.generate_thing_group_name(iot_obj.generate_random_id())
+    assert iot_obj.add_thing_to_thing_group(thing_name, group_name) is True
+
+    component_recipe_dir = "./components/SampleComponentWithConfiguration/1.0.0/recipe/"
+
+    # Deploy SampleComponentWithConfiguration to a named group
+    assert gg_util_obj.create_local_deployment(
+        None,
+        component_recipe_dir,
+        "SampleComponentWithConfiguration=1.0.0",
+        group_name=group_name)
+
+    timeout = 180
+    while timeout > 0:
+        if system_interface.check_systemctl_status_for_component(
+                "SampleComponentWithConfiguration") == "RUNNING":
+            break
+        sleep_with_log(1)
+        timeout -= 1
+    assert system_interface.check_systemctl_status_for_component(
+        "SampleComponentWithConfiguration") == "RUNNING"
+
+    # Remove SampleComponentWithConfiguration from the named group — should stop since no other group has it
+    assert gg_util_obj.create_local_deployment(
+        None,
+        None,
+        None,
+        group_name=group_name,
+        remove_components=["SampleComponentWithConfiguration"])
+
+    timeout = 180
+    while timeout > 0:
+        if system_interface.check_systemctl_status_for_component(
+                "SampleComponentWithConfiguration") == "NOT_RUNNING":
+            break
+        sleep_with_log(1)
+        timeout -= 1
+    assert system_interface.check_systemctl_status_for_component(
+        "SampleComponentWithConfiguration") == "NOT_RUNNING"
