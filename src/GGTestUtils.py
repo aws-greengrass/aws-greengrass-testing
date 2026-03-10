@@ -454,6 +454,33 @@ class GGTestUtils:
 
         return "TIMEOUT"
 
+    def wait_for_iot_job_status(
+            self, timeout: float, deployment_id: str,
+            thing_name: str) -> Literal['SUCCEEDED', 'FAILED', 'TIMEOUT']:
+        """Poll IoT Job execution status for a deployment."""
+        deployment = self._ggClient.get_deployment(deploymentId=deployment_id)
+        iot_job_id = deployment.get("iotJobId")
+        if not iot_job_id:
+            print(f"No iotJobId found for deployment {deployment_id}")
+            return "FAILED"
+
+        while timeout > 0:
+            try:
+                resp = self._iotClient.describe_job_execution(
+                    jobId=iot_job_id, thingName=thing_name)
+                status = resp["execution"]["status"]
+                if status == "SUCCEEDED":
+                    return "SUCCEEDED"
+                if status in ("FAILED", "REJECTED", "REMOVED", "CANCELED"):
+                    print(f"IoT Job {iot_job_id} status: {status}")
+                    return "FAILED"
+            except Exception as e:
+                print(f"Error checking job status: {e}")
+            time.sleep(1)
+            timeout -= 1
+
+        return "TIMEOUT"
+
     def _upload_files_to_s3(self,
                             files: Sequence[os.PathLike | str],
                             bucket_name: str,
@@ -802,23 +829,28 @@ class GGTestUtils:
         self._ggServiceList = []
 
     def wait_ggcore_device_status(
-            self, timeout: int | float, thing_group_name,
-            desired_health: str) -> Optional[CoreDeviceStatusType]:
-        things_in_group = self._iotClient.list_things_in_thing_group(
-            thingGroupName=thing_group_name,
-            recursive=False,
-            nextToken="",
-            maxResults=100,
-        )
+            self,
+            timeout: int | float,
+            thing_group_name,
+            desired_health: str,
+            thing_name: str = None) -> Optional[CoreDeviceStatusType]:
+        if thing_name is None:
+            things_in_group = self._iotClient.list_things_in_thing_group(
+                thingGroupName=thing_group_name,
+                recursive=False,
+                nextToken="",
+                maxResults=100,
+            )
 
-        # Make sure that there is only one thing in the group.
-        if len(things_in_group["things"]) != 1:
-            print("The number of things in the thing-group must be 1.")
-            return False
+            # Make sure that there is only one thing in the group.
+            if len(things_in_group["things"]) != 1:
+                print("The number of things in the thing-group must be 1.")
+                return False
+            thing_name = things_in_group["things"][0]
 
         while timeout > 0:
             return_val = self._ggClient.get_core_device(
-                coreDeviceThingName=things_in_group["things"][0])
+                coreDeviceThingName=thing_name)
 
             if return_val is None or return_val["status"] != desired_health:
                 time.sleep(1)

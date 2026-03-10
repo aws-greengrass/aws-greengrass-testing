@@ -1,10 +1,11 @@
 from typing import Generator
 from GGTestUtils import sleep_with_log
 from pytest import fixture, mark
-from src.IoTUtils import IoTUtils
+from src.IoTUtils import IoTUtils, JSON_FILE
 from src.GGTestUtils import GGTestUtils, ComponentDeploymentInfo
 from src.SystemInterface import SystemInterface
 
+import json
 import time
 import src.GGLSetup as ggl_setup
 
@@ -1449,7 +1450,13 @@ def test_Deployment_19_T3(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
 # Deployment-20: IoT endpoint switch
 # ==============================================================================
 
-DESTINATION_REGION = "us-east-1"
+
+def _get_destination_region(source_region: str) -> str:
+    """Return a region different from the source for endpoint switch
+    tests. The endpoint switch deploys new IoT endpoints in a
+    different region, so the destination must differ from the
+    source region provided via the --region CLI parameter."""
+    return ("us-west-2" if source_region == "us-east-1" else "us-east-1")
 
 
 def _create_endpoint_switch_deployment(
@@ -1494,6 +1501,7 @@ def test_Deployment_20_T1(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     assert iot_obj.add_thing_to_thing_group(thing_name,
                                             thing_group_name) is True
 
+    dest_region = _get_destination_region(gg_util_obj.aws_region)
     thing_group_arn = gg_util_obj.get_thing_group_arn(thing_group_name)
     source_endpoints = iot_obj.get_iot_endpoints()
 
@@ -1529,7 +1537,7 @@ def test_Deployment_20_T1(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
 
     # T1c: Region mismatch — endpoint URLs contain destination
     # region but awsRegion is set to source region
-    dest_iot_obj = IoTUtils(DESTINATION_REGION)
+    dest_iot_obj = IoTUtils(dest_region)
     dest_endpoints = dest_iot_obj.get_iot_endpoints()
     deployment_id = _create_endpoint_switch_deployment(
         source_gg_util_obj=gg_util_obj,
@@ -1547,9 +1555,8 @@ def test_Deployment_20_T1(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
 
     # T1d: Unreachable endpoint — syntactically valid but device
     # cert is not registered at this endpoint
-    unreachable_data_ep = (f"abcde-ats.iot.{DESTINATION_REGION}.amazonaws.com")
-    unreachable_cred_ep = (
-        f"abcde.credentials.iot.{DESTINATION_REGION}.amazonaws.com")
+    unreachable_data_ep = (f"abcde-ats.iot.{dest_region}.amazonaws.com")
+    unreachable_cred_ep = (f"abcde.credentials.iot.{dest_region}.amazonaws.com")
     deployment_id = _create_endpoint_switch_deployment(
         source_gg_util_obj=gg_util_obj,
         thing_group_arn=thing_group_arn,
@@ -1557,7 +1564,7 @@ def test_Deployment_20_T1(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
         merge_config={
             "iotDataEndpoint": unreachable_data_ep,
             "iotCredEndpoint": unreachable_cred_ep,
-            "awsRegion": DESTINATION_REGION,
+            "awsRegion": dest_region,
         },
         deployment_name="EndpointSwitch_UnreachableEndpoint",
     )
@@ -1565,3 +1572,63 @@ def test_Deployment_20_T1(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     # for cloud propagation and polling
     assert (gg_util_obj.wait_for_deployment_till_timeout(
         180, deployment_id) == "FAILED")
+
+
+# Scenario: Deployment-20-T2: Happy path — full endpoint switch.
+# Provisions IoT resources in the destination region, deploys the
+# destination endpoints, and verifies the device connects to the
+# destination region.
+def test_Deployment_20_T2(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
+                          system_interface: SystemInterface):
+    thing_name = iot_obj.thing_name
+    id = iot_obj.generate_random_id()
+    thing_group_name = iot_obj.generate_thing_group_name(id)
+    assert iot_obj.add_thing_to_thing_group(thing_name,
+                                            thing_group_name) is True
+
+    dest_region = _get_destination_region(gg_util_obj.aws_region)
+
+    # Read the device certificate PEM from the setup data file
+    with open(JSON_FILE, 'r') as f:
+        setup_data = json.load(f)
+    cert_pem = setup_data['DEVICE_CERT']
+
+    # Provision IoT resources in the destination region
+    dest_role_alias = "ggl-uat-role-alias-dest"
+    dest_iot_obj = IoTUtils(dest_region, thing_name=thing_name)
+    try:
+        dest_iot_obj.provision_for_endpoint_switch(
+            cert_pem, role_alias_name=dest_role_alias)
+        dest_endpoints = dest_iot_obj.get_iot_endpoints()
+
+        # Deploy the destination region endpoints
+        thing_group_arn = gg_util_obj.get_thing_group_arn(thing_group_name)
+        deployment_id = _create_endpoint_switch_deployment(
+            source_gg_util_obj=gg_util_obj,
+            thing_group_arn=thing_group_arn,
+            thing_name=thing_name,
+            merge_config={
+                "iotDataEndpoint": dest_endpoints["iotDataEndpoint"],
+                "iotCredEndpoint": dest_endpoints["iotCredEndpoint"],
+                "iotRoleAlias": dest_role_alias,
+                "awsRegion": dest_region,
+            },
+            deployment_name="EndpointSwitch_HappyPath",
+        )
+        assert (gg_util_obj.wait_for_iot_job_status(180, deployment_id,
+                                                    thing_name) == "SUCCEEDED")
+
+        # Wait for core device registration in destination region
+        dest_gg_util_obj = GGTestUtils(gg_util_obj.aws_account,
+                                       gg_util_obj.s3_artifact_bucket,
+                                       dest_region, gg_util_obj.cli_bin_path)
+        dest_gg_util_obj.wait_ggcore_device_status(60,
+                                                   None,
+                                                   "HEALTHY",
+                                                   thing_name=thing_name)
+    finally:
+        # Core device deletion fails if triggered immediately after
+        # registration due to a race condition. Sleep before cleanup
+        # to allow registration to complete.
+        sleep_with_log(5)
+        dest_iot_obj.clean_up()
