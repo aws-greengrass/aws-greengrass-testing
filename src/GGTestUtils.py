@@ -875,3 +875,39 @@ class GGTestUtils:
             RECIPE_DIR) / f"{component_name}-{component_version}.yaml"
         print(f"Checking if file {recipe_path} exists")
         return recipe_path.exists()
+
+    def get_nucleus_lite_version(self, thing_name: str) -> str:
+        """Get installed NucleusLite version from core device."""
+        device = self._ggClient.get_core_device(coreDeviceThingName=thing_name)
+        version = device.get("coreVersion")
+        if not version:
+            raise RuntimeError("coreVersion not found for core device")
+        return version
+
+    def create_nucleus_lite_component(self, thing_name: str) -> str:
+        """Create a dummy aws.greengrass.NucleusLite component
+        matching the version installed on the device.
+
+        Returns the component version string. The component ARN
+        is tracked for cleanup.
+        """
+        version = self.get_nucleus_lite_version(thing_name)
+        recipe_path = os.path.join("components", "aws.greengrass.NucleusLite",
+                                   "recipe", "aws.greengrass.NucleusLite.yaml")
+        with open(recipe_path, "r") as f:
+            recipe_content = f.read()
+        recipe_content = recipe_content.replace("$componentVersion$", version)
+        recipe_yaml = yaml.safe_load(recipe_content)
+        recipe = json.dumps(recipe_yaml)
+        try:
+            resp = self._ggClient.create_component_version(inlineRecipe=recipe)
+        except self._ggClient.exceptions.ConflictException:
+            print("aws.greengrass.NucleusLite component already exists")
+            arn = (f"arn:aws:greengrass:{self._region}"
+                   f":{self._account}:components"
+                   f":aws.greengrass.NucleusLite:versions:{version}")
+            self._ggComponentToDeleteArn.append(arn)
+            return version
+        print(f"Uploaded NucleusLite component: {resp['arn']}")
+        self._ggComponentToDeleteArn.append(resp["arn"])
+        return version

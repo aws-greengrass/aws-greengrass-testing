@@ -1,0 +1,16 @@
+---
+RecipeFormatVersion: "2020-01-25"
+ComponentName: "aws.greengrass.NucleusLite"
+ComponentVersion: "$componentVersion$"
+ComponentType: "aws.greengrass.generic"
+ComponentDescription: "Nucleus Lite stub component"
+ComponentPublisher: "AWS"
+Manifests:
+  - Platform:
+      os: "all"
+      runtime: "aws_nucleus_lite"
+    Lifecycle:
+      run:
+        Script: "true"
+    Artifacts: []
+Lifecycle: {}

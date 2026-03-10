@@ -2,7 +2,7 @@ from typing import Generator
 from GGTestUtils import sleep_with_log
 from pytest import fixture, mark
 from src.IoTUtils import IoTUtils
-from src.GGTestUtils import GGTestUtils
+from src.GGTestUtils import GGTestUtils, ComponentDeploymentInfo
 from src.SystemInterface import SystemInterface
 
 import time
@@ -1443,3 +1443,125 @@ def test_Deployment_19_T3(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
         timeout -= 1
     assert system_interface.check_systemctl_status_for_component(
         "SampleComponentWithConfiguration") == "NOT_RUNNING"
+
+
+# ==============================================================================
+# Deployment-20: IoT endpoint switch
+# ==============================================================================
+
+DESTINATION_REGION = "us-east-1"
+
+
+def _create_endpoint_switch_deployment(
+    source_gg_util_obj: GGTestUtils,
+    thing_group_arn: str,
+    thing_name: str,
+    merge_config: dict,
+    deployment_name: str = "EndpointSwitchDeployment",
+) -> str:
+    """Upload NucleusLite component and deploy with the given
+    merge_config to the specified thing group. Returns deployment
+    ID."""
+    version = source_gg_util_obj.create_nucleus_lite_component(thing_name)
+    sleep_with_log(5, "waiting for component to be DEPLOYABLE")
+
+    component = ComponentDeploymentInfo(
+        name="aws.greengrass.NucleusLite",
+        versions=[version],
+        merge_config=merge_config,
+    )
+    result = source_gg_util_obj.create_deployment(
+        thingArn=thing_group_arn,
+        component_list=[component],
+        deployment_name=deployment_name,
+    )
+    assert result["deploymentId"] is not None
+    return result["deploymentId"]
+
+
+# Scenario: Deployment-20-T1: Endpoint switch validation and
+# pre-flight failures. Deploys invalid endpoint configurations and
+# verifies each is rejected without modifying device state.
+#   - Invalid IoT data endpoint → FAILED
+#   - Invalid IoT credential endpoint → FAILED
+#   - Region mismatch (endpoint URL region != awsRegion) → FAILED
+#   - Unreachable endpoint (valid URL, cert not registered) → FAILED
+def test_Deployment_20_T1(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
+                          system_interface: SystemInterface):
+    thing_name = iot_obj.thing_name
+    id = iot_obj.generate_random_id()
+    thing_group_name = iot_obj.generate_thing_group_name(id)
+    assert iot_obj.add_thing_to_thing_group(thing_name,
+                                            thing_group_name) is True
+
+    thing_group_arn = gg_util_obj.get_thing_group_arn(thing_group_name)
+    source_endpoints = iot_obj.get_iot_endpoints()
+
+    # T1a: Invalid IoT data endpoint
+    deployment_id = _create_endpoint_switch_deployment(
+        source_gg_util_obj=gg_util_obj,
+        thing_group_arn=thing_group_arn,
+        thing_name=thing_name,
+        merge_config={
+            "iotDataEndpoint": "invalidEndpoint",
+            "iotCredEndpoint": source_endpoints["iotCredEndpoint"],
+            "awsRegion": gg_util_obj.aws_region,
+        },
+        deployment_name="EndpointSwitch_InvalidDataEndpoint",
+    )
+    assert (gg_util_obj.wait_for_deployment_till_timeout(
+        180, deployment_id) == "FAILED")
+
+    # T1b: Invalid IoT credential endpoint
+    deployment_id = _create_endpoint_switch_deployment(
+        source_gg_util_obj=gg_util_obj,
+        thing_group_arn=thing_group_arn,
+        thing_name=thing_name,
+        merge_config={
+            "iotDataEndpoint": source_endpoints["iotDataEndpoint"],
+            "iotCredEndpoint": "invalidEndpoint",
+            "awsRegion": gg_util_obj.aws_region,
+        },
+        deployment_name="EndpointSwitch_InvalidCredEndpoint",
+    )
+    assert (gg_util_obj.wait_for_deployment_till_timeout(
+        180, deployment_id) == "FAILED")
+
+    # T1c: Region mismatch — endpoint URLs contain destination
+    # region but awsRegion is set to source region
+    dest_iot_obj = IoTUtils(DESTINATION_REGION)
+    dest_endpoints = dest_iot_obj.get_iot_endpoints()
+    deployment_id = _create_endpoint_switch_deployment(
+        source_gg_util_obj=gg_util_obj,
+        thing_group_arn=thing_group_arn,
+        thing_name=thing_name,
+        merge_config={
+            "iotDataEndpoint": dest_endpoints["iotDataEndpoint"],
+            "iotCredEndpoint": dest_endpoints["iotCredEndpoint"],
+            "awsRegion": gg_util_obj.aws_region,
+        },
+        deployment_name="EndpointSwitch_RegionMismatch",
+    )
+    assert (gg_util_obj.wait_for_deployment_till_timeout(
+        180, deployment_id) == "FAILED")
+
+    # T1d: Unreachable endpoint — syntactically valid but device
+    # cert is not registered at this endpoint
+    unreachable_data_ep = (f"abcde-ats.iot.{DESTINATION_REGION}.amazonaws.com")
+    unreachable_cred_ep = (
+        f"abcde.credentials.iot.{DESTINATION_REGION}.amazonaws.com")
+    deployment_id = _create_endpoint_switch_deployment(
+        source_gg_util_obj=gg_util_obj,
+        thing_group_arn=thing_group_arn,
+        thing_name=thing_name,
+        merge_config={
+            "iotDataEndpoint": unreachable_data_ep,
+            "iotCredEndpoint": unreachable_cred_ep,
+            "awsRegion": DESTINATION_REGION,
+        },
+        deployment_name="EndpointSwitch_UnreachableEndpoint",
+    )
+    # Device MQTT connectivity check timeout is 60s; allow overhead
+    # for cloud propagation and polling
+    assert (gg_util_obj.wait_for_deployment_till_timeout(
+        180, deployment_id) == "FAILED")
