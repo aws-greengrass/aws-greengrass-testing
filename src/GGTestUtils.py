@@ -468,11 +468,19 @@ class GGTestUtils:
             try:
                 resp = self._iotClient.describe_job_execution(
                     jobId=iot_job_id, thingName=thing_name)
-                status = resp["execution"]["status"]
+                execution = resp["execution"]
+                status = execution["status"]
                 if status == "SUCCEEDED":
                     return "SUCCEEDED"
                 if status in ("FAILED", "REJECTED", "REMOVED", "CANCELED"):
-                    print(f"IoT Job {iot_job_id} status: {status}")
+                    print(f"\n{'='*60}")
+                    print(f"IOT JOB FAILED: {iot_job_id}")
+                    print(f"Status: {status}")
+                    print(f"Status details: "
+                          f"{execution.get('statusDetails', {})}")
+                    print(f"Deployment: {deployment_id}")
+                    self._dump_device_logs()
+                    print(f"{'='*60}\n")
                     return "FAILED"
             except Exception as e:
                 print(f"Error checking job status: {e}")
@@ -480,6 +488,40 @@ class GGTestUtils:
             timeout -= 1
 
         return "TIMEOUT"
+
+    def _dump_device_logs(self):
+        """Dump recent Greengrass service logs for debugging."""
+        try:
+            services = [
+                "ggdeploymentd", "iotcored", "ggconfigd", "tesd", "gghealthd",
+                "ggipcd"
+            ]
+            for svc in services:
+                log_output = subprocess.run([
+                    "/usr/bin/journalctl", "-u", svc, "--no-pager", "-n", "50",
+                    "--since", "5 minutes ago"
+                ],
+                                            capture_output=True,
+                                            text=True,
+                                            timeout=3)
+                if (log_output.stdout.strip()
+                        and "-- No entries --" not in log_output.stdout):
+                    print(f"\n--- {svc} logs ---")
+                    print(log_output.stdout[-1500:])
+
+            error_log = subprocess.run([
+                "/usr/bin/journalctl", "--no-pager", "-p", "err", "--since",
+                "5 minutes ago"
+            ],
+                                       capture_output=True,
+                                       text=True,
+                                       timeout=3)
+            if (error_log.stdout.strip()
+                    and "-- No entries --" not in error_log.stdout):
+                print(f"\n--- System errors (priority: err) ---")
+                print(error_log.stdout[-2000:])
+        except Exception as e:
+            print(f"Could not retrieve logs: {e}")
 
     def _upload_files_to_s3(self,
                             files: Sequence[os.PathLike | str],
