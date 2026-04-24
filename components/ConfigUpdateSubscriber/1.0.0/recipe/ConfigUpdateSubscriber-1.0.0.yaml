@@ -1,0 +1,32 @@
+---
+RecipeFormatVersion: "2020-01-25"
+ComponentName: ConfigUpdateSubscriber
+ComponentVersion: "1.0.0"
+ComponentDescription: >-
+  Subscribes to its own configuration updates and prints one line per event.
+  Used by the UAT that verifies SubscribeToConfigurationUpdate does not fire on
+  deployments that do not change config values.
+ComponentPublisher: Me
+ComponentConfiguration:
+  DefaultConfiguration:
+    watchedKey: "v1"
+    accessControl:
+      aws.greengrass.ipc.config:
+        ConfigUpdateSubscriber:config:1:
+          policyDescription: "Allow self configuration access."
+          operations:
+            - "aws.greengrass#SubscribeToConfigurationUpdate"
+            - "aws.greengrass#GetConfiguration"
+          resources:
+            - "*"
+Manifests:
+  - Platform:
+      os: "linux"
+      runtime: "*"
+    Lifecycle:
+      install: |-
+        python3 -m venv .venv
+        .venv/bin/python3 -m pip install awsiotsdk
+      run: |-
+        .venv/bin/python3 -u {artifacts:path}/config_update_subscriber.py
+Lifecycle: {}
