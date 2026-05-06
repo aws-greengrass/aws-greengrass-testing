@@ -1,0 +1,33 @@
+---
+RecipeFormatVersion: "2020-01-25"
+ComponentName: SampleComponentConfigDeploy
+ComponentVersion: "1.0.0"
+ComponentDescription:
+  UAT component that exercises componentToConfiguration merge/reset via IPC
+  CreateLocalDeployment
+ComponentPublisher: Amazon
+ComponentDependencies:
+  aws.greengrass.Cli:
+    VersionRequirement: ">=2.0.0"
+    DependencyType: SOFT
+ComponentConfiguration:
+  DefaultConfiguration:
+    accessControl:
+      aws.greengrass.Cli:
+        "SampleComponentConfigDeploy:cli:1":
+          policyDescription: "Allow CreateLocalDeployment IPC"
+          operations:
+            - "aws.greengrass#CreateLocalDeployment"
+          resources:
+            - "*"
+Manifests:
+  - Platform:
+      os: "*"
+      runtime: "*"
+    Lifecycle:
+      install:
+        "python3 -m ensurepip --default-pip 2>/dev/null; python3 -m pip install
+        awsiotsdk || true"
+      run: "python3 -u {artifacts:path}/deploy_config.py"
+    Artifacts:
+      - URI: "s3://DUMMY/SampleComponentConfigDeploy/1.0.0/deploy_config.py"
