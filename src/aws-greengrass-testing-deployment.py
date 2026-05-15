@@ -1632,3 +1632,53 @@ def test_Deployment_20_T2(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
         # to allow registration to complete.
         sleep_with_log(5)
         dest_iot_obj.clean_up()
+
+
+# Scenario: Deployment-21-T1: When a configuration update is deployed to a component,
+# the component is redeployed; its lifecycle steps are re-run as part of the deployment.
+def test_Deployment_21_T1(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
+                          system_interface: SystemInterface):
+    # Set up thing group
+    new_thing_name = iot_obj.thing_name
+    id = iot_obj.generate_random_id()
+    new_thing_group_name = iot_obj.generate_thing_group_name(id)
+    assert iot_obj.add_thing_to_thing_group(new_thing_name,
+                                            new_thing_group_name) is True
+
+    # Upload and deploy SampleComponentWithConfiguration with default config
+    component_info = gg_util_obj.upload_component_with_versions(
+        "SampleComponentWithConfiguration", ["1.0.0"])
+    sleep_with_log(5)
+
+    thing_group_arn = gg_util_obj.get_thing_group_arn(new_thing_group_name)
+    deployment_id = gg_util_obj.create_deployment(
+        thing_group_arn, [component_info], "InitialDeployment")["deploymentId"]
+    assert deployment_id is not None
+    assert (gg_util_obj.wait_for_deployment_till_timeout(
+        180, deployment_id) == "SUCCEEDED")
+
+    # Verify component is running with default config value
+    service_name = "ggl." + component_info.name + ".service"
+    assert (system_interface.monitor_journalctl_for_message(
+        service_name,
+        "running generic sample with version 1.0.0 with configuration value MyConfigDefaultValue",
+        timeout=30) is True)
+
+    # Deploy a configuration update to the same component
+    updated_component = ComponentDeploymentInfo(
+        name=component_info.name,
+        versions=["1.0.0"],
+        merge_config={"MyConfigKey": "UpdatedConfigValue"},
+    )
+    deployment_id_2 = gg_util_obj.create_deployment(
+        thing_group_arn, [updated_component],
+        "ConfigUpdateDeployment")["deploymentId"]
+    assert deployment_id_2 is not None
+    assert (gg_util_obj.wait_for_deployment_till_timeout(
+        240, deployment_id_2) == "SUCCEEDED")
+
+    # Verify the component was redeployed: run lifecycle re-executed with new config
+    assert (system_interface.monitor_journalctl_for_message(
+        service_name,
+        "running generic sample with version 1.0.0 with configuration value UpdatedConfigValue",
+        timeout=30) is True)
