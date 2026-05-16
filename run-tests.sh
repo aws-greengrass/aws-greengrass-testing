@@ -37,7 +37,7 @@ setup_and_cleanup() {
         echo "Setting up python3 venv environment in $VENV_DIR"
         {
             if ! dpkg -l | grep -q python3-venv; then
-                sudo apt install -y python3-venv
+                sudo apt-get install -y python3-venv
             fi
             python3 -m venv "$VENV_DIR"
         } || {
