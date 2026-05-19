@@ -287,6 +287,7 @@ class SystemInterface:
                 "-xeau",
                 service_name,
                 "-f",    # Follow mode - shows new entries as they are added
+                "--no-pager",
             ]
 
             # Run the command and stream output

@@ -36,7 +36,7 @@ jobs:
         run:
           curl --proto '=https' --tlsv1.2 -sSfL
           https://artifacts.nixos.org/nix-installer | sh -s -- install
-          --no-confirm
+          --no-confirm --enable-flakes
 
       - name: Check ${{ matrix.name }}
         run: |
