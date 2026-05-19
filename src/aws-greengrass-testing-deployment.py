@@ -1634,6 +1634,61 @@ def test_Deployment_20_T2(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
         dest_iot_obj.clean_up()
 
 
+# As a developer, I can use a local IPC CreateLocalDeployment with componentToConfiguration
+# to merge and reset configuration on a running component without cloud credentials.
+def test_Deployment_1_T3_lite_config_merge_via_ipc(
+        iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
+        system_interface: SystemInterface):
+    # Step 1: Deploy SampleComponentWithConfiguration with default config
+    component_recipe_dir = "./components/SampleComponentWithConfiguration/1.0.0/recipe/"
+    assert (gg_util_obj.create_local_deployment(
+        None, component_recipe_dir, "SampleComponentWithConfiguration=1.0.0")
+            is True)
+
+    # Wait for the component to be RUNNING
+    timeout = 180
+    while timeout > 0:
+        if system_interface.check_systemctl_status_for_component(
+                "SampleComponentWithConfiguration") == "RUNNING":
+            break
+        sleep_with_log(1)
+        timeout -= 1
+    assert (system_interface.check_systemctl_status_for_component(
+        "SampleComponentWithConfiguration") == "RUNNING")
+
+    # Verify default config value is present
+    assert (system_interface.monitor_journalctl_for_message(
+        "ggl.SampleComponentWithConfiguration.service",
+        "running generic sample with version 1.0.0 with configuration value MyConfigDefaultValue",
+        timeout=20) is True)
+
+    # Step 2: Deploy SampleComponentConfigDeploy which triggers IPC merge
+    config_deploy_recipe_dir = "./components/SampleComponentConfigDeploy/1.0.0/recipe/"
+    config_deploy_artifacts_dir = "./components/SampleComponentConfigDeploy/1.0.0/artifacts/"
+    assert (gg_util_obj.create_local_deployment(
+        config_deploy_artifacts_dir, config_deploy_recipe_dir,
+        "SampleComponentConfigDeploy=1.0.0") is True)
+
+    # Wait for the config deploy component to run
+    timeout = 180
+    while timeout > 0:
+        if system_interface.check_systemctl_status_for_component(
+                "SampleComponentConfigDeploy") == "RUNNING":
+            break
+        sleep_with_log(1)
+        timeout -= 1
+
+    # Step 3: Assert the target component now shows the MERGED value
+    assert (system_interface.monitor_journalctl_for_message(
+        "ggl.SampleComponentWithConfiguration.service",
+        "running generic sample with version 1.0.0 with configuration value MergedViaIPC",
+        timeout=60) is True)
+
+    # Step 4: After the reset (done by the script after 15s), verify default is restored
+    assert (system_interface.monitor_journalctl_for_message(
+        "ggl.SampleComponentWithConfiguration.service",
+        "running generic sample with version 1.0.0 with configuration value MyConfigDefaultValue",
+        timeout=60) is True)
 # Scenario: Deployment-21-T1: When a configuration update is deployed to a component,
 # the component is redeployed; its lifecycle steps are re-run as part of the deployment.
 def test_Deployment_21_T1(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
