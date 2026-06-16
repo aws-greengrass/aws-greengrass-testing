@@ -88,7 +88,6 @@ def test_ConfigUpdateSubscription_no_duplicate_on_repeat_deploy(
         system_interface: SystemInterface):
     component = "ConfigUpdateSubscriber"
     version = "1.0.0"
-    service = f"ggl.{component}.service"
     marker = "CONFIG_UPDATE_RECEIVED"
 
     # Add the core device's thing to a new thing group so we can target it
@@ -99,9 +98,14 @@ def test_ConfigUpdateSubscription_no_duplicate_on_repeat_deploy(
                                             thing_group_name) is True
     thing_group_arn = gg_util_obj.get_thing_group_arn(thing_group_name)
 
-    # Upload the component once. All subsequent deployments reuse this same
-    # version and vary only the merged configuration.
-    gg_util_obj.upload_component_with_versions(component, [version])
+    # Upload the component once. The framework registers it in the cloud under
+    # a randomized name (e.g. "ConfigUpdateSubscriber<uuid>"), so reuse that
+    # returned name for every deployment and on-device (systemd) lookup. All
+    # subsequent deployments reuse this same version and vary only the merged
+    # configuration.
+    component = gg_util_obj.upload_component_with_versions(
+        component, [version]).name
+    service = f"ggl.{component}.service"
     sleep_with_log(5, "let cloud mark the component DEPLOYABLE")
 
     # First deployment: component starts and subscribes. The default config is

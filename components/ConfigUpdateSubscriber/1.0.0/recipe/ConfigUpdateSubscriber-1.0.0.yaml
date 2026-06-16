@@ -29,4 +29,6 @@ Manifests:
         .venv/bin/python3 -m pip install awsiotsdk
       run: |-
         .venv/bin/python3 -u {artifacts:path}/config_update_subscriber.py
+    Artifacts:
+      - URI: "s3://$bucketName$/$testArtifactsDirectory$/$randomId$/config_update_subscriber.py"
 Lifecycle: {}
