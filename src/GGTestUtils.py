@@ -902,6 +902,81 @@ class GGTestUtils:
 
         return False
 
+    def _resolve_single_thing_in_group(self,
+                                       thing_group_name: str) -> Optional[str]:
+        """Return the single thing name in a thing group, or None if the group
+        does not contain exactly one thing."""
+        things_in_group = self._iotClient.list_things_in_thing_group(
+            thingGroupName=thing_group_name,
+            recursive=False,
+            nextToken="",
+            maxResults=100,
+        )
+        things = things_in_group.get("things", [])
+        if len(things) != 1:
+            print("The number of things in the thing-group must be 1.")
+            return None
+        return things[0]
+
+    def get_cloud_installed_components(self, thing_name: str) -> Dict[str, str]:
+        """Return {componentName: lifecycleState} that the cloud reports as
+        installed on the core device via GreengrassV2 ListInstalledComponents.
+        A component removed from the device is pruned from this inventory once
+        fleet status reports it as UNINSTALLED, so it no longer appears."""
+        components: Dict[str, str] = {}
+        next_token = None
+        while True:
+            kwargs: Dict[str, Any] = {"coreDeviceThingName": thing_name}
+            if next_token:
+                kwargs["nextToken"] = next_token
+            response = self._ggClient.list_installed_components(**kwargs)
+            for component in response.get("installedComponents", []):
+                components[component["componentName"]] = component.get(
+                    "lifecycleState", "")
+            next_token = response.get("nextToken")
+            if not next_token:
+                break
+        return components
+
+    def wait_for_cloud_component_installed(self,
+                                           timeout: int | float,
+                                           thing_group_name: str,
+                                           component_name: str,
+                                           thing_name: str = None) -> bool:
+        """Poll the cloud component inventory until `component_name` is reported
+        installed for the device, or the timeout elapses."""
+        if thing_name is None:
+            thing_name = self._resolve_single_thing_in_group(thing_group_name)
+        if thing_name is None:
+            return False
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            if component_name in self.get_cloud_installed_components(
+                    thing_name):
+                return True
+            time.sleep(1)
+        return False
+
+    def wait_for_cloud_component_uninstalled(self,
+                                             timeout: int | float,
+                                             thing_group_name: str,
+                                             component_name: str,
+                                             thing_name: str = None) -> bool:
+        """Poll the cloud component inventory until `component_name` is no
+        longer reported for the device (pruned after fleet status reported it
+        as UNINSTALLED), or the timeout elapses."""
+        if thing_name is None:
+            thing_name = self._resolve_single_thing_in_group(thing_group_name)
+        if thing_name is None:
+            return False
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            if component_name not in self.get_cloud_installed_components(
+                    thing_name):
+                return True
+            time.sleep(1)
+        return False
+
     def create_recipe_file(self, component_name: str) -> dict | None:
         template_file = os.path.join(".", "misc", "recipe_template.yaml")
         template_abs_path = os.path.abspath(template_file)
