@@ -19,6 +19,8 @@ class IoTUtils():
         self._iam_client = client("iam", region_name=self._region)
         self._gg_client = client("greengrassv2", region_name=self._region)
         self._thing_groups = []
+        self._provisioned_role_name = None
+        self._provisioned_role_alias = None
 
     @property
     def thing_name(self):
@@ -32,8 +34,10 @@ class IoTUtils():
             endpointType="iot:CredentialProvider")["endpointAddress"]
         return {"iotDataEndpoint": data_ep, "iotCredEndpoint": cred_ep}
 
-    def provision_for_endpoint_switch(self, cert_pem: str,
-                                      role_alias_name: str):
+    def provision_for_endpoint_switch(self,
+                                      cert_pem: str,
+                                      role_alias_name: str,
+                                      role_name: str = "ggl-uat-role"):
         """Provision IoT resources for an existing device in this
         region. Registers the certificate PEM (without CA) and
         creates thing, policy, role, and role alias."""
@@ -43,8 +47,13 @@ class IoTUtils():
         cert_arn = resp['certificateArn']
         self._iot_client.attach_thing_principal(thingName=self._thing_name,
                                                 principal=cert_arn)
-        role_arn = self._create_iot_role()
-        role_alias_arn = self._create_role_alias(role_arn, role_alias_name)
+        role_arn, role_created = self._create_iot_role(role_name=role_name)
+        role_alias_arn, alias_created = self._create_role_alias(
+            role_arn, role_alias_name)
+        if role_created:
+            self._provisioned_role_name = role_name
+        if alias_created:
+            self._provisioned_role_alias = role_alias_name
         self._attach_thing_policy(role_alias_arn, cert_arn,
                                   "ggl-uat-thing-policy-dest")
         print(f"Provisioned thing '{self._thing_name}' in {self._region}")
@@ -88,8 +97,8 @@ class IoTUtils():
             return None
 
         # set up role and role alias
-        role_arn = self._create_iot_role()
-        role_alias_arn = self._create_role_alias(role_arn)
+        role_arn, _ = self._create_iot_role()
+        role_alias_arn, _ = self._create_role_alias(role_arn)
         self._attach_thing_policy(role_alias_arn, cert_arn)
 
         print(f"Successfully created a thing: {thing_name}")
@@ -261,6 +270,33 @@ class IoTUtils():
             # Delete the core device
             self.delete_core_device()
             self.delete_thing(self._thing_name)
+
+            # Delete provisioned role and alias if created
+            if self._provisioned_role_alias:
+                try:
+                    self._iot_client.delete_role_alias(
+                        roleAlias=self._provisioned_role_alias)
+                    print(
+                        f"Deleted role alias '{self._provisioned_role_alias}'")
+                except Exception as e:
+                    print(f"Could not delete role alias: {e}")
+            if self._provisioned_role_name:
+                try:
+                    attached = self._iam_client.list_attached_role_policies(
+                        RoleName=self._provisioned_role_name
+                    )['AttachedPolicies']
+                    for policy in attached:
+                        self._iam_client.detach_role_policy(
+                            RoleName=self._provisioned_role_name,
+                            PolicyArn=policy['PolicyArn'])
+                        self._iam_client.delete_policy(
+                            PolicyArn=policy['PolicyArn'])
+                    self._iam_client.delete_role(
+                        RoleName=self._provisioned_role_name)
+                    print(f"Deleted role '{self._provisioned_role_name}'")
+                except Exception as e:
+                    print(f"Could not delete role: {e}")
+
             print("IoT clean-up completed.\n")
 
             # Delete the JSON file
@@ -275,7 +311,9 @@ class IoTUtils():
     # ===============================================
     # HELPER FUNCTIONS
     # ===============================================
-    def _create_iot_role(self) -> str | None:
+    def _create_iot_role(self,
+                         role_name: str = "ggl-uat-role"
+                         ) -> tuple[str | None, bool]:
         trust_policy = {
             "Version":
             "2012-10-17",
@@ -296,20 +334,20 @@ class IoTUtils():
                 "Allow",
                 "Action": [
                     "logs:CreateLogGroup", "logs:CreateLogStream",
-                    "logs:PutLogEvents", "logs:DescribeLogStreams", "s3:*"
+                    "logs:PutLogEvents", "logs:DescribeLogStreams",
+                    "iot:DescribeEndpoint", "s3:*"
                 ],
                 "Resource":
                 "*"
             }]
         }
 
-        role_name = "ggl-uat-role"
-        policy_name = "ggl-uat-role-token-exchange-policy"
+        policy_name = f"{role_name}-token-exchange-policy"
 
         try:
             role_response = self._iam_client.get_role(RoleName=role_name)
             print(f"Role '{role_name}' already exists.")
-            return role_response['Role']['Arn']
+            return (role_response['Role']['Arn'], False)
 
         except self._iam_client.exceptions.NoSuchEntityException:
             role_response = self._iam_client.create_role(
@@ -323,22 +361,22 @@ class IoTUtils():
             self._iam_client.attach_role_policy(
                 RoleName=role_name, PolicyArn=policy_response['Policy']['Arn'])
 
-            return role_response['Role']['Arn']
+            return (role_response['Role']['Arn'], True)
 
         except Exception as e:
             print(f"Error creating role: {str(e)}")
-            return None
+            return (None, False)
 
-    def _create_role_alias(
-            self,
-            role_arn: str,
-            role_alias_name: str = "ggl-uat-role-alias") -> str | None:
+    def _create_role_alias(self,
+                           role_arn: str,
+                           role_alias_name: str = "ggl-uat-role-alias"
+                           ) -> tuple[str | None, bool]:
 
         try:
             response = self._iot_client.describe_role_alias(
                 roleAlias=role_alias_name)
             print(f"Role alias '{role_alias_name}' already exists.")
-            return response['roleAliasDescription']['roleAliasArn']
+            return (response['roleAliasDescription']['roleAliasArn'], False)
 
         except self._iot_client.exceptions.ResourceNotFoundException:
             response = self._iot_client.create_role_alias(
@@ -346,11 +384,11 @@ class IoTUtils():
                 roleArn=role_arn,
                 credentialDurationSeconds=3600)
 
-            return response['roleAliasArn']
+            return (response['roleAliasArn'], True)
 
         except Exception as e:
             print(f"Error creating role alias: {str(e)}")
-            return None
+            return (None, False)
 
     def _attach_thing_policy(self,
                              role_alias_arn: str,

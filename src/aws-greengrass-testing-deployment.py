@@ -1634,6 +1634,95 @@ def test_Deployment_20_T2(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
         dest_iot_obj.clean_up()
 
 
+# Scenario: Deployment-20-T3: Endpoint switch TES cascade.
+# Deploys TesCredentialVerifier (HARD dep on TES), verifies it prints
+# source credentials, performs endpoint switch, and verifies the
+# component prints destination credentials after the cascade restart.
+def test_Deployment_20_T3(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
+                          system_interface: SystemInterface):
+    thing_name = iot_obj.thing_name
+    id = iot_obj.generate_random_id()
+    thing_group_name = iot_obj.generate_thing_group_name(id)
+    assert iot_obj.add_thing_to_thing_group(thing_name,
+                                            thing_group_name) is True
+
+    source_region = gg_util_obj.aws_region
+    dest_region = _get_destination_region(source_region)
+
+    # Read the device certificate PEM from the setup data file
+    with open(JSON_FILE, 'r') as f:
+        setup_data = json.load(f)
+    cert_pem = setup_data['DEVICE_CERT']
+
+    # Provision IoT resources in the destination region with distinct role
+    dest_role_alias = "ggl-uat-role-alias-dest"
+    dest_iot_obj = IoTUtils(dest_region, thing_name=thing_name)
+    try:
+        dest_iot_obj.provision_for_endpoint_switch(
+            cert_pem,
+            role_alias_name=dest_role_alias,
+            role_name="ggl-uat-role-dest")
+
+        # Deploy TesCredentialVerifier alongside NucleusLite in source
+        thing_group_arn = gg_util_obj.get_thing_group_arn(thing_group_name)
+        verifier_info = gg_util_obj.upload_component_with_versions(
+            "TesCredentialVerifier", ["1.0.0"])
+        sleep_with_log(5, "waiting for component to be DEPLOYABLE")
+
+        nucleus_version = gg_util_obj.create_nucleus_lite_component(thing_name)
+        sleep_with_log(5, "waiting for NucleusLite component")
+
+        nucleus_component = ComponentDeploymentInfo(
+            name="aws.greengrass.NucleusLite",
+            versions=[nucleus_version],
+            merge_config=None,
+        )
+        result = gg_util_obj.create_deployment(
+            thingArn=thing_group_arn,
+            component_list=[nucleus_component, verifier_info],
+            deployment_name="TesCredentialVerifier_InitialDeploy",
+        )
+        deployment_id = result["deploymentId"]
+        assert deployment_id is not None
+        assert (gg_util_obj.wait_for_deployment_till_timeout(
+            180, deployment_id) == "SUCCEEDED")
+
+        # Verify component prints source credentials
+        service_name = f"ggl.{verifier_info.name}.service"
+        assert (system_interface.monitor_journalctl_for_message(service_name,
+                                                                "ggl-uat-role/",
+                                                                timeout=60)
+                is True)
+        assert (system_interface.monitor_journalctl_for_message(
+            service_name, f".iot.{source_region}.", timeout=30) is True)
+
+        # Perform endpoint switch deployment
+        dest_endpoints = dest_iot_obj.get_iot_endpoints()
+        deployment_id = _create_endpoint_switch_deployment(
+            source_gg_util_obj=gg_util_obj,
+            thing_group_arn=thing_group_arn,
+            thing_name=thing_name,
+            merge_config={
+                "iotDataEndpoint": dest_endpoints["iotDataEndpoint"],
+                "iotCredEndpoint": dest_endpoints["iotCredEndpoint"],
+                "iotRoleAlias": dest_role_alias,
+                "awsRegion": dest_region,
+            },
+            deployment_name="EndpointSwitch_TesCascade",
+        )
+        assert (gg_util_obj.wait_for_iot_job_status(180, deployment_id,
+                                                    thing_name) == "SUCCEEDED")
+
+        # Verify component prints destination credentials after cascade
+        assert (system_interface.monitor_journalctl_for_message(
+            service_name, "ggl-uat-role-dest/", timeout=60) is True)
+        assert (system_interface.monitor_journalctl_for_message(
+            service_name, f".iot.{dest_region}.", timeout=30) is True)
+    finally:
+        sleep_with_log(5)
+        dest_iot_obj.clean_up()
+
+
 # Scenario: Deployment-21-T1: When a configuration update is deployed to a component,
 # the component is redeployed; its lifecycle steps are re-run as part of the deployment.
 def test_Deployment_21_T1(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
