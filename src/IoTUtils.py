@@ -376,6 +376,12 @@ class IoTUtils():
                             PolicyArn=policy['PolicyArn'])
                         self._iam_client.delete_policy(
                             PolicyArn=policy['PolicyArn'])
+                    inline = self._iam_client.list_role_policies(
+                        RoleName=self._provisioned_role_name)['PolicyNames']
+                    for policy_name in inline:
+                        self._iam_client.delete_role_policy(
+                            RoleName=self._provisioned_role_name,
+                            PolicyName=policy_name)
                     self._iam_client.delete_role(
                         RoleName=self._provisioned_role_name)
                     print(f"Deleted role '{self._provisioned_role_name}'")
@@ -430,26 +436,34 @@ class IoTUtils():
 
         try:
             role_response = self._iam_client.get_role(RoleName=role_name)
+            role_arn = role_response['Role']['Arn']
+            role_created = False
             print(f"Role '{role_name}' already exists.")
-            return (role_response['Role']['Arn'], False)
 
         except self._iam_client.exceptions.NoSuchEntityException:
             role_response = self._iam_client.create_role(
                 RoleName=role_name,
                 AssumeRolePolicyDocument=json.dumps(trust_policy))
-
-            policy_response = self._iam_client.create_policy(
-                PolicyName=policy_name,
-                PolicyDocument=json.dumps(token_exchange_policy))
-
-            self._iam_client.attach_role_policy(
-                RoleName=role_name, PolicyArn=policy_response['Policy']['Arn'])
-
-            return (role_response['Role']['Arn'], True)
+            role_arn = role_response['Role']['Arn']
+            role_created = True
 
         except Exception as e:
             print(f"Error creating role: {str(e)}")
             return (None, False)
+
+        # Always reconcile the inline policy with the current template.
+        # put_role_policy is upsert (creates or overwrites), so this picks up
+        # template changes on roles that persist across runs.
+        try:
+            self._iam_client.put_role_policy(
+                RoleName=role_name,
+                PolicyName=policy_name,
+                PolicyDocument=json.dumps(token_exchange_policy))
+        except Exception as e:
+            print(f"Error reconciling role policy: {str(e)}")
+            return (None, False)
+
+        return (role_arn, role_created)
 
     def _create_role_alias(self,
                            role_arn: str,
