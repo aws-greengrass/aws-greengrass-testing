@@ -473,7 +473,17 @@ class IoTUtils():
         try:
             response = self._iot_client.describe_role_alias(
                 roleAlias=role_alias_name)
-            print(f"Role alias '{role_alias_name}' already exists.")
+            existing_arn = response['roleAliasDescription']['roleArn']
+            if existing_arn != role_arn:
+                # Reconcile: alias exists but points to a different role.
+                # Without this, a stale role alias from a previous test run
+                # silently overrides the intended role_arn.
+                print(f"Role alias '{role_alias_name}' points to "
+                      f"'{existing_arn}', updating to '{role_arn}'.")
+                self._iot_client.update_role_alias(roleAlias=role_alias_name,
+                                                   roleArn=role_arn)
+            else:
+                print(f"Role alias '{role_alias_name}' already exists.")
             return (response['roleAliasDescription']['roleAliasArn'], False)
 
         except self._iot_client.exceptions.ResourceNotFoundException:
