@@ -1,0 +1,129 @@
+name: UAT Component Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      lite_repo:
+        description: "gg-lite repository to build against"
+        required: false
+      lite_repo_ref:
+        description: "Ref (branch) on the gg-lite repo to use"
+        required: false
+
+# Share the concurrency lane with lite repo's uat.yml so both repos'
+# UAT runs serialize globally on the shared AWS account.
+concurrency:
+  group: uat-component-tests
+  cancel-in-progress: false
+
+jobs:
+  list-tests:
+    if:
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name ==
+      'aws-greengrass/aws-greengrass-testing'
+    permissions:
+      contents: read
+    runs-on: ubuntu-22.04
+    outputs:
+      tests: ${{ steps.list.outputs.tests }}
+    steps:
+      - name: Checkout testing repository
+        uses: actions/checkout@v6
+
+      - name: Checkout lite repository
+        uses: actions/checkout@v6
+        with:
+          repository:
+            ${{ github.event.inputs.lite_repo ||
+            'aws-greengrass/aws-greengrass-lite' }}
+          ref: ${{ github.event.inputs.lite_repo_ref || 'main' }}
+          path: aws-greengrass-lite
+
+      - name: List all tests
+        id: list
+        run: |
+          IGNORE_FILE="${GITHUB_WORKSPACE}/aws-greengrass-lite/.github/uat-ignore.txt"
+          tests=$(find src -name "aws-greengrass-testing-*.py" -exec grep -l "^def test_" {} \; | \
+            while read file; do
+              category=$(basename "$file" | sed 's/aws-greengrass-testing-\(.*\)\.py/\1/')
+              grep -h "^def test_" "$file" | sed 's/def \(test_[^(]*\).*/\1/' | \
+              while read test; do
+                if [ ! -f "$IGNORE_FILE" ] || ! grep -v '^#' "$IGNORE_FILE" | grep -qE "^($category:)?$test"; then
+                  echo "{\"name\":\"$test\",\"category\":\"$category\",\"timeout\":3900}"
+                fi
+              done
+            done | jq -s -c .)
+          echo "tests=$tests" >> $GITHUB_OUTPUT
+
+  uat-test:
+    if:
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name ==
+      'aws-greengrass/aws-greengrass-testing'
+    needs: list-tests
+    strategy:
+      fail-fast: false
+      # Cap parallel jobs hitting the shared AWS account. Combined with the
+      # cross-repo concurrency lane above, total in-flight UAT jobs across
+      # both repos never exceeds this cap.
+      max-parallel: 4
+      matrix:
+        test: ${{ fromJson(needs.list-tests.outputs.tests) }}
+    permissions:
+      id-token: write
+      contents: read
+
+    runs-on: ubuntu-22.04
+
+    steps:
+      # Spread initial API load across the shared account so parallel matrix
+      # jobs don't all hit AWS simultaneously and trigger synchronized throttling.
+      - name: Stagger start to decorrelate parallel AWS API bursts
+        run: sleep $(( RANDOM % 30 ))
+        shell: bash
+
+      - name: Checkout testing repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ">=3.12"
+
+      - name: Checkout lite repository
+        uses: actions/checkout@v6
+        with:
+          repository:
+            ${{ github.event.inputs.lite_repo ||
+            'aws-greengrass/aws-greengrass-lite' }}
+          ref: ${{ github.event.inputs.lite_repo_ref || 'main' }}
+          path: aws-greengrass-lite
+
+      - name: Get temporary AWS credentials
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          audience: sts.amazonaws.com
+          aws-region: us-west-2
+          role-to-assume: arn:aws:iam::832850273037:role/GGL-UAT-GH-Role
+          role-duration-seconds: ${{ matrix.test.timeout }}
+          unset-current-credentials: true
+
+      - name: Determine gg-lite SHA to build
+        run: |
+          cd aws-greengrass-lite
+          echo "SHA=$(git rev-parse HEAD)" >> $GITHUB_ENV
+
+      - name: Run UAT test
+        run: |
+          ./run-tests.sh \
+            --aws-account=832850273037 \
+            --s3-bucket=lite-uat-bucket \
+            --commit-id=${{ env.SHA }} \
+            --aws-region=us-west-2 \
+            --test-category=${{ matrix.test.category }} \
+            --test-name=${{ matrix.test.name }}
