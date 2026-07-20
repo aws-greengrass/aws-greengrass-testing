@@ -1,6 +1,7 @@
 armv7
 ASAN
 awsiotsdk
+boto
 cbor
 clientv
 coreutils
