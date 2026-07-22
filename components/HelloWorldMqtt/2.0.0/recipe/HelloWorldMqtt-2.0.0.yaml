@@ -1,0 +1,36 @@
+---
+RecipeFormatVersion: "2020-01-25"
+ComponentName: "HelloWorldMqtt"
+ComponentVersion: "2.0.0"
+ComponentType: "aws.greengrass.generic"
+ComponentDescription:
+  "MQTT component that uses {iot:thingName} interpolated policy resource strings
+  for authorization."
+ComponentPublisher: "Me"
+ComponentConfiguration:
+  DefaultConfiguration:
+    Message: "Hello from IoT Core"
+    Topic: "test/topic"
+    accessControl:
+      aws.greengrass.ipc.mqttproxy:
+        HelloWorldMqtt:mqttproxy:1:
+          policyDescription:
+            "Allows access to publish and subscribe to a topic using
+            interpolated thingName"
+          operations:
+            - "aws.greengrass#SubscribeToIoTCore"
+            - "aws.greengrass#PublishToIoTCore"
+          resources: ["{iot:thingName}/test/topic"]
+Manifests:
+  - Platform:
+      os: "linux"
+      runtime: "*"
+    Lifecycle:
+      install: |-
+        python3 -m venv .venv
+        .venv/bin/python3 -m pip install awsiotsdk
+      run: |-
+        .venv/bin/python3 -u {artifacts:path}/hello_world_mqtt.py "{iot:thingName}/{configuration:/Topic}" "{configuration:/Message}"
+    Artifacts:
+      - Uri: "s3://$bucketName$/$testArtifactsDirectory$/$randomId$/hello_world_mqtt.py"
+Lifecycle: {}
