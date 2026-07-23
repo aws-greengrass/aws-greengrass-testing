@@ -1,0 +1,21 @@
+---
+RecipeFormatVersion: 2020-01-25
+ComponentName: aws.gg.uat.local.NucleusConfigForwardingTestService
+ComponentDescription:
+  Verifies that GetConfiguration and SubscribeToConfigurationUpdate requests
+  targeting aws.greengrass.Nucleus are transparently forwarded to the
+  aws.greengrass.NucleusLite configuration tree on Greengrass Lite.
+ComponentPublisher: Me
+ComponentVersion: 1.0.0
+ComponentConfiguration:
+  DefaultConfiguration: {}
+Manifests:
+  - Platform:
+      os: linux
+      runtime: "*"
+    Lifecycle:
+      install:
+        "python3 -m venv .venv && . .venv/bin/activate && python3 -m pip install
+        --quiet --disable-pip-version-check awsiotsdk"
+      run: |-
+        .venv/bin/python -u {artifacts:path}/nucleus_config_forwarding.py

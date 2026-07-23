@@ -2,7 +2,7 @@ from typing import Generator
 from GGTestUtils import sleep_with_log
 from pytest import fixture, mark
 from src.IoTUtils import IoTUtils
-from src.GGTestUtils import GGTestUtils
+from src.GGTestUtils import GGTestUtils, ComponentDeploymentInfo
 from src.SystemInterface import SystemInterface
 
 import time
@@ -383,6 +383,97 @@ def test_Component_29_T4(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     # }
     # """
     # GG_LITE CLI doesn't support this yet.
+
+
+# As an operator, GetConfiguration and SubscribeToConfigurationUpdate requests
+# for aws.greengrass.Nucleus are transparently forwarded to
+# aws.greengrass.NucleusLite on Greengrass Lite, and subscribe events are
+# relabeled back to the requested aws.greengrass.Nucleus name.
+def test_Component_30_T0(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
+                         system_interface: SystemInterface):
+    component_name = "aws.gg.uat.local.NucleusConfigForwardingTestService"
+    service = "ggl." + component_name + ".service"
+    # Keep in sync with PROBE_KEY in the forwarding component artifact.
+    probe_key = "uatForwardingProbe"
+    journal_since = time.time()
+
+    # Pre-condition: the test setup (setup_greengrass_lite, run by the iot_obj
+    # fixture) seeds iotDataEndpoint under aws.greengrass.NucleusLite
+    # configuration, which the component reads back through the Nucleus alias.
+
+    # I install the forwarding test component version 1.0.0 from local store
+    component_artifacts_dir = "./components/local_artifacts/"
+    component_recipe_dir = (
+        "./components/aws.gg.uat.local.NucleusConfigForwardingTestService/"
+        "1.0.0/recipe/")
+    assert (gg_util_obj.create_local_deployment(component_artifacts_dir,
+                                                component_recipe_dir,
+                                                component_name + "=1.0.0"))
+
+    # A GetConfiguration read using the classic aws.greengrass.Nucleus name
+    # returns the same value as a direct aws.greengrass.NucleusLite read.
+    assert (system_interface.monitor_journalctl_for_message(
+        service, "NUCLEUS FORWARDING MATCH", timeout=120, since=journal_since)
+            is True)
+
+    # The response is transparent: it echoes the requested component name.
+    assert (system_interface.monitor_journalctl_for_message(
+        service,
+        "NUCLEUS RESPONSE COMPONENT NAME MATCH",
+        timeout=20,
+        since=journal_since) is True)
+
+    # Subscribing via the classic Nucleus name is accepted (forwarded), not
+    # rejected with ResourceNotFoundError.
+    assert (system_interface.monitor_journalctl_for_message(
+        service, "NUCLEUS SUBSCRIBE OK", timeout=20, since=journal_since)
+            is True)
+
+    # Drive a NucleusLite configuration change via a cloud deployment and verify
+    # the subscribed component receives the update relabeled to
+    # aws.greengrass.Nucleus (not the underlying aws.greengrass.NucleusLite). A
+    # harmless probe key is merged so no nucleus behavior (e.g. an endpoint
+    # switch) is triggered. Cleanup is automatic: the thing group is registered
+    # by IoTUtils (removed and deleted in its clean_up) and the deployment by
+    # GGTestUtils (cancelled and deleted in its clean_up).
+    random_id = iot_obj.generate_random_id()
+    thing_group_name = iot_obj.generate_thing_group_name(random_id)
+    assert iot_obj.add_thing_to_thing_group(iot_obj.thing_name,
+                                            thing_group_name) is True
+    thing_group_arn = gg_util_obj.get_thing_group_arn(thing_group_name)
+
+    version = gg_util_obj.create_nucleus_lite_component(iot_obj.thing_name)
+    sleep_with_log(5, "waiting for NucleusLite component to be DEPLOYABLE")
+
+    probe_component = ComponentDeploymentInfo(
+        name="aws.greengrass.NucleusLite",
+        versions=[version],
+        merge_config={probe_key: "uat-" + random_id},
+    )
+    deployment_id = gg_util_obj.create_deployment(
+        thingArn=thing_group_arn,
+        component_list=[probe_component],
+        deployment_name="NucleusConfigForwardingProbe",
+    )["deploymentId"]
+    assert (gg_util_obj.wait_for_deployment_till_timeout(
+        180, deployment_id) == "SUCCEEDED")
+
+    # The component subscribed via aws.greengrass.Nucleus must receive the
+    # config-update event relabeled to aws.greengrass.Nucleus.
+    assert (system_interface.monitor_journalctl_for_message(
+        service, "CONFIG UPDATE EVENT componentName=aws.greengrass.Nucleus "
+        f"keyPath={probe_key}",
+        timeout=120,
+        since=journal_since) is True)
+
+    # No event may expose the underlying storage component name. The window is
+    # 2x the component's 5s sentinel reprint interval so a late or duplicate
+    # mislabeled event would also be caught.
+    assert (system_interface.monitor_journalctl_for_message(
+        service,
+        "CONFIG UPDATE EVENT componentName=aws.greengrass.NucleusLite keyPath=",
+        timeout=10,
+        since=journal_since) is False)
 
 
 # As a component developer, I can use automatic cleanup to delete component files further than last two deployments
