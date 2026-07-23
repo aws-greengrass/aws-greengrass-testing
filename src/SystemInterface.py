@@ -278,8 +278,11 @@ class SystemInterface:
             except:
                 pass
 
-    def monitor_journalctl_for_message(self, service_name: str, message: str,
-                                       timeout: int | float) -> bool:
+    def monitor_journalctl_for_message(self,
+                                       service_name: str,
+                                       message: str,
+                                       timeout: int | float,
+                                       since: float | None = None) -> bool:
         try:
             cmd = [
                 "sudo",
@@ -289,6 +292,10 @@ class SystemInterface:
                 "-f",    # Follow mode - shows new entries as they are added
                 "--no-pager",
             ]
+            if since is not None:
+                # Include every matching entry from this test run, rather than
+                # journalctl's default tail from an earlier service invocation.
+                cmd.extend(["--since", f"@{since}", "--no-tail"])
 
             # Run the command and stream output
             process = subprocess.Popen(
