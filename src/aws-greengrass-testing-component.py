@@ -481,7 +481,6 @@ def test_Component_30_T0(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     thing_group_arn = gg_util_obj.get_thing_group_arn(thing_group_name)
 
     version = gg_util_obj.create_nucleus_lite_component(iot_obj.thing_name)
-    sleep_with_log(5, "waiting for NucleusLite component to be DEPLOYABLE")
 
     probe_component = ComponentDeploymentInfo(
         name="aws.greengrass.NucleusLite",

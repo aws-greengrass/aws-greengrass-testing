@@ -14,8 +14,9 @@ on:
         description: "Ref (branch) on the gg-lite repo to use"
         required: false
 
-# Share the concurrency lane with lite repo's uat.yml so both repos'
-# UAT runs serialize globally on the shared AWS account.
+# Serialize UAT runs within this repository. Note: concurrency groups are
+# repository-scoped, so this does NOT serialize against the lite repo's UAT
+# runs on the shared AWS account; cross-repo overlap is expected.
 concurrency:
   group: uat-component-tests
   cancel-in-progress: false
@@ -68,9 +69,9 @@ jobs:
     needs: list-tests
     strategy:
       fail-fast: false
-      # Cap parallel jobs hitting the shared AWS account. Combined with the
-      # cross-repo concurrency lane above, total in-flight UAT jobs across
-      # both repos never exceeds this cap.
+      # Cap parallel jobs from THIS repo hitting the shared AWS account.
+      # The lite repo's UAT runs are not serialized against ours, so total
+      # in-flight jobs on the account can exceed this cap.
       max-parallel: 4
       matrix:
         test: ${{ fromJson(needs.list-tests.outputs.tests) }}
