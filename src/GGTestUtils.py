@@ -3,7 +3,8 @@ import os
 from typing import Any, Dict, List, Literal, Optional, Sequence, Tuple
 from uuid import uuid1
 import boto3
-from botocore.exceptions import ClientError, BotoCoreError
+from botocore.exceptions import (ClientError, BotoCoreError, ConnectionError as
+                                 BotoConnectionError, HTTPClientError)
 from botocore.config import Config
 import time
 import random
@@ -1213,8 +1214,22 @@ class GGTestUtils:
         """Create a dummy aws.greengrass.NucleusLite component
         matching the version installed on the device.
 
-        Returns the component version string. The component ARN
-        is tracked for cleanup.
+        Returns the component version string.
+
+        The version string (2.6.0-<sha>) is shared by every concurrent job
+        that built the same commit, across this repo's and the lite repo's
+        UAT workflows. The component version is therefore intentionally NOT
+        registered for teardown deletion: a job deleting it mid-run breaks
+        every other job still resolving it (cloud resolution fails with
+        "no usable version satisfying requirements"). Stale versions from
+        old commits accumulate (one per distinct lite commit tested);
+        garbage collection is tracked in issue #323 and must run only when
+        no UAT runs are active in either repo.
+
+        Because existing versions are reused, the first-registered recipe for
+        a given version string wins: edits to the NucleusLite recipe template
+        take effect only for lite refs whose version has not been registered
+        yet.
         """
         version = self.get_nucleus_lite_version(thing_name)
         recipe_path = os.path.join("components", "aws.greengrass.NucleusLite",
@@ -1224,15 +1239,187 @@ class GGTestUtils:
         recipe_content = recipe_content.replace("$componentVersion$", version)
         recipe_yaml = yaml.safe_load(recipe_content)
         recipe = json.dumps(recipe_yaml)
-        try:
-            resp = self._ggClient.create_component_version(inlineRecipe=recipe)
-        except self._ggClient.exceptions.ConflictException:
-            print("aws.greengrass.NucleusLite component already exists")
-            arn = (f"arn:aws:greengrass:{self._region}"
-                   f":{self._account}:components"
-                   f":aws.greengrass.NucleusLite:versions:{version}")
-            self._ggComponentToDeleteArn.append(arn)
+        arn = (f"arn:aws:greengrass:{self._region}"
+               f":{self._account}:components"
+               f":aws.greengrass.NucleusLite:versions:{version}")
+
+        # Populated by poll_state with the most recent status object, so
+        # error paths can include the API's message/errors diagnostics.
+        last_status = {}
+
+        def poll_state():
+            """Current componentState; a deleted version maps to DELETED, a
+            missing one to NOT_FOUND, and transient API errors to UNKNOWN.
+            Permanent errors raise."""
+            try:
+                status = (self._ggClient.describe_component(arn=arn).get(
+                    "status", {}))
+            except self._ggClient.exceptions.ResourceNotFoundException:
+                return "NOT_FOUND"
+            except ClientError as e:
+                code = e.response.get("Error", {}).get("Code", "")
+                if (code not in _THROTTLE_CODES
+                        and code != "InternalServerException"):
+                    # Permanent errors (e.g. AccessDenied, Validation) fail
+                    # setup with the real cause instead of burning the poll
+                    # window and surfacing as a cryptic resolution failure.
+                    raise
+                print(f"describe_component transient error: {code}")
+                return "UNKNOWN"
+            except (BotoConnectionError, HTTPClientError) as e:
+                # Only transport-level errors are transient; other
+                # BotoCoreErrors (credentials, params) are permanent and
+                # propagate.
+                print(f"describe_component transient error: {e}")
+                return "UNKNOWN"
+            last_status.clear()
+            last_status.update(status)
+            if status.get("vendorGuidance") == "DELETED":
+                # A deleted version may remain describable (componentState
+                # can still read DEPLOYABLE) but cannot be deployed. While
+                # the delete converges it may become creatable again, so it
+                # participates in the missing streak; if it persists to the
+                # deadline the helper raises with remediation.
+                return "DELETED"
+            return status.get("componentState", "UNKNOWN")
+
+        def register():
+            """Create the version. Returns "created" when this call created
+            it, "exists" on conflict (the version provably exists), or
+            "unknown" on a transient error (the poll loop decides what
+            happens next). Permanent errors raise."""
+            try:
+                _retry_on_throttle(
+                    lambda: self._ggClient.create_component_version(inlineRecipe
+                                                                    =recipe))
+                print(f"Uploaded NucleusLite component: {arn}")
+                return "created"
+            except self._ggClient.exceptions.ConflictException:
+                # A concurrent creator won, or a delete of this version is
+                # still in progress; observe more before trying again.
+                print("aws.greengrass.NucleusLite component already exists")
+                return "exists"
+            except ClientError as e:
+                code = e.response.get("Error", {}).get("Code", "")
+                if (code not in _THROTTLE_CODES
+                        and code != "InternalServerException"):
+                    raise
+                print(f"create_component_version transient error: {code}")
+                return "unknown"
+            except (BotoConnectionError, HTTPClientError) as e:
+                # Transport error: the create may or may not have landed;
+                # polling decides. Other BotoCoreErrors propagate.
+                print(f"create_component_version transient error: {e}")
+                return "unknown"
+
+        # Describe-first: CreateComponentVersion has a non-adjustable 1 rps
+        # regional quota, so avoid it when the version already exists. An
+        # initial UNKNOWN (transient error) still registers: a create
+        # against an existing version just conflicts harmlessly.
+        state = poll_state()
+        # Existence confirmed by any means: a real observed state, an
+        # accepted create, or a create conflict (the version must exist).
+        # DELETED does not count: it is evidence of non-deployability.
+        ever_confirmed = state not in ("NOT_FOUND", "UNKNOWN", "DELETED")
+        if state in ("NOT_FOUND", "DELETED", "UNKNOWN"):
+            if register() in ("created", "exists"):
+                ever_confirmed = True
+            # Fresh read so the pre-registration miss does not seed the
+            # missing streak below.
+            state = poll_state()
+
+        # Wait until the cloud reports the version DEPLOYABLE so deployments
+        # created right after this call can resolve it (~60s of polling).
+        deadline = time.monotonic() + 60
+        missing_polls = 0
+        re_registered = False
+        # Last non-UNKNOWN observation; deadline decisions use this so
+        # transient errors cannot mask or fabricate evidence.
+        last_definitive = state if state != "UNKNOWN" else None
+        while True:
+            if state == "DEPLOYABLE":
+                return version
+            if state == "DEPRECATED":
+                # AWS documents only vendorGuidance DELETED as not
+                # deployable; DEPRECATED carries no such statement, so warn
+                # and let the deployment decide.
+                print("NucleusLite component version is DEPRECATED; "
+                      "proceeding")
+                return version
+            if state == "FAILED":
+                # Never delete the shared version here: a delete based on a
+                # possibly stale read can remove a healthy version that a
+                # concurrent job just registered. Fail loudly instead; this
+                # state wedges every run of this lite commit until the
+                # version is removed out-of-band (see issue #323).
+                raise RuntimeError(
+                    f"NucleusLite component version {version} is FAILED "
+                    f"(message: {last_status.get('message')}, errors: "
+                    f"{last_status.get('errors')}); UAT cannot proceed. "
+                    "Remove it (aws greengrassv2 delete-component --arn "
+                    f"{arn}) and re-run.")
+            if state in ("NOT_FOUND", "DELETED"):
+                missing_polls += 1
+                if missing_polls >= 3 and not re_registered:
+                    # The version vanished after registration (e.g. deleted
+                    # by an in-flight run on pre-fix code). Re-registering
+                    # is safe: create cannot delete anything, and a
+                    # concurrent creator just yields a conflict.
+                    outcome = register()
+                    if outcome in ("created", "exists"):
+                        ever_confirmed = True
+                    if outcome == "created":
+                        # Consumed the one re-register budget; give the new
+                        # version polls of its own even near the deadline.
+                        re_registered = True
+                        missing_polls = 0
+                        deadline = max(deadline, time.monotonic() + 16)
+                    else:
+                        # Conflict/transient: observe another full streak
+                        # before considering a retry.
+                        missing_polls = 0
+            elif state != "UNKNOWN":
+                # Only a real, present state clears the missing streak;
+                # UNKNOWN (transient error) is no evidence either way.
+                missing_polls = 0
+            if time.monotonic() >= deadline:
+                break
+            print(f"NucleusLite component state: {state}; waiting...")
+            time.sleep(2)
+            state = poll_state()
+            if state != "UNKNOWN":
+                # Judge the deadline on the last definitive observation so
+                # a trailing transient error cannot mask missing/deleted
+                # evidence (or fabricate it).
+                last_definitive = state
+        if last_definitive == "NOT_FOUND":
+            retried = ("one re-registration attempt"
+                       if re_registered else "no re-registration accepted")
+            raise RuntimeError(
+                f"NucleusLite component version {version} not found after "
+                f"~60s of polling ({retried}); a deployment referencing it "
+                f"would fail resolution. arn={arn}")
+        if last_definitive == "DELETED":
+            raise RuntimeError(
+                f"NucleusLite component version {version} is deleted "
+                "(vendorGuidance DELETED, message: "
+                f"{last_status.get('vendorGuidanceMessage')}) and cannot be "
+                "deployed. Wait for the delete to converge, or remove it "
+                "explicitly if stuck (aws greengrassv2 delete-component "
+                f"--arn {arn}), then re-run.")
+        if last_definitive is None and not ever_confirmed:
+            # Every observation in the window was a transient error and no
+            # create/conflict ever confirmed existence: zero evidence. Do
+            # not return a version that may not exist.
+            raise RuntimeError(
+                f"Could not confirm NucleusLite component version {version} "
+                "exists within the polling window (describe_component "
+                f"unavailable throughout). arn={arn}")
+        if last_definitive is None:
+            print("NucleusLite component existence confirmed via "
+                  "create/conflict but state never observed (transient "
+                  "errors throughout); proceeding")
             return version
-        print(f"Uploaded NucleusLite component: {resp['arn']}")
-        self._ggComponentToDeleteArn.append(resp["arn"])
+        print(f"NucleusLite component state {state} (last definitive: "
+              f"{last_definitive}) at the polling deadline; proceeding")
         return version

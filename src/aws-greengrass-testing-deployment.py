@@ -1470,7 +1470,6 @@ def _create_endpoint_switch_deployment(
     merge_config to the specified thing group. Returns deployment
     ID."""
     version = source_gg_util_obj.create_nucleus_lite_component(thing_name)
-    sleep_with_log(5, "waiting for component to be DEPLOYABLE")
 
     component = ComponentDeploymentInfo(
         name="aws.greengrass.NucleusLite",
@@ -1670,7 +1669,6 @@ def test_Deployment_20_T3(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
         sleep_with_log(5, "waiting for component to be DEPLOYABLE")
 
         nucleus_version = gg_util_obj.create_nucleus_lite_component(thing_name)
-        sleep_with_log(5, "waiting for NucleusLite component")
 
         nucleus_component = ComponentDeploymentInfo(
             name="aws.greengrass.NucleusLite",
