@@ -1,0 +1,27 @@
+---
+RecipeFormatVersion: "2020-01-25"
+ComponentName: ConnStatusSubscriber
+ComponentVersion: "1.0.0"
+ComponentDescription: >-
+  Subscribes to IoT Core connection status updates via
+  SubscribeToIoTCoreConnectionStatus and prints one line per event. Used by
+  test_ConnectionStatus_1_T1 (subscription accepted without an accessControl
+  policy, current status delivered as the first stream event) and
+  test_ConnectionStatus_1_T2 (initial status reflects a core that cannot
+  connect, then the reconnect transition).
+ComponentPublisher: Me
+ComponentConfiguration:
+  DefaultConfiguration: {}
+Manifests:
+  - Platform:
+      os: "linux"
+      runtime: "*"
+    Lifecycle:
+      install: |-
+        python3 -m venv .venv
+        .venv/bin/python3 -m pip install awsiotsdk
+      run: |-
+        .venv/bin/python3 -u {artifacts:path}/conn_status_subscriber.py
+    Artifacts:
+      - URI: "s3://$bucketName$/$testArtifactsDirectory$/$randomId$/conn_status_subscriber.py"
+Lifecycle: {}
