@@ -24,6 +24,7 @@ repository via the
 | Security                           | security             |
 | System log forwarder               | system-log-forwarder |
 | Runtime                            | runtime              |
+| IoT Core connection status         | connection-status    |
 
 ## Prerequisites
 
