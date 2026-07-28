@@ -26,16 +26,10 @@ public class IamModule extends AbstractAWSResourceModule<IamClient, IamLifecycle
             final AwsCredentialsProvider provider,
             final AWSResourcesContext context,
             final ApacheHttpClient.Builder httpClientBuilder) {
-        final Region globalRegion = Region.regions().stream()
-                .filter(Region::isGlobalRegion)
-                .filter(global -> global.id().startsWith(context.region().metadata().partition().id() + "-"))
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Global region not found: "
-                        + context.region().metadata().id()));
         return IamClient.builder()
                 .credentialsProvider(provider)
                 .httpClientBuilder(httpClientBuilder)
-                .region(globalRegion)
+                .region(Region.AWS_GLOBAL)
                 .build();
     }
 }

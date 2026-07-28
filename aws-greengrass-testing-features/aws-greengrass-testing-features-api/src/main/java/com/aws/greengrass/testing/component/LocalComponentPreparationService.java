@@ -22,6 +22,8 @@ import software.amazon.awssdk.utils.IoUtils;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -42,7 +44,7 @@ public class LocalComponentPreparationService extends PreparationServiceUtils im
     private static final String COMPONENT_VERSION = "ComponentVersion";
     private static final String MANIFESTS = "Manifests";
     private static final String ARTIFACTS = "Artifacts";
-    private static final String URI = "URI";
+    private static final String URI_KEY = "URI";
     public static final String LOCAL_STORE = "testlocalstore";
     public static final String ARTIFACTS_DIR = "artifacts";
     public static final String RECIPE_DIR = "recipes";
@@ -105,12 +107,17 @@ public class LocalComponentPreparationService extends PreparationServiceUtils im
                     Iterator<Map<String, Object>> iterator = artifacts.iterator();
                     while (iterator.hasNext()) {
                         Map<String, Object> artifact = iterator.next();
-                        String uri = artifact.get(URI).toString();
+                        String uri = getArtifactUri(artifact);
+                        if (uri == null) {
+                            LOGGER.warn("Artifact in component {} has no URI field", overrideNameVersion.name());
+                            hasAllArtifacts = false;
+                            continue;
+                        }
                         if (isArtifactExists(uri)) {
                             if (uri.startsWith("file:")) {
                                 iterator.remove();
-                                String filepath = uri.split(":", 2)[1];
-                                copyArtifactToLocalStore(Paths.get(filepath),componentName,componentVersion);
+                                Path filepath = fileUriToPath(uri);
+                                copyArtifactToLocalStore(filepath, componentName, componentVersion);
                             } else if (uri.startsWith("classpath:")) {
                                 iterator.remove();
                                 String filepath = uri.split(":", 2)[1];
@@ -147,6 +154,45 @@ public class LocalComponentPreparationService extends PreparationServiceUtils im
         } catch (IOException ie) {
             LOGGER.error("Failed to load {}:", overrideNameVersion, ie);
             return Optional.empty();
+        }
+    }
+
+    /**
+     * Get the artifact URI from a map using case-insensitive key lookup.
+     * Greengrass recipes accept "URI", "Uri", and "uri" as valid keys.
+     */
+    @VisibleForTesting
+    static String getArtifactUri(Map<String, Object> artifact) {
+        for (Map.Entry<String, Object> entry : artifact.entrySet()) {
+            if (URI_KEY.equalsIgnoreCase(entry.getKey()) && entry.getValue() != null) {
+                return entry.getValue().toString();
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Convert a file: URI string to a Path, handling all valid forms.
+     * Supports:
+     * - file:///C:/path (RFC 8089 Windows)
+     * - file:/C:/path
+     * - file:C:/path
+     * - file:///unix/path
+     * - file:/unix/path
+     */
+    @VisibleForTesting
+    static Path fileUriToPath(String fileUri) {
+        try {
+            return Paths.get(new URI(fileUri));
+        } catch (URISyntaxException | IllegalArgumentException e) {
+            // Fallback: strip "file:" prefix and handle as raw path
+            String path = fileUri.substring("file:".length());
+            // Remove leading slashes that precede a Windows drive letter (e.g., ///C:/ -> C:/)
+            while (path.length() > 1 && path.startsWith("/") && Character.isLetter(path.charAt(1))
+                    && path.length() > 2 && path.charAt(2) == ':') {
+                path = path.substring(1);
+            }
+            return Paths.get(path);
         }
     }
 
