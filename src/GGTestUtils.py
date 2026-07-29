@@ -632,8 +632,8 @@ class GGTestUtils:
             ]
             for svc in services:
                 log_output = subprocess.run([
-                    "/usr/bin/journalctl", "-u", svc, "--no-pager", "-n", "50",
-                    "--since", "5 minutes ago"
+                    "/usr/bin/journalctl", "-u", f"ggl.core.{svc}.service",
+                    "--no-pager", "-n", "50", "--since", "5 minutes ago"
                 ],
                                             capture_output=True,
                                             text=True,
@@ -641,7 +641,7 @@ class GGTestUtils:
                 if (log_output.stdout.strip()
                         and "-- No entries --" not in log_output.stdout):
                     print(f"\n--- {svc} logs ---")
-                    print(log_output.stdout[-1500:])
+                    print(log_output.stdout)
 
             error_log = subprocess.run([
                 "/usr/bin/journalctl", "--no-pager", "-p", "err", "--since",
