@@ -385,6 +385,44 @@ def test_Component_29_T4(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
     # GG_LITE CLI doesn't support this yet.
 
 
+# As an operator, when I interpolate component default configurations by local
+# deployment, a recipe variable naming a configuration value that does not exist
+# is left in the lifecycle script verbatim rather than substituted with an empty
+# string, and the rest of the script still runs. See aws-greengrass-lite#867.
+def test_Component_29_T5(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
+                         system_interface: SystemInterface):
+    component = "SampleComponentWithMissingConfiguration"
+    recipe_dir = f"./components/{component}/1.0.0/recipe/"
+    service = f"ggl.{component}.service"
+
+    assert gg_util_obj.create_local_deployment(None, recipe_dir,
+                                               f"{component}=1.0.0")
+
+    timeout = 180
+    while timeout > 0:
+        if system_interface.check_systemctl_status_for_component(
+                component) == "RUNNING":
+            break
+        sleep_with_log(1)
+        timeout -= 1
+    assert (system_interface.check_systemctl_status_for_component(component) ==
+            "RUNNING")
+
+    # A resolvable variable is still substituted.
+    assert (system_interface.monitor_journalctl_for_message(
+        service, "present=MyConfigDefaultValue", timeout=30) is True)
+
+    # An unresolvable variable is left as-is instead of blanked.
+    assert (system_interface.monitor_journalctl_for_message(
+        service, "missing={configuration:/NoSuchKey}", timeout=30) is True)
+
+    # The line after the unresolvable variable still runs, so interpolation did
+    # not truncate the script.
+    assert (system_interface.monitor_journalctl_for_message(service,
+                                                            "TAIL_REACHED",
+                                                            timeout=30) is True)
+
+
 # As an operator, GetConfiguration and SubscribeToConfigurationUpdate requests
 # for aws.greengrass.Nucleus are transparently forwarded to
 # aws.greengrass.NucleusLite on Greengrass Lite, and subscribe events are
