@@ -1,0 +1,23 @@
+---
+RecipeFormatVersion: "2020-01-25"
+ComponentName: SampleComponentWithMissingConfiguration
+ComponentVersion: "1.0.0"
+ComponentDescription:
+  Sample component whose lifecycle references both an existing and a nonexistent
+  configuration value
+ComponentPublisher: Amazon
+ComponentConfiguration:
+  DefaultConfiguration:
+    MyConfigKey: "MyConfigDefaultValue"
+Manifests:
+  - Platform:
+      os: "*"
+      runtime: "*"
+    Lifecycle:
+      run: |-
+        while true; do
+        echo present={configuration:/MyConfigKey}
+        echo missing={configuration:/NoSuchKey}
+        echo TAIL_REACHED
+        sleep 5
+        done
