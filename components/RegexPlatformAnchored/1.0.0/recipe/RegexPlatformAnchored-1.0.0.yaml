@@ -1,0 +1,18 @@
+---
+RecipeFormatVersion: "2020-01-25"
+ComponentName: _RegexPlatformAnchored_
+ComponentVersion: "1.0.0"
+ComponentDescription:
+  Tests that regex platform matching uses whole-string semantics
+ComponentPublisher: GG UAT
+Manifests:
+  - Platform:
+      os: "/lin/"
+      runtime: "*"
+    Lifecycle:
+      run: echo REGEX_ANCHOR_VIOLATION
+  - Platform:
+      os: "/linux/"
+      runtime: "*"
+    Lifecycle:
+      run: echo REGEX_ANCHOR_FALLBACK

@@ -553,3 +553,258 @@ def test_Component_34_T4(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
 
     # the local files for component Minimal version 1.0.0 should not exist
     assert not gg_util_obj.recipe_for_component_exists("Minimal", "1.0.0")
+
+
+# Regex alternation in os attribute selects the correct manifest on a matching platform.
+def test_Component_35_T1(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
+                         system_interface: SystemInterface):
+    """Proves regex alternation /linux|darwin/ matches the os attribute on a Linux device."""
+    new_thing_name = iot_obj.thing_name
+    id = iot_obj.generate_random_id()
+    new_thing_group_name = iot_obj.generate_thing_group_name(id)
+    new_thing_group_result = iot_obj.add_thing_to_thing_group(
+        new_thing_name, new_thing_group_name)
+    assert new_thing_group_result is True
+
+    component_cloud_name = gg_util_obj.upload_component_with_versions(
+        "RegexPlatformAlternation", ["1.0.0"])
+
+    deployment_id = gg_util_obj.create_deployment(
+        gg_util_obj.get_thing_group_arn(new_thing_group_name),
+        [component_cloud_name],
+    )["deploymentId"]
+    assert deployment_id is not None
+
+    assert (gg_util_obj.wait_for_deployment_till_timeout(
+        180, deployment_id) == "SUCCEEDED")
+
+    sleep_with_log(5)
+
+    assert (system_interface.monitor_journalctl_for_message(
+        "ggl." + component_cloud_name[0] + ".service",
+        "REGEX_ALTERNATION_SELECTED",
+        timeout=20) is True)
+
+
+# Regex whole-string anchoring: /lin/ must NOT match "linux" because matching is anchored.
+def test_Component_35_T2(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
+                         system_interface: SystemInterface):
+    """Proves whole-string regex matching: /lin/ does not match linux.
+    The second manifest is regex-gated (/linux/) so this test fails rather
+    than passing vacuously when regex support is absent."""
+    new_thing_name = iot_obj.thing_name
+    id = iot_obj.generate_random_id()
+    new_thing_group_name = iot_obj.generate_thing_group_name(id)
+    new_thing_group_result = iot_obj.add_thing_to_thing_group(
+        new_thing_name, new_thing_group_name)
+    assert new_thing_group_result is True
+
+    component_cloud_name = gg_util_obj.upload_component_with_versions(
+        "RegexPlatformAnchored", ["1.0.0"])
+
+    deployment_id = gg_util_obj.create_deployment(
+        gg_util_obj.get_thing_group_arn(new_thing_group_name),
+        [component_cloud_name],
+    )["deploymentId"]
+    assert deployment_id is not None
+
+    assert (gg_util_obj.wait_for_deployment_till_timeout(
+        180, deployment_id) == "SUCCEEDED")
+
+    sleep_with_log(5)
+
+    # Manifest 2 must win: /linux/ matches the device os.
+    assert (system_interface.monitor_journalctl_for_message(
+        "ggl." + component_cloud_name[0] + ".service",
+        "REGEX_ANCHOR_FALLBACK",
+        timeout=20) is True)
+
+    # Negative assertion: the violation marker must NOT appear in the log.
+    # A short timeout is used; if monitor returns True, the anchoring is broken.
+    assert (system_interface.monitor_journalctl_for_message(
+        "ggl." + component_cloud_name[0] + ".service",
+        "REGEX_ANCHOR_VIOLATION",
+        timeout=10) is False)
+
+
+# Regex alternation on the architecture attribute selects the correct manifest.
+def test_Component_35_T3(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
+                         system_interface: SystemInterface):
+    """Proves regex /aarch64|amd64/ matches the architecture attribute on arm64 or x86_64 devices."""
+    new_thing_name = iot_obj.thing_name
+    id = iot_obj.generate_random_id()
+    new_thing_group_name = iot_obj.generate_thing_group_name(id)
+    new_thing_group_result = iot_obj.add_thing_to_thing_group(
+        new_thing_name, new_thing_group_name)
+    assert new_thing_group_result is True
+
+    component_cloud_name = gg_util_obj.upload_component_with_versions(
+        "RegexPlatformArch", ["1.0.0"])
+
+    deployment_id = gg_util_obj.create_deployment(
+        gg_util_obj.get_thing_group_arn(new_thing_group_name),
+        [component_cloud_name],
+    )["deploymentId"]
+    assert deployment_id is not None
+
+    assert (gg_util_obj.wait_for_deployment_till_timeout(
+        180, deployment_id) == "SUCCEEDED")
+
+    sleep_with_log(5)
+
+    assert (system_interface.monitor_journalctl_for_message(
+        "ggl." + component_cloud_name[0] + ".service",
+        "REGEX_ARCH_SELECTED",
+        timeout=20) is True)
+
+
+# Regex matching works on the runtime platform attribute.
+def test_Component_35_T4(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
+                         system_interface: SystemInterface):
+    """Proves regex /aws_nucleus_lite/ matches the runtime attribute on a Greengrass Lite device."""
+    new_thing_name = iot_obj.thing_name
+    id = iot_obj.generate_random_id()
+    new_thing_group_name = iot_obj.generate_thing_group_name(id)
+    new_thing_group_result = iot_obj.add_thing_to_thing_group(
+        new_thing_name, new_thing_group_name)
+    assert new_thing_group_result is True
+
+    component_cloud_name = gg_util_obj.upload_component_with_versions(
+        "RegexPlatformRuntime", ["1.0.0"])
+
+    deployment_id = gg_util_obj.create_deployment(
+        gg_util_obj.get_thing_group_arn(new_thing_group_name),
+        [component_cloud_name],
+    )["deploymentId"]
+    assert deployment_id is not None
+
+    assert (gg_util_obj.wait_for_deployment_till_timeout(
+        180, deployment_id) == "SUCCEEDED")
+
+    sleep_with_log(5)
+
+    assert (system_interface.monitor_journalctl_for_message(
+        "ggl." + component_cloud_name[0] + ".service",
+        "REGEX_RUNTIME_SELECTED",
+        timeout=20) is True)
+
+
+# A malformed regex pattern must fail closed, selecting the fallback manifest.
+def test_Component_35_T5(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
+                         system_interface: SystemInterface):
+    """Proves a malformed regex /[/ fails closed and does not match any platform.
+    The second manifest is regex-gated (/linux/) so this test fails rather
+    than passing vacuously when regex support is absent."""
+    new_thing_name = iot_obj.thing_name
+    id = iot_obj.generate_random_id()
+    new_thing_group_name = iot_obj.generate_thing_group_name(id)
+    new_thing_group_result = iot_obj.add_thing_to_thing_group(
+        new_thing_name, new_thing_group_name)
+    assert new_thing_group_result is True
+
+    component_cloud_name = gg_util_obj.upload_component_with_versions(
+        "RegexPlatformMalformed", ["1.0.0"])
+
+    deployment_id = gg_util_obj.create_deployment(
+        gg_util_obj.get_thing_group_arn(new_thing_group_name),
+        [component_cloud_name],
+    )["deploymentId"]
+    assert deployment_id is not None
+
+    assert (gg_util_obj.wait_for_deployment_till_timeout(
+        180, deployment_id) == "SUCCEEDED")
+
+    sleep_with_log(5)
+
+    # Manifest 2 must win: /linux/ matches the device os.
+    assert (system_interface.monitor_journalctl_for_message(
+        "ggl." + component_cloud_name[0] + ".service",
+        "REGEX_MALFORMED_FALLBACK",
+        timeout=20) is True)
+
+    # Negative assertion: the malformed pattern must never have matched.
+    assert (system_interface.monitor_journalctl_for_message(
+        "ggl." + component_cloud_name[0] + ".service",
+        "REGEX_MALFORMED_ACCEPTED",
+        timeout=10) is False)
+
+
+# Five-branch regex alternation on architecture selects the correct manifest.
+def test_Component_35_T6(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
+                         system_interface: SystemInterface):
+    """Proves five-branch regex /riscv64|x86|aarch64|amd64|arm/ matches architecture.
+    The likely matching branch (aarch64 or amd64) is deliberately not first in the
+    alternation, proving the engine traverses all alternatives."""
+    new_thing_name = iot_obj.thing_name
+    id = iot_obj.generate_random_id()
+    new_thing_group_name = iot_obj.generate_thing_group_name(id)
+    new_thing_group_result = iot_obj.add_thing_to_thing_group(
+        new_thing_name, new_thing_group_name)
+    assert new_thing_group_result is True
+
+    component_cloud_name = gg_util_obj.upload_component_with_versions(
+        "RegexPlatformArchMulti", ["1.0.0"])
+
+    deployment_id = gg_util_obj.create_deployment(
+        gg_util_obj.get_thing_group_arn(new_thing_group_name),
+        [component_cloud_name],
+    )["deploymentId"]
+    assert deployment_id is not None
+
+    assert (gg_util_obj.wait_for_deployment_till_timeout(
+        180, deployment_id) == "SUCCEEDED")
+
+    sleep_with_log(5)
+
+    assert (system_interface.monitor_journalctl_for_message(
+        "ggl." + component_cloud_name[0] + ".service",
+        "REGEX_ARCH_MULTI_SELECTED",
+        timeout=20) is True)
+
+    # Negative assertion: the fallback must NOT have been selected.
+    assert (system_interface.monitor_journalctl_for_message(
+        "ggl." + component_cloud_name[0] + ".service",
+        "REGEX_ARCH_MULTI_FALLBACK",
+        timeout=10) is False)
+
+
+# Five-branch regex where no branch matches forces fallback selection.
+def test_Component_35_T7(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
+                         system_interface: SystemInterface):
+    """Proves /riscv64|x86|arm/ does not match aarch64 or amd64.
+    Both manifests are regex-gated so this test fails rather than passing
+    vacuously when regex support is absent. Manifest 2 matches /aarch64|amd64/,
+    so this test assumes the device reports architecture as aarch64 or amd64.
+    It would incorrectly pass on a 32-bit arm, riscv64, or x86 device."""
+    new_thing_name = iot_obj.thing_name
+    id = iot_obj.generate_random_id()
+    new_thing_group_name = iot_obj.generate_thing_group_name(id)
+    new_thing_group_result = iot_obj.add_thing_to_thing_group(
+        new_thing_name, new_thing_group_name)
+    assert new_thing_group_result is True
+
+    component_cloud_name = gg_util_obj.upload_component_with_versions(
+        "RegexPlatformArchMultiNoMatch", ["1.0.0"])
+
+    deployment_id = gg_util_obj.create_deployment(
+        gg_util_obj.get_thing_group_arn(new_thing_group_name),
+        [component_cloud_name],
+    )["deploymentId"]
+    assert deployment_id is not None
+
+    assert (gg_util_obj.wait_for_deployment_till_timeout(
+        180, deployment_id) == "SUCCEEDED")
+
+    sleep_with_log(5)
+
+    # Manifest 2 must win: /aarch64|amd64/ matches the device architecture.
+    assert (system_interface.monitor_journalctl_for_message(
+        "ggl." + component_cloud_name[0] + ".service",
+        "REGEX_ARCH_MULTI_NOMATCH_FALLBACK",
+        timeout=20) is True)
+
+    # Negative assertion: the violation marker must NOT appear.
+    assert (system_interface.monitor_journalctl_for_message(
+        "ggl." + component_cloud_name[0] + ".service",
+        "REGEX_ARCH_MULTI_NOMATCH_VIOLATION",
+        timeout=10) is False)

@@ -1,0 +1,17 @@
+---
+RecipeFormatVersion: "2020-01-25"
+ComponentName: _RegexPlatformAlternation_
+ComponentVersion: "1.0.0"
+ComponentDescription: Tests regex alternation in platform os matching
+ComponentPublisher: GG UAT
+Manifests:
+  - Platform:
+      os: "/linux|darwin/"
+      runtime: "*"
+    Lifecycle:
+      run: echo REGEX_ALTERNATION_SELECTED
+  - Platform:
+      os: "*"
+      runtime: "*"
+    Lifecycle:
+      run: echo REGEX_ALTERNATION_FALLBACK
