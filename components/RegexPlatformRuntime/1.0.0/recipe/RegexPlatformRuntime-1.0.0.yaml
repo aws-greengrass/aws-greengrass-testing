@@ -1,0 +1,17 @@
+---
+RecipeFormatVersion: "2020-01-25"
+ComponentName: _RegexPlatformRuntime_
+ComponentVersion: "1.0.0"
+ComponentDescription: Tests regex matching on the runtime platform attribute
+ComponentPublisher: GG UAT
+Manifests:
+  - Platform:
+      runtime: "/aws_nucleus_lite/"
+      os: "linux"
+    Lifecycle:
+      run: echo REGEX_RUNTIME_SELECTED
+  - Platform:
+      os: "*"
+      runtime: "*"
+    Lifecycle:
+      run: echo REGEX_RUNTIME_FALLBACK

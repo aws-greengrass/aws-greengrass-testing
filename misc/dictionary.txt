@@ -34,6 +34,7 @@ mqttproxy
 murty
 nixos
 nixpkgs
+NOMATCH
 organisation
 picocli
 pkcs
@@ -42,6 +43,7 @@ popma
 pyproject
 pytest
 remko
+riscv64
 tesd
 tmpfs
 venv

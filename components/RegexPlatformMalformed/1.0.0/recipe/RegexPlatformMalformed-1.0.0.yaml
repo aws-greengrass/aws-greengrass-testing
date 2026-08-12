@@ -1,0 +1,17 @@
+---
+RecipeFormatVersion: "2020-01-25"
+ComponentName: _RegexPlatformMalformed_
+ComponentVersion: "1.0.0"
+ComponentDescription: Tests that a malformed regex pattern fails closed
+ComponentPublisher: GG UAT
+Manifests:
+  - Platform:
+      os: "/[/"
+      runtime: "*"
+    Lifecycle:
+      run: echo REGEX_MALFORMED_ACCEPTED
+  - Platform:
+      os: "/linux/"
+      runtime: "*"
+    Lifecycle:
+      run: echo REGEX_MALFORMED_FALLBACK
