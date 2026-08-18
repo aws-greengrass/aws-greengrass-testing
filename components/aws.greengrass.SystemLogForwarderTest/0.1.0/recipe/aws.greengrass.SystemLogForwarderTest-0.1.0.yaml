@@ -26,50 +26,10 @@ ComponentDependencies:
 Manifests:
   - Platform:
       os: "linux"
-      architecture: "aarch64"
+      runtime: "*"
     Lifecycle:
       run:
-        Script: "{artifacts:path}/system-log-forwarder-arm64
-          --maxUploadIntervalSec\
-          \ {configuration:/maxUploadIntervalSec} --bufferCapacity
-          {configuration:/bufferCapacity}\
-          \ --logGroup {configuration:/logGroup} --logStream
-          \"{configuration:/logStream}\"\
-          \ --thingName {iot:thingName} --filters '{configuration:/filters}'"
-        RequiresPrivilege: "true"
-    Artifacts:
-      - Uri: "s3://$bucketName$/$testArtifactsDirectory$/system-log-forwarder-arm64"
-        Unarchive: "NONE"
-        Permission:
-          Read: "OWNER"
-          Execute: "OWNER"
-  - Platform:
-      os: "linux"
-      architecture: "amd64"
-    Lifecycle:
-      run:
-        Script: "{artifacts:path}/system-log-forwarder-x86_64
-          --maxUploadIntervalSec\
-          \ {configuration:/maxUploadIntervalSec} --bufferCapacity
-          {configuration:/bufferCapacity}\
-          \ --logGroup {configuration:/logGroup} --logStream
-          \"{configuration:/logStream}\"\
-          \ --thingName {iot:thingName} --filters '{configuration:/filters}'"
-        RequiresPrivilege: "true"
-    Artifacts:
-      - Uri: "s3://$bucketName$/$testArtifactsDirectory$/system-log-forwarder-x86_64"
-        Unarchive: "NONE"
-        Permission:
-          Read: "OWNER"
-          Execute: "OWNER"
-  - Platform:
-      os: "linux"
-      runtime: "aws_nucleus_lite"
-      architecture: "aarch64"
-    Lifecycle:
-      run:
-        Script: "{artifacts:path}/system-log-forwarder-arm64
-          --maxUploadIntervalSec\
+        Script: "{artifacts:path}/system-log-forwarder --maxUploadIntervalSec\
           \ {configuration:/maxUploadIntervalSec} --bufferCapacity
           {configuration:/bufferCapacity}\
           \ --logGroup {configuration:/logGroup} --logStream
@@ -77,47 +37,7 @@ Manifests:
           \ --thingName {iot:thingName} --filters {configuration:/filters}"
         RequiresPrivilege: "true"
     Artifacts:
-      - Uri: "s3://$bucketName$/$testArtifactsDirectory$/system-log-forwarder-arm64"
-        Unarchive: "NONE"
-        Permission:
-          Read: "OWNER"
-          Execute: "OWNER"
-  - Platform:
-      os: "linux"
-      runtime: "aws_nucleus_lite"
-      architecture: "amd64"
-    Lifecycle:
-      run:
-        Script: "{artifacts:path}/system-log-forwarder-x86_64
-          --maxUploadIntervalSec\
-          \ {configuration:/maxUploadIntervalSec} --bufferCapacity
-          {configuration:/bufferCapacity}\
-          \ --logGroup {configuration:/logGroup} --logStream
-          \"{configuration:/logStream}\"\
-          \ --thingName {iot:thingName} --filters {configuration:/filters}"
-        RequiresPrivilege: "true"
-    Artifacts:
-      - Uri: "s3://$bucketName$/$testArtifactsDirectory$/system-log-forwarder-x86_64"
-        Unarchive: "NONE"
-        Permission:
-          Read: "OWNER"
-          Execute: "OWNER"
-  - Platform:
-      os: "linux"
-      runtime: "aws_nucleus_lite"
-      architecture: "arm"
-    Lifecycle:
-      run:
-        Script: "{artifacts:path}/system-log-forwarder-armv7
-          --maxUploadIntervalSec\
-          \ {configuration:/maxUploadIntervalSec} --bufferCapacity
-          {configuration:/bufferCapacity}\
-          \ --logGroup {configuration:/logGroup} --logStream
-          \"{configuration:/logStream}\"\
-          \ --thingName {iot:thingName} --filters {configuration:/filters}"
-        RequiresPrivilege: "true"
-    Artifacts:
-      - Uri: "s3://$bucketName$/$testArtifactsDirectory$/system-log-forwarder-armv7"
+      - Uri: "s3://$bucketName$/$testArtifactsDirectory$/$randomId$/system-log-forwarder"
         Unarchive: "NONE"
         Permission:
           Read: "OWNER"
