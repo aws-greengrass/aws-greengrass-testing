@@ -123,7 +123,6 @@ def cloudwatch_cleanup(request) -> Generator[None, None, None]:
 
 
 # Scenario: SLF-1-T1: As a device application owner, I can deploy SLF to my device with default configuration values and the component will be healthy and the deployment succeeds.
-@pytest.mark.skip(reason="System log forwarder binaries not available")
 def test_SLF_1_T1(iot_obj: IoTUtils, cloudwatch_cleanup,
                   gg_util_obj: GGTestUtils, system_interface: SystemInterface):
     # Store log stream name for cleanup - use default log group name
@@ -181,7 +180,6 @@ def test_SLF_1_T1(iot_obj: IoTUtils, cloudwatch_cleanup,
 
 
 # Scenario: SLF-1-T2: As a device application owner, I can deploy SLF to my device with default filter configuration and reduced time-based configuration and observe logs show up in the cloud.
-@pytest.mark.skip(reason="System log forwarder binaries not available")
 def test_SLF_1_T2(iot_obj: IoTUtils, cloudwatch_cleanup,
                   gg_util_obj: GGTestUtils, system_interface: SystemInterface):
     # Store log stream name for cleanup
@@ -277,7 +275,6 @@ def test_SLF_1_T2(iot_obj: IoTUtils, cloudwatch_cleanup,
 
 
 # Scenario: SLF-1-T3: As a device application owner, I can deploy SLF to my device with a configured log group name.
-@pytest.mark.skip(reason="System log forwarder binaries not available")
 def test_SLF_1_T3(iot_obj: IoTUtils, cloudwatch_cleanup,
                   gg_util_obj: GGTestUtils, system_interface: SystemInterface):
     # Store log stream name for cleanup
@@ -362,7 +359,6 @@ def test_SLF_1_T3(iot_obj: IoTUtils, cloudwatch_cleanup,
 
 
 # Scenario: SLF-1-T4: As a device application owner, I can deploy SLF to my device with a configured log stream name.
-@pytest.mark.skip(reason="System log forwarder binaries not available")
 def test_SLF_1_T4(iot_obj: IoTUtils, cloudwatch_cleanup,
                   gg_util_obj: GGTestUtils, system_interface: SystemInterface):
     # Store custom log stream name for cleanup
