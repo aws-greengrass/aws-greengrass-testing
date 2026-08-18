@@ -692,9 +692,11 @@ def test_Component_35_T4(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
 # A malformed regex pattern must fail closed, selecting the fallback manifest.
 def test_Component_35_T5(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
                          system_interface: SystemInterface):
-    """Proves a malformed regex /[/ fails closed and does not match any platform.
-    The second manifest is regex-gated (/linux/) so this test fails rather
-    than passing vacuously when regex support is absent."""
+    """Proves that /(?i)linux/ is valid to the cloud's Java regex validator but
+    unsupported by Lite's Thompson NFA engine (no inline-flag support), so
+    Lite declines the first manifest and selects the regex-gated second
+    manifest (/linux/).  The second manifest is regex-gated so this test
+    cannot pass vacuously when regex support is absent."""
     new_thing_name = iot_obj.thing_name
     id = iot_obj.generate_random_id()
     new_thing_group_name = iot_obj.generate_thing_group_name(id)

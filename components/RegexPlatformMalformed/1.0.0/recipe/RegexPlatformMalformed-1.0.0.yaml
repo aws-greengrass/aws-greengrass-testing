@@ -6,7 +6,7 @@ ComponentDescription: Tests that a malformed regex pattern fails closed
 ComponentPublisher: GG UAT
 Manifests:
   - Platform:
-      os: "/[/"
+      os: "/(?i)linux/"
       runtime: "*"
     Lifecycle:
       run: echo REGEX_MALFORMED_ACCEPTED
