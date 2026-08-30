@@ -44,7 +44,7 @@
         <guice.version>5.0.1</guice.version>
         <jackson.version>2.15.2</jackson.version>
         <semver.version>3.1.0</semver.version>
-        <iotdevicesdk.version>1.10.3</iotdevicesdk.version>
+        <iotdevicesdk.version>1.17.5</iotdevicesdk.version>
         <picocli.version>4.6.1</picocli.version>
         <dagger.version>2.37</dagger.version>
     </properties>
