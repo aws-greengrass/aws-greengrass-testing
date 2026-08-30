@@ -28,6 +28,21 @@ _THROTTLE_CODES = frozenset({
     "LimitExceededException",
 })
 
+# SendDirectMessage retry: 6 attempts, exponential backoff capped at 30s.
+_DM_MAX_ATTEMPTS = 6
+_DM_BASE_RETRY_DELAY = 2.0    # seconds
+_DM_MAX_RETRY_DELAY = 30.0    # seconds
+# Max seconds to wait for the device PUBACK (confirmation=True only).
+_DM_CONFIRMATION_TIMEOUT = 10
+
+# Failures that cannot succeed on retry.
+_DM_NON_RETRYABLE_CODES = frozenset({
+    "InvalidRequestException",
+    "UnauthorizedException",
+    "ForbiddenException",
+    "RequestEntityTooLargeException",
+})
+
 
 def _retry_on_throttle(func, *, attempts=3, base_delay=1.0, cap=10.0):
     """Retry func() on throttling/transient errors with full-jitter backoff.
@@ -70,6 +85,8 @@ class IoTUtils():
         self._gg_client = client("greengrassv2",
                                  region_name=self._region,
                                  config=THROTTLE_RETRY_CONFIG)
+        # Built lazily on first data-plane use.
+        self._iot_data_client = None
         self._thing_groups = []
         self._provisioned_role_name = None
         self._provisioned_role_alias = None
@@ -85,6 +102,85 @@ class IoTUtils():
         cred_ep = self._iot_client.describe_endpoint(
             endpointType="iot:CredentialProvider")["endpointAddress"]
         return {"iotDataEndpoint": data_ep, "iotCredEndpoint": cred_ep}
+
+    def send_direct_message(self,
+                            client_id: str,
+                            topic: str,
+                            payload: str,
+                            confirmation: bool = True,
+                            timeout: int = _DM_CONFIRMATION_TIMEOUT) -> int:
+        """Send an IoT Core direct message to a device by MQTT client id (the
+        thing name), over its existing connection with no subscription.
+
+        confirmation=True delivers at QoS 1 and waits for the device PUBACK,
+        returning 504 on timeout so a send racing an unready receiver retries
+        instead of passing falsely.
+
+        Returns the HTTP status code (200 on success), fast-fails on
+        non-retryable errors, and raises AssertionError if all attempts fail.
+        """
+        payload_bytes = payload.encode("utf-8") if isinstance(payload,
+                                                              str) else payload
+        iot_data_client = self._get_iot_data_client()
+        last_error = None
+        for attempt in range(1, _DM_MAX_ATTEMPTS + 1):
+            try:
+                response = iot_data_client.send_direct_message(
+                    clientId=client_id,
+                    topic=topic,
+                    confirmation=confirmation,
+                    timeout=timeout,
+                    payload=payload_bytes)
+                status = response["ResponseMetadata"]["HTTPStatusCode"]
+                print(
+                    f"SendDirectMessage to client {client_id} on topic {topic} "
+                    f"succeeded: status={status} "
+                    f"message={response.get('message')} "
+                    f"traceId={response.get('traceId')}")
+                return status
+            except ClientError as e:
+                code = e.response["Error"].get("Code", "")
+                if code in _DM_NON_RETRYABLE_CODES:
+                    # Cannot succeed on retry; surface it now.
+                    print(f"ERROR: SendDirectMessage to client {client_id} on "
+                          f"topic {topic} failed with non-retryable error "
+                          f"{code}: {e}")
+                    raise
+                # Retryable (not-ready, throttling, 5xx, or PUBACK timeout).
+                last_error = e
+                print(f"SendDirectMessage to client {client_id} on topic "
+                      f"{topic} failed on attempt {attempt}/{_DM_MAX_ATTEMPTS}: "
+                      f"{e}")
+            except (BotoCoreError, botocore.exceptions.ConnectionError) as e:
+                # Transient transport error.
+                last_error = e
+                print(f"SendDirectMessage to client {client_id} on topic "
+                      f"{topic} transient error on attempt "
+                      f"{attempt}/{_DM_MAX_ATTEMPTS}: {e}")
+
+            if attempt < _DM_MAX_ATTEMPTS:
+                sleep(
+                    min(_DM_BASE_RETRY_DELAY * 2**(attempt - 1),
+                        _DM_MAX_RETRY_DELAY))
+
+        raise AssertionError(
+            f"SendDirectMessage to client {client_id} on topic {topic} did not "
+            f"succeed after {_DM_MAX_ATTEMPTS} attempts") from last_error
+
+    def publish_to_iot_core(self,
+                            topic: str,
+                            payload: str,
+                            qos: int = 1) -> int:
+        """Publish a message to an IoT Core topic (broker publish). Returns the
+        HTTP status code (200 on success)."""
+        payload_bytes = payload.encode("utf-8") if isinstance(payload,
+                                                              str) else payload
+        response = self._get_iot_data_client().publish(topic=topic,
+                                                       qos=qos,
+                                                       payload=payload_bytes)
+        status = response["ResponseMetadata"]["HTTPStatusCode"]
+        print(f"Publish to IoT Core on topic {topic} returned status={status}")
+        return status
 
     def provision_for_endpoint_switch(self,
                                       cert_pem: str,
@@ -401,6 +497,18 @@ class IoTUtils():
     # ===============================================
     # HELPER FUNCTIONS
     # ===============================================
+    def _get_iot_data_client(self):
+        """Build the IoT data plane client on first use, pointed at the
+        account's iot:Data-ATS endpoint."""
+        if self._iot_data_client is None:
+            data_endpoint = self._iot_client.describe_endpoint(
+                endpointType="iot:Data-ATS")["endpointAddress"]
+            self._iot_data_client = client("iot-data",
+                                           region_name=self._region,
+                                           endpoint_url=f"https://{data_endpoint}",
+                                           config=THROTTLE_RETRY_CONFIG)
+        return self._iot_data_client
+
     def _create_iot_role(self,
                          role_name: str = "ggl-uat-role"
                          ) -> tuple[str | None, bool]:

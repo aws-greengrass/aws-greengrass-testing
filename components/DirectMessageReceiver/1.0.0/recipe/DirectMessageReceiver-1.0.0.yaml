@@ -1,0 +1,34 @@
+---
+RecipeFormatVersion: "2020-01-25"
+ComponentName: DirectMessageReceiver
+ComponentVersion: "1.0.0"
+ComponentDescription: >-
+  Test-only receiver for the direct-message UATs. Reads Topic, SubscriptionMode,
+  and CloudSubscriptionTopic and calls SubscribeToIoTCore over IPC, logging each
+  registration outcome and every received message (topic, payload, path).
+
+  Note: Needs an awsiotsdk with subscriptionMode; installed from a fork until it ships.
+  accessControl is omitted on purpose so each test grants it via merge config.
+ComponentPublisher: Me
+ComponentConfiguration:
+  DefaultConfiguration:
+    Topic: "cmd/#"
+    SubscriptionMode: "RECEIVE_ONLY"
+    CloudSubscriptionTopic: ""
+Manifests:
+  - Platform:
+      os: "linux"
+      runtime: "*"
+    Lifecycle:
+      # Fork branch adds subscriptionMode; use released awsiotsdk once merged.
+      install: |-
+        python3 -m venv .venv
+        .venv/bin/python3 -m pip install "git+https://github.com/tushar-aws/aws-iot-device-sdk-python-v2@feat/subscribe-to-iot-core-subscription-mode"
+      run: |-
+        .venv/bin/python3 -u {artifacts:path}/direct_message_receiver.py \
+          "{configuration:/Topic}" \
+          "{configuration:/SubscriptionMode}" \
+          "{configuration:/CloudSubscriptionTopic}"
+    Artifacts:
+      - URI: "s3://$bucketName$/$testArtifactsDirectory$/$randomId$/direct_message_receiver.py"
+Lifecycle: {}
