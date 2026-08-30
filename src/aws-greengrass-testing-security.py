@@ -471,3 +471,93 @@ def test_Security_6_T22(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
         "ggl." + publisher_cloud_name[0] + ".service",
         "UnauthorizedError",
         timeout=20) is True)
+
+
+# Scenario: Security-6-T23
+# As a service owner, I want to use interpolated recipe variables like {iot:thingName}
+# in MQTT authorization policy resource strings. The authorization should resolve
+# the variable at runtime and allow publish/subscribe when the topic matches.
+def test_Security_6_T23(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
+                        system_interface: SystemInterface):
+    security_thing_name = iot_obj.thing_name
+    id = iot_obj.generate_random_id()
+    security_thing_group_name = iot_obj.generate_thing_group_name(id)
+    security_thing_group_result = iot_obj.add_thing_to_thing_group(
+        security_thing_name, security_thing_group_name)
+    assert security_thing_group_result is True
+
+    # Deploy HelloWorldMqtt 2.0.0. Its lifecycle builds the request topic from
+    # a directly interpolated thing name and the configured topic suffix, while
+    # its access control policy uses an interpolated resource.
+    mqtt_cloud_name = gg_util_obj.upload_component_with_versions(
+        "HelloWorldMqtt", ["2.0.0"])
+    if mqtt_cloud_name is None:
+        raise RuntimeError(
+            "Fatal error: HelloWorldMqtt 2.0.0 cannot be uploaded to cloud")
+
+    deployment_id = gg_util_obj.create_deployment(
+        thingArn=gg_util_obj.get_thing_group_arn(security_thing_group_name),
+        component_list=[mqtt_cloud_name],
+        deployment_name="InterpolatedMqttResourceDeploy")["deploymentId"]
+
+    assert (gg_util_obj.wait_for_deployment_till_timeout(
+        240, deployment_id) == "SUCCEEDED")
+
+    sleep_with_log(5)
+
+    # The lifecycle and policy independently interpolate {iot:thingName} to
+    # the same <thing-name>/test/topic resource, so authorization should succeed.
+    assert (system_interface.monitor_journalctl_for_message(
+        "ggl." + mqtt_cloud_name[0] + ".service",
+        "Successfully subscribed to",
+        timeout=60) is True)
+
+    assert (system_interface.monitor_journalctl_for_message(
+        "ggl." + mqtt_cloud_name[0] + ".service",
+        "Successfully published 1 message(s)",
+        timeout=60) is True)
+
+
+# Scenario: Security-6-T24
+# As a service owner, I want to ensure that when an interpolated MQTT policy
+# resource does NOT match the topic the component publishes to, authorization
+# is denied.
+def test_Security_6_T24(iot_obj: IoTUtils, gg_util_obj: GGTestUtils,
+                        system_interface: SystemInterface):
+    security_thing_name = iot_obj.thing_name
+    id = iot_obj.generate_random_id()
+    security_thing_group_name = iot_obj.generate_thing_group_name(id)
+    security_thing_group_result = iot_obj.add_thing_to_thing_group(
+        security_thing_name, security_thing_group_name)
+    assert security_thing_group_result is True
+
+    # Deploy HelloWorldMqtt 2.0.0 with the other/topic suffix, but override the
+    # policy resource to a different interpolated path. Authorization should
+    # compare <thing-name>/other/topic with <thing-name>/test/topic and deny it.
+    mqtt_cloud_name = gg_util_obj.upload_component_with_versions(
+        "HelloWorldMqtt", ["2.0.0"])
+    if mqtt_cloud_name is None:
+        raise RuntimeError(
+            "Fatal error: HelloWorldMqtt 2.0.0 cannot be uploaded to cloud")
+
+    mqtt_cloud_name = mqtt_cloud_name._replace(
+        merge_config={"Topic": "other/topic"})
+
+    deployment_id = gg_util_obj.create_deployment(
+        thingArn=gg_util_obj.get_thing_group_arn(security_thing_group_name),
+        component_list=[mqtt_cloud_name],
+        deployment_name="MismatchedInterpolatedMqttResourceDeploy"
+    )["deploymentId"]
+
+    # The deployment should fail because the concrete request topic does not
+    # match the interpolated policy resource.
+    deployment_result = gg_util_obj.wait_for_deployment_till_timeout(
+        180, deployment_id)
+    assert (deployment_result == "FAILED")
+
+    sleep_with_log(5)
+
+    # Verify that an authorization error was logged
+    assert (system_interface.monitor_journalctl_for_message(
+        "ggl." + mqtt_cloud_name[0] + ".service", "IPC error", timeout=30)
+            is True)
